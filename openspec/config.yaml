@@ -1,0 +1,37 @@
+# openspec/config.yaml — Cartografías Sensoriales
+schema: spec-driven
+
+context: |
+  Tech stack: Astro 7+, React, TypeScript (strict), Leaflet (CRS.Simple), Motion
+  Architecture: Screaming Architecture, Feature First, DDD folder structure
+  Data: JSON/TS/MDX (no backend, no database)
+  Audio: Custom Audio Engine (idle/loading/playing/paused/ended/error)
+  Testing: Vitest + Testing Library + Playwright
+  Style: Feature-scoped folders (domain/data/ui/services/lib)
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Justify every React island (no unnecessary hydration)
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Cover all domain invariants (map/sound/soundPiece/path constraints)
+  design:
+    - Include sequence diagrams for complex flows (audio engine, map state)
+    - Document architecture decisions with rationale
+    - Show Leaflet abstraction layer (avoid direct Leaflet coupling)
+  tasks:
+    - Group by implementation phase (Fase 1-6 from SPEC.md)
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns
+    - TypeScript strict mode MUST pass
+    tdd: false
+    test_command: "pnpm test"
+  verify:
+    test_command: "pnpm test"
+    build_command: "pnpm build"
+    coverage_threshold: 80
+  archive:
+    - Warn before merging destructive deltas

@@ -1,0 +1,33 @@
+---
+import type { Map } from '../domain/types';
+
+interface Props {
+  map: Map;
+}
+
+const { map } = Astro.props;
+---
+
+<a
+  href={`/${map.slug}`}
+  class="group flex flex-col overflow-hidden rounded-lg border border-secondary-sand/30 bg-white shadow-sm transition hover:shadow-md"
+  data-testid="map-card"
+>
+  <div class="aspect-[3/2] w-full bg-secondary-sand/20">
+    <img
+      src={map.image.src}
+      alt={map.title}
+      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+      loading="lazy"
+      width={map.image.width}
+      height={map.image.height}
+    />
+  </div>
+  <div class="p-4">
+    <h2
+      class="text-lg font-semibold text-primary-navy group-hover:text-primary-brown"
+    >
+      {map.title}
+    </h2>
+  </div>
+</a>
