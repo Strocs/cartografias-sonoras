@@ -1,11 +1,20 @@
 'use client';
 
 import L from 'leaflet';
-import { useCallback, useImperativeHandle, useRef, useState } from 'react';
+import {
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import 'leaflet/dist/leaflet.css';
 
+import { cn } from '@shared/utils/cn';
+
 import type { MapViewportConfig, MapViewportRef } from './types';
+import { MapContext } from './MapContext';
 
 export interface MapViewportProps {
   imageUrl: string;
@@ -14,6 +23,7 @@ export interface MapViewportProps {
   config?: MapViewportConfig;
   className?: string;
   ref?: React.Ref<MapViewportRef>;
+  children?: ReactNode;
 }
 
 export function MapViewport({
@@ -23,8 +33,10 @@ export function MapViewport({
   config,
   className,
   ref,
+  children,
 }: MapViewportProps) {
   const mapRef = useRef<L.Map | null>(null);
+  const [mapState, setMapState] = useState<L.Map | null>(null);
   const [isReady, setIsReady] = useState(false);
 
   const initContainer = useCallback(
@@ -53,11 +65,14 @@ export function MapViewport({
       map.fitBounds(bounds);
 
       mapRef.current = map;
+      setMapState(map);
       setIsReady(true);
 
       return () => {
         map.remove();
         mapRef.current = null;
+        setMapState(null);
+        setIsReady(false);
       };
     },
     [
@@ -92,11 +107,16 @@ export function MapViewport({
   }));
 
   return (
-    <div
-      ref={initContainer}
-      className={className}
-      data-testid="map-viewport"
-      data-ready={isReady}
-    />
+    <MapContext.Provider value={{ map: mapState, ready: isReady }}>
+      <div className={cn('relative size-full', className)}>
+        <div
+          ref={initContainer}
+          className="size-full"
+          data-testid="map-viewport"
+          data-ready={isReady}
+        />
+        {children}
+      </div>
+    </MapContext.Provider>
   );
 }
