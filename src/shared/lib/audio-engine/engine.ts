@@ -38,6 +38,9 @@ export function createInitialState(): AudioEngineState {
     activePieceId: null,
     piece: createIdlePieceState(),
     mapId: null,
+    volume: 1,
+    muted: false,
+    _pendingSeeks: new Map(),
   };
 }
 
@@ -106,13 +109,18 @@ export function playSound(
 
 export function soundLoaded(
   state: AudioEngineState,
-  soundId: number
+  soundId: number,
+  duration?: number
 ): AudioEngineState {
   const current = state.activeSounds.get(soundId);
   if (current?.status !== AUDIO_STATUS.LOADING) {
     return state;
   }
-  return setSound(state, soundId, { status: AUDIO_STATUS.PLAYING });
+  const update: Partial<SoundState> = { status: AUDIO_STATUS.PLAYING };
+  if (duration !== undefined) {
+    update.duration = duration;
+  }
+  return setSound(state, soundId, update);
 }
 
 export function pauseSound(
@@ -191,7 +199,53 @@ export function seekSound(
   if (!current) {
     return state;
   }
+  const pending = new Map(state._pendingSeeks);
+  pending.delete(soundId);
+  return { ...setSound(state, soundId, { currentTime: time }), _pendingSeeks: pending };
+}
+
+export function pendingSeek(
+  state: AudioEngineState,
+  soundId: number,
+  time: number
+): AudioEngineState {
+  const current = state.activeSounds.get(soundId);
+  if (!current) {
+    return state;
+  }
+  const pending = new Map(state._pendingSeeks);
+  pending.set(soundId, time);
+  return { ...state, _pendingSeeks: pending };
+}
+
+export function setVolume(
+  state: AudioEngineState,
+  volume: number
+): AudioEngineState {
+  return { ...state, volume };
+}
+
+export function toggleMute(state: AudioEngineState): AudioEngineState {
+  return { ...state, muted: !state.muted };
+}
+
+export function soundTimeUpdated(
+  state: AudioEngineState,
+  soundId: number,
+  time: number
+): AudioEngineState {
+  const current = state.activeSounds.get(soundId);
+  if (!current) {
+    return state;
+  }
   return setSound(state, soundId, { currentTime: time });
+}
+
+export function pieceTimeUpdated(
+  state: AudioEngineState,
+  time: number
+): AudioEngineState {
+  return updatePiece(state, { currentTime: time });
 }
 
 export function playPiece(
@@ -208,11 +262,18 @@ export function playPiece(
   };
 }
 
-export function pieceLoaded(state: AudioEngineState): AudioEngineState {
+export function pieceLoaded(
+  state: AudioEngineState,
+  duration?: number
+): AudioEngineState {
   if (state.piece.status !== AUDIO_STATUS.LOADING) {
     return state;
   }
-  return updatePiece(state, { status: AUDIO_STATUS.PLAYING });
+  const update: Partial<PieceState> = { status: AUDIO_STATUS.PLAYING };
+  if (duration !== undefined) {
+    update.duration = duration;
+  }
+  return updatePiece(state, update);
 }
 
 export function pausePiece(state: AudioEngineState): AudioEngineState {
