@@ -6,8 +6,9 @@ import tailwindcss from 'eslint-plugin-tailwindcss';
 
 export default defineConfig([
   {
-    ignores: ['.astro/', 'dist/', 'pnpm-lock.yaml']
+    ignores: ['.astro/', 'dist/', 'pnpm-lock.yaml', 'node_modules/']
   },
+  // Base config: all files get recommended rules
   {
     files: ['**/*.{js,jsx,ts,tsx,astro}'],
     extends: [
@@ -20,7 +21,13 @@ export default defineConfig([
       tailwindcss: {
         cssConfigPath: 'src/styles/global.css'
       }
-    },
+    }
+  },
+  // Feature isolation: only features/ cannot import from sibling features.
+  // shared/ and views/ are allowed to import from features — they exist to
+  // compose, reuse, and orchestrate across feature boundaries.
+  {
+    files: ['src/features/**'],
     rules: {
       'no-restricted-imports': [
         'error',

@@ -33,9 +33,9 @@ describe('RightRail', () => {
   it('excludes the active map from the rail', () => {
     render(<RightRail maps={maps} activeSlug="locacion-1" />);
 
-    expect(screen.queryByText('M1')).not.toBeInTheDocument();
-    expect(screen.getByText('M2')).toBeInTheDocument();
-    expect(screen.getByText('M3')).toBeInTheDocument();
+    expect(screen.queryByText('Plaza de Armas — La Serena')).not.toBeInTheDocument();
+    expect(screen.getByText('Mercado — Coquimbo')).toBeInTheDocument();
+    expect(screen.getByText('Borde Costero')).toBeInTheDocument();
   });
 
   it('renders a link to each inactive map', () => {
@@ -56,10 +56,10 @@ describe('RightRail', () => {
     expect(images[1]).toHaveAttribute('src', '/maps/locacion-2.png');
   });
 
-  it('renders the map identifiers', () => {
+  it('renders the map titles', () => {
     render(<RightRail maps={maps} activeSlug="locacion-1" />);
 
-    expect(screen.getByText('M2')).toBeInTheDocument();
-    expect(screen.getByText('M3')).toBeInTheDocument();
+    expect(screen.getByText('Mercado — Coquimbo')).toBeInTheDocument();
+    expect(screen.getByText('Borde Costero')).toBeInTheDocument();
   });
 });

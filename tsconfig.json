@@ -7,7 +7,8 @@
     "paths": {
       "@features/*": ["src/features/*"],
       "@shared/*": ["src/shared/*"],
-      "@styles/*": ["src/styles/*"]
+      "@styles/*": ["src/styles/*"],
+      "@views/*": ["src/views/*"]
     },
     "jsx": "react-jsx",
     "jsxImportSource": "react"

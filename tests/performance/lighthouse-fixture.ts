@@ -13,8 +13,10 @@ type LighthouseFixtures = {
  *
  * Each worker gets its own port to support parallel runs.
  */
-export const lighthouseTest = base.extend<LighthouseFixtures>({
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Playwright fixture convention for no input fixtures
+export const lighthouseTest = base.extend<{}, LighthouseFixtures>({
   port: [
+    // eslint-disable-next-line no-empty-pattern -- Playwright fixture convention
     async ({}, use) => {
       const port = await getPort();
       await use(port);

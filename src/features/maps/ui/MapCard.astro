@@ -10,10 +10,10 @@ const { map } = Astro.props;
 
 <a
   href={`/${map.slug}`}
-  class="group flex flex-col overflow-hidden rounded-lg border border-secondary-sand/30 bg-white shadow-sm transition hover:shadow-md"
+  class="group border-secondary-sand/30 flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md"
   data-testid="map-card"
 >
-  <div class="aspect-[3/2] w-full bg-secondary-sand/20">
+  <div class="bg-secondary-sand/20 aspect-[3/2] w-full">
     <img
       src={map.image.src}
       alt={map.title}
@@ -25,7 +25,7 @@ const { map } = Astro.props;
   </div>
   <div class="p-4">
     <h2
-      class="text-lg font-semibold text-primary-navy group-hover:text-primary-brown"
+      class="text-primary-navy group-hover:text-primary-brown text-lg font-semibold"
     >
       {map.title}
     </h2>
