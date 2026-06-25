@@ -39,20 +39,22 @@ vi.mock('@views/sound-tour', () => ({
   ),
 }));
 
-const mapImage = mockMaps[0].image;
-const sounds = mockSounds.filter((s) => s.mapId === 1).slice(0, 2);
-const paths = mockPaths.filter((p) => p.mapId === 1).slice(0, 1);
-const inactiveMaps = mockMaps.filter((m) => m.slug !== 'locacion-1').slice(0, 1);
+const map = mockMaps[0];
+const mapImage = map.image;
+const sounds = mockSounds.filter((s) => s.mapId === map.id).slice(0, 2);
+const paths = mockPaths.filter((p) => p.mapId === map.id).slice(0, 1);
+const inactiveMaps = mockMaps.filter((m) => m.slug !== map.slug).slice(0, 1);
 
 describe('ActiveMapLayout', () => {
   it('renders the viewport with the given image dimensions', () => {
     render(
       <ActiveMapLayout
-        slug="locacion-1"
+        slug={map.slug}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
         inactiveMaps={inactiveMaps}
+        soundPiece={null}
       />
     );
 
@@ -62,11 +64,12 @@ describe('ActiveMapLayout', () => {
   it('renders a sound marker for each sound', () => {
     render(
       <ActiveMapLayout
-        slug="locacion-1"
+        slug={map.slug}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
         inactiveMaps={inactiveMaps}
+        soundPiece={null}
       />
     );
 
@@ -79,11 +82,12 @@ describe('ActiveMapLayout', () => {
   it('renders path overlay with the provided paths', () => {
     render(
       <ActiveMapLayout
-        slug="locacion-1"
+        slug={map.slug}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
         inactiveMaps={inactiveMaps}
+        soundPiece={null}
       />
     );
 
@@ -96,11 +100,12 @@ describe('ActiveMapLayout', () => {
   it('renders map controls', () => {
     render(
       <ActiveMapLayout
-        slug="locacion-1"
+        slug={map.slug}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
         inactiveMaps={inactiveMaps}
+        soundPiece={null}
       />
     );
 
@@ -110,11 +115,12 @@ describe('ActiveMapLayout', () => {
   it('renders the right rail with inactive maps', () => {
     render(
       <ActiveMapLayout
-        slug="locacion-1"
+        slug={map.slug}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
         inactiveMaps={inactiveMaps}
+        soundPiece={null}
       />
     );
 
@@ -127,11 +133,12 @@ describe('ActiveMapLayout', () => {
   it('renders the warm cream canvas background', () => {
     render(
       <ActiveMapLayout
-        slug="locacion-1"
+        slug={map.slug}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
         inactiveMaps={inactiveMaps}
+        soundPiece={null}
       />
     );
 

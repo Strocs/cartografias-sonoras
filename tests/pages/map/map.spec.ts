@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { mockMaps } from '../../../src/features/maps/data/mock-maps';
 import { mockPaths } from '../../../src/features/paths/data/mock-paths';
+import { mockSoundPieces } from '../../../src/features/sound-pieces/data/mock-sound-pieces';
 import { mockSounds } from '../../../src/features/sounds/data/mock-sounds';
 import { HomePage } from '../home/home-page';
 import { MapPage } from './map-page';
@@ -165,6 +166,84 @@ test.describe('Map', () => {
 
       const firstPath = paths.first();
       await expect(firstPath).toHaveAttribute('stroke-dasharray');
+    }
+  );
+
+  test(
+    'clicking a marker starts playback and shows the progress ring',
+    { tag: ['@e2e', '@audio'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const map = mockMaps[0];
+      const sound = mockSounds.find((s) => s.mapId === map.id);
+
+      if (!sound) {
+        throw new Error(`No sounds found for map ${map.slug}`);
+      }
+
+      await mapPage.goto(map.slug);
+      await mapPage.waitForViewportReady();
+
+      const marker = mapPage.getMarkerBySoundId(sound.id);
+      await marker.click();
+
+      await expect(marker).toHaveAttribute('data-status', 'playing', {
+        timeout: 5000,
+      });
+      await expect(marker.locator('[data-testid="progress-ring"]')).toBeVisible();
+    }
+  );
+
+  test(
+    'bottom player appears when audio is playing',
+    { tag: ['@e2e', '@audio'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const map = mockMaps[0];
+      const sound = mockSounds.find((s) => s.mapId === map.id);
+
+      if (!sound) {
+        throw new Error(`No sounds found for map ${map.slug}`);
+      }
+
+      await mapPage.goto(map.slug);
+      await mapPage.waitForViewportReady();
+
+      await expect(mapPage.bottomPlayer).not.toBeVisible();
+
+      const marker = mapPage.getMarkerBySoundId(sound.id);
+      await marker.click();
+
+      await expect(mapPage.bottomPlayer).toBeVisible({ timeout: 5000 });
+      await expect(mapPage.bottomPlayer).toHaveAttribute(
+        'data-mode',
+        'exploration'
+      );
+    }
+  );
+
+  test(
+    'sound piece trigger switches the bottom player to piece mode',
+    { tag: ['@e2e', '@audio'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const map = mockMaps[0];
+      const piece = mockSoundPieces.find((p) => p.mapId === map.id);
+
+      if (!piece) {
+        throw new Error(`No sound piece found for map ${map.slug}`);
+      }
+
+      await mapPage.goto(map.slug);
+      await mapPage.waitForViewportReady();
+
+      await expect(mapPage.soundPieceTrigger).toBeVisible();
+      await mapPage.soundPieceTrigger.click();
+
+      await expect(mapPage.bottomPlayer).toBeVisible({ timeout: 5000 });
+      await expect(mapPage.bottomPlayer).toHaveAttribute('data-mode', 'piece');
+      await expect(mapPage.bottomPlayer).toContainText(piece.title);
+      await expect(mapPage.bottomPlayer).toContainText(piece.author);
     }
   );
 });

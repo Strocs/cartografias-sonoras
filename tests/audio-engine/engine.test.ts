@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyPieceSeek,
   AUDIO_STATUS,
   createInitialState,
   pausePiece,
   pauseSound,
+  pendingPieceSeek,
   pendingSeek,
   pieceEnded,
   pieceError,
@@ -173,11 +175,12 @@ describe('Audio engine state machine', () => {
       expect(next.piece.status).toBe(AUDIO_STATUS.IDLE);
     });
 
-    it('transitions a playing piece to ended', () => {
+    it('transitions a playing piece to ended and clears active piece id', () => {
       const state = pieceLoaded(playPiece(createInitialState(), 100, 10));
       const next = pieceEnded(state);
 
       expect(next.piece.status).toBe(AUDIO_STATUS.ENDED);
+      expect(next.activePieceId).toBeNull();
     });
 
     it('transitions a piece to error', () => {
@@ -193,6 +196,23 @@ describe('Audio engine state machine', () => {
       const next = seekPiece(state, 33);
 
       expect(next.piece.currentTime).toBe(33);
+    });
+
+    it('records a pending piece seek', () => {
+      const state = pieceLoaded(playPiece(createInitialState(), 100, 10));
+      const next = pendingPieceSeek(state, 77);
+
+      expect(next.piece.currentTime).toBe(77);
+      expect(next._pendingPieceSeek).toBe(77);
+    });
+
+    it('applies a pending piece seek and clears the flag', () => {
+      let state = pieceLoaded(playPiece(createInitialState(), 100, 10));
+      state = pendingPieceSeek(state, 77);
+      const next = applyPieceSeek(state, 77);
+
+      expect(next.piece.currentTime).toBe(77);
+      expect(next._pendingPieceSeek).toBeNull();
     });
 
     it('ignores individual sound playback while a piece is active', () => {

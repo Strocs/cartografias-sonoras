@@ -40,21 +40,21 @@ Chain strategy: stacked-to-main
 
 ## Phase 3 — Bottom Player
 
-- [ ] 3.1 Create `AudioBottomPlayer.tsx`: fixed teal bar, bronze border
-- [ ] 3.2 Motion enter/exit animation for bar show/hide
-- [ ] 3.3 Play/pause toggle wired to store status
-- [ ] 3.4 Interactive scrubber for pieces, display-only for sounds
-- [ ] 3.5 Time indicators: elapsed + duration in M:SS
-- [ ] 3.6 CSS keyframes wave visualizer placeholder
-- [ ] 3.7 Volume slider + mute toggle → store actions
-- [ ] 3.8 Mode label: "Modo Exploración" vs "Modo Obra"
-- [ ] 3.9 Create `SoundPieceTrigger.tsx`: dispatches playPiece
-- [ ] 3.10 Tests: bottom player controls + SoundPieceTrigger
+- [x] 3.1 Create `AudioBottomPlayer.tsx`: fixed teal bar, bronze border
+- [x] 3.2 Motion enter/exit animation for bar show/hide
+- [x] 3.3 Play/pause toggle wired to store status
+- [x] 3.4 Interactive scrubber for pieces, display-only for sounds
+- [x] 3.5 Time indicators: elapsed + duration in M:SS
+- [x] 3.6 CSS keyframes wave visualizer placeholder
+- [x] 3.7 Volume slider + mute toggle → store actions
+- [x] 3.8 Mode label: "Modo Exploración" vs "Modo Obra"
+- [x] 3.9 Create `SoundPieceTrigger.tsx`: dispatches playPiece
+- [x] 3.10 Tests: bottom player controls + SoundPieceTrigger
 
 ## Phase 4 — Integration & Wiring
 
-- [ ] 4.1 Compose AudioPool + AudioBottomPlayer + SoundPieceTrigger in ActiveMapLayout.tsx
-- [ ] 4.2 Pass soundPiece prop via ActiveMapLayout.astro from page data
-- [ ] 4.3 In `[slug].astro`: find active SoundPiece from mock data, pass to layout
-- [ ] 4.4 Verify piece stops sounds, blocking during piece, auto-resume after
-- [ ] 4.5 Verify mode label flips correctly exploration ↔ piece
+- [x] 4.1 Compose AudioPool + AudioBottomPlayer + SoundPieceTrigger in ActiveMapLayout.tsx
+- [x] 4.2 Pass soundPiece prop via ActiveMapLayout.astro from page data
+- [x] 4.3 In `[slug].astro`: find active SoundPiece from mock data, pass to layout
+- [x] 4.4 Verify piece stops sounds, blocking during piece, auto-resume after
+- [x] 4.5 Verify mode label flips correctly exploration ↔ piece

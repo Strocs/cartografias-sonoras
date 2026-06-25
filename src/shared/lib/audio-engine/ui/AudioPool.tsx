@@ -105,6 +105,15 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
         audioTransitions.seekSound(id, time);
       }
     });
+
+    if (state._pendingPieceSeek !== null && state.activePieceId !== null) {
+      const pieceAudio = audioRefs.current.get(state.activePieceId);
+      if (pieceAudio) {
+        const time = state._pendingPieceSeek;
+        pieceAudio.currentTime = time;
+        audioTransitions.seekPiece(time);
+      }
+    }
   };
 
   const syncAllActiveAudio = (): void => {

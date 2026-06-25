@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 
 import {
+  applyPieceSeek as applyPieceSeekEngine,
   createInitialState,
   pausePiece as pausePieceEngine,
   pauseSound as pauseSoundEngine,
+  pendingPieceSeek as pendingPieceSeekEngine,
   pendingSeek as pendingSeekEngine,
   pieceEnded as pieceEndedEngine,
   pieceError as pieceErrorEngine,
@@ -13,7 +15,6 @@ import {
   playSound as playSoundEngine,
   resumePiece as resumePieceEngine,
   resumeSound as resumeSoundEngine,
-  seekPiece as seekPieceEngine,
   seekSound as seekSoundEngine,
   setVolume as setVolumeEngine,
   soundEnded as soundEndedEngine,
@@ -62,8 +63,12 @@ export const useAudioStore = create<AudioStore>((set) => ({
     set((state) => resumePieceEngine(state));
   },
 
+  stopPiece: () => {
+    set((state) => stopPieceEngine(state));
+  },
+
   seekPiece: (time) => {
-    set((state) => seekPieceEngine(state, time));
+    set((state) => pendingPieceSeekEngine(state, time));
   },
 
   seekSound: (soundId, time) => {
@@ -117,6 +122,10 @@ export const audioTransitions: AudioTransitions = {
 
   pieceTimeUpdated: (time: number) => {
     useAudioStore.setState((state) => pieceTimeUpdatedEngine(state, time));
+  },
+
+  seekPiece: (time: number) => {
+    useAudioStore.setState((state) => applyPieceSeekEngine(state, time));
   },
 
   stopPiece: () => {

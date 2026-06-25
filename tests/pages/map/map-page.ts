@@ -19,6 +19,12 @@ export class MapPage extends BasePage {
   readonly waveDivider: Locator;
   readonly subtitle: Locator;
   readonly institutionalLogos: Locator;
+  readonly bottomPlayer: Locator;
+  readonly bottomPlayPause: Locator;
+  readonly bottomScrubber: Locator;
+  readonly bottomTime: Locator;
+  readonly bottomWave: Locator;
+  readonly soundPieceTrigger: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -37,6 +43,12 @@ export class MapPage extends BasePage {
     this.waveDivider = page.locator('aside svg[viewBox="0 0 200 8"]');
     this.subtitle = page.getByText('Paisaje Sonoro Urbano');
     this.institutionalLogos = page.getByText('Instituciones');
+    this.bottomPlayer = page.getByTestId('audio-bottom-player');
+    this.bottomPlayPause = page.getByTestId('bottom-play-pause');
+    this.bottomScrubber = page.getByTestId('bottom-scrubber');
+    this.bottomTime = page.getByTestId('bottom-time');
+    this.bottomWave = page.getByTestId('bottom-wave');
+    this.soundPieceTrigger = page.getByTestId('sound-piece-trigger');
   }
 
   async goto(slug: string): Promise<void> {

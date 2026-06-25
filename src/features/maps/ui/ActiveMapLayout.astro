@@ -2,6 +2,7 @@
 import type { MapImage } from '../domain/types';
 import type { Sound } from '../../sounds/domain/types';
 import type { Path } from '../../paths/domain/types';
+import type { SoundPiece } from '../../sound-pieces/domain/types';
 import { ActiveMapLayout } from './ActiveMapLayout';
 
 interface Props {
@@ -10,9 +11,10 @@ interface Props {
   sounds: Sound[];
   paths: Path[];
   inactiveMaps: import('../domain/types').Map[];
+  soundPiece?: SoundPiece | null;
 }
 
-const { slug, mapImage, sounds, paths, inactiveMaps } = Astro.props;
+const { slug, mapImage, sounds, paths, inactiveMaps, soundPiece } = Astro.props;
 ---
 
 <ActiveMapLayout
@@ -22,4 +24,5 @@ const { slug, mapImage, sounds, paths, inactiveMaps } = Astro.props;
   sounds={sounds}
   paths={paths}
   inactiveMaps={inactiveMaps}
+  soundPiece={soundPiece}
 />

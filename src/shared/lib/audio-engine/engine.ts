@@ -41,6 +41,7 @@ export function createInitialState(): AudioEngineState {
     volume: 1,
     muted: false,
     _pendingSeeks: new Map(),
+    _pendingPieceSeek: null,
   };
 }
 
@@ -302,7 +303,11 @@ export function pieceEnded(state: AudioEngineState): AudioEngineState {
   if (state.piece.status !== AUDIO_STATUS.PLAYING) {
     return state;
   }
-  return updatePiece(state, { status: AUDIO_STATUS.ENDED });
+  return {
+    ...state,
+    activePieceId: null,
+    piece: { ...state.piece, status: AUDIO_STATUS.ENDED },
+  };
 }
 
 export function pieceError(
@@ -317,4 +322,24 @@ export function seekPiece(
   time: number
 ): AudioEngineState {
   return updatePiece(state, { currentTime: time });
+}
+
+export function pendingPieceSeek(
+  state: AudioEngineState,
+  time: number
+): AudioEngineState {
+  return {
+    ...updatePiece(state, { currentTime: time }),
+    _pendingPieceSeek: time,
+  };
+}
+
+export function applyPieceSeek(
+  state: AudioEngineState,
+  time: number
+): AudioEngineState {
+  return {
+    ...updatePiece(state, { currentTime: time }),
+    _pendingPieceSeek: null,
+  };
 }

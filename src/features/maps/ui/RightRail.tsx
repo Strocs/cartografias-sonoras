@@ -3,13 +3,16 @@
 import { cn } from '@shared/utils/cn';
 
 import type { Map } from '../domain/types';
+import type { SoundPiece } from '../../sound-pieces/domain/types';
+import { SoundPieceTrigger } from '../../sound-pieces/ui/SoundPieceTrigger';
 
 export interface RightRailProps {
   maps: Map[];
   activeSlug: string;
+  soundPiece?: SoundPiece | null;
 }
 
-export function RightRail({ maps, activeSlug }: RightRailProps) {
+export function RightRail({ maps, activeSlug, soundPiece }: RightRailProps) {
   const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
 
   return (
@@ -17,6 +20,9 @@ export function RightRail({ maps, activeSlug }: RightRailProps) {
       className="flex h-full w-20 flex-col gap-3 overflow-y-auto p-2 md:w-24"
       data-testid="right-rail"
     >
+      {soundPiece && (
+        <SoundPieceTrigger soundPiece={soundPiece} mapId={soundPiece.mapId} />
+      )}
       {inactiveMaps.map((map) => (
         <a
           key={map.id}
