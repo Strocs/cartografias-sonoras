@@ -1,9 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Navigation from '../shared/ui/Navigation.astro';
-import MapViewport from '../shared/lib/viewport/MapViewport.astro';
+import ActiveMapLayout from '../features/maps/ui/ActiveMapLayout.astro';
 import { mockMaps } from '../features/maps/data/mock-maps';
-import { mockSoundPieces } from '../features/sound-pieces/data/mock-sound-pieces';
+import { mockSounds } from '../features/sounds/data/mock-sounds';
+import { mockPaths } from '../features/paths/data/mock-paths';
 
 export function getStaticPaths() {
   return mockMaps.map((map) => ({ params: { slug: map.slug } }));
@@ -16,33 +17,23 @@ if (!map) {
   return new Response('Not found', { status: 404 });
 }
 
-const piece = mockSoundPieces.find((p) => p.id === map.soundPieceId);
+const sounds = mockSounds.filter((sound) => sound.mapId === map.id);
+const paths = mockPaths.filter((path) => path.mapId === map.id);
+const inactiveMaps = mockMaps.filter((m) => m.slug !== slug);
 const title = map.title;
 ---
 
 <Layout title={title}>
-  <div class="flex min-h-screen">
+  <div class="flex h-screen">
     <Navigation backHref="/" />
-    <main class="flex-1 p-6 md:p-8">
-      <h1 class="text-3xl font-bold text-primary-navy">{map.title}</h1>
-      {
-        piece && (
-          <p class="mt-2 text-primary-brown">
-            {piece.title} — {piece.author}
-          </p>
-        )
-      }
-
-      <div
-        class="mt-6 aspect-[3/2] w-full overflow-hidden rounded-lg border border-secondary-sand/30"
-      >
-        <MapViewport
-          imageUrl={map.image.src}
-          width={map.image.width}
-          height={map.image.height}
-          className="h-full w-full"
-        />
-      </div>
+    <main class="relative flex-1 overflow-hidden">
+      <ActiveMapLayout
+        slug={map.slug}
+        mapImage={map.image}
+        sounds={sounds}
+        paths={paths}
+        inactiveMaps={inactiveMaps}
+      />
     </main>
   </div>
 </Layout>
