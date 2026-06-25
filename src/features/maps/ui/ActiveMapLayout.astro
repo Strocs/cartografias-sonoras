@@ -1,0 +1,25 @@
+---
+import type { MapImage } from '../domain/types';
+import type { Sound } from '../../sounds/domain/types';
+import type { Path } from '../../paths/domain/types';
+import { ActiveMapLayout } from './ActiveMapLayout';
+
+interface Props {
+  slug: string;
+  mapImage: MapImage;
+  sounds: Sound[];
+  paths: Path[];
+  inactiveMaps: import('../domain/types').Map[];
+}
+
+const { slug, mapImage, sounds, paths, inactiveMaps } = Astro.props;
+---
+
+<ActiveMapLayout
+  client:only="react"
+  slug={slug}
+  mapImage={mapImage}
+  sounds={sounds}
+  paths={paths}
+  inactiveMaps={inactiveMaps}
+/>
