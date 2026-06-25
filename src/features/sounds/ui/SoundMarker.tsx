@@ -3,9 +3,16 @@
 import L from 'leaflet';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useShallow } from 'zustand/react/shallow';
 
 import { cn } from '@shared/utils/cn';
-import { useAudioStore } from '@shared/lib/audio-engine';
+import {
+  AUDIO_STATUS,
+  useAudioStore,
+  type AudioEngineState,
+  type AudioStatus,
+} from '@shared/lib/audio-engine';
 import { useMap } from '@shared/lib/viewport/MapContext';
 import { useMountEffect } from '@shared/hooks/useMountEffect';
 
@@ -18,11 +25,39 @@ export interface SoundMarkerProps {
 }
 
 const MARKER_SIZE = 56;
-const ICON_SIZE = 48;
+const IDLE_SIZE = 40;
 const PLAYING_SIZE = 56;
 const RING_RADIUS = 24;
 const RING_STROKE = 3;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+interface SoundSlice {
+  status: AudioStatus;
+  currentTime: number;
+  duration: number;
+}
+
+function selectSoundSlice(
+  state: AudioEngineState,
+  soundId: number
+): SoundSlice {
+  const sound = state.activeSounds.get(soundId);
+  return {
+    status: sound?.status ?? AUDIO_STATUS.IDLE,
+    currentTime: sound?.currentTime ?? 0,
+    duration: sound?.duration ?? 0,
+  };
+}
+
+const markerVariants = {
+  idle: { width: IDLE_SIZE, height: IDLE_SIZE },
+  active: { width: PLAYING_SIZE, height: PLAYING_SIZE },
+};
+
+const haloVariants = {
+  idle: { opacity: 0, scale: 0.8 },
+  active: { opacity: 1, scale: 1 },
+};
 
 export function SoundMarker({ sound, location }: SoundMarkerProps) {
   const { map } = useMap();
@@ -30,9 +65,10 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
     useState<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  const soundState = useAudioStore((state) =>
-    state.activeSounds.get(sound.id)
+  const { status, currentTime, duration } = useAudioStore(
+    useShallow((state) => selectSoundSlice(state, sound.id))
   );
+  const activePieceId = useAudioStore((state) => state.activePieceId);
   const playSound = useAudioStore((state) => state.playSound);
   const pauseSound = useAudioStore((state) => state.pauseSound);
 
@@ -70,19 +106,20 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
     return null;
   }
 
-  const status = soundState?.status ?? 'idle';
-  const isPlaying = status === 'playing' || status === 'loading';
-  const isPaused = status === 'paused';
+  const isPiecePlaying = activePieceId !== null;
+  const isPlaying =
+    status === AUDIO_STATUS.PLAYING || status === AUDIO_STATUS.LOADING;
+  const isPaused = status === AUDIO_STATUS.PAUSED;
   const isActive = isPlaying || isPaused;
 
-  const progress =
-    soundState && soundState.duration > 0
-      ? soundState.currentTime / soundState.duration
-      : 0;
-
+  const progress = duration > 0 ? currentTime / duration : 0;
   const ringOffset = RING_CIRCUMFERENCE * (1 - progress);
 
   function handleClick() {
+    if (isPiecePlaying) {
+      return;
+    }
+
     if (isPlaying) {
       pauseSound(sound.id);
     } else {
@@ -90,30 +127,49 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
     }
   }
 
+  const ariaLabel = isPiecePlaying
+    ? 'Reproducción bloqueada por modo obra'
+    : isPlaying
+      ? 'Pausar sonido'
+      : 'Reproducir sonido';
+
   return createPortal(
-    <button
+    <motion.button
       type="button"
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      disabled={isPiecePlaying}
+      animate={isActive ? 'active' : 'idle'}
+      variants={markerVariants}
+      initial={false}
+      whileTap={isPiecePlaying ? undefined : { scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={cn(
         'absolute top-1/2 left-1/2 -translate-1/2',
         'flex items-center justify-center rounded-full border-0',
-        'bg-charcoal text-white shadow-lg transition-all duration-200',
+        'bg-charcoal text-white shadow-lg',
         'focus:ring-2 focus:ring-white/50 focus:outline-none',
-        isActive
-          ? 'size-14 shadow-white/30'
-          : 'size-12 hover:shadow-white/20'
+        isActive ? 'shadow-white/30' : 'hover:shadow-white/20',
+        isPiecePlaying && 'cursor-not-allowed opacity-50'
       )}
-      style={{
-        width: isActive ? PLAYING_SIZE : ICON_SIZE,
-        height: isActive ? PLAYING_SIZE : ICON_SIZE,
-      }}
-      aria-label={isPlaying ? 'Pausar sonido' : 'Reproducir sonido'}
+      aria-label={ariaLabel}
       data-testid="sound-marker"
       data-sound-id={sound.id}
       data-status={isPlaying ? 'playing' : isPaused ? 'paused' : 'idle'}
+      data-disabled={isPiecePlaying ? 'true' : 'false'}
     >
+      <motion.div
+        className="pointer-events-none absolute inset-0 rounded-full"
+        variants={haloVariants}
+        initial={false}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        style={{
+          boxShadow: '0 0 0 4px rgba(255, 255, 255, 0.25)',
+        }}
+        aria-hidden="true"
+      />
+
       {isActive && (
         <svg
           className="pointer-events-none absolute inset-0 -rotate-90"
@@ -139,15 +195,33 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
       )}
 
       <span className="relative z-10 flex items-center justify-center">
-        {isPlaying ? (
-          <PauseIcon />
-        ) : (
-          <PlayIcon />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          {isPlaying ? (
+            <motion.span
+              key="pause"
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.15 }}
+            >
+              <PauseIcon />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="play"
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.15 }}
+            >
+              <PlayIcon />
+            </motion.span>
+          )}
+        </AnimatePresence>
       </span>
 
       {isHovered && <HoverCard sound={sound} location={location} />}
-    </button>,
+    </motion.button>,
     portalContainer
   );
 }
