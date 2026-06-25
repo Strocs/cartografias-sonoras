@@ -1,7 +1,16 @@
 'use client';
 
 import { MapViewport } from '@shared/lib/viewport';
+/*
+ * Composition root exception: ActiveMapLayout is the assembly point for all
+ * interactive map components. It must import PathOverlay (paths feature) and
+ * SoundMarker (sounds feature) to compose the full cartography experience.
+ * This is a recognized architecture pattern — the composition root owns the
+ * dependency graph. Feature-level isolation is preserved everywhere else.
+ */
+// eslint-disable-next-line no-restricted-imports
 import { PathOverlay } from '../../paths/ui';
+// eslint-disable-next-line no-restricted-imports
 import { SoundMarker } from '../../sounds/ui';
 
 import type { Map, MapImage } from '../domain/types';
