@@ -21,11 +21,11 @@
 
 ## Phase 3: Layout, Integration and Tests
 
-- [ ] 3.1 Create `ActiveMapLayout.tsx`
-- [ ] 3.2 Create `ActiveMapLayout.astro`
-- [ ] 3.3 Update `[slug].astro`
-- [ ] 3.4 Update `map-page.ts`
-- [ ] 3.5 Update `map.spec.ts`
+- [x] 3.1 Create `ActiveMapLayout.tsx`
+- [x] 3.2 Create `ActiveMapLayout.astro`
+- [x] 3.3 Update `[slug].astro`
+- [x] 3.4 Update `map-page.ts`
+- [x] 3.5 Update `map.spec.ts`
 
 ## Review Workload Forecast
 
