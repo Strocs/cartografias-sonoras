@@ -13,9 +13,9 @@ type LighthouseFixtures = {
  *
  * Each worker gets its own port to support parallel runs.
  */
-export const lighthouseTest = base.extend<{}, LighthouseFixtures>({
+export const lighthouseTest = base.extend<object, LighthouseFixtures>({
   port: [
-    async ({}, use) => {
+    async (_context: unknown, use) => {
       const port = await getPort();
       await use(port);
     },
