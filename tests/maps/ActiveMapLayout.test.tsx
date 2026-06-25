@@ -4,9 +4,9 @@ import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import { ActiveMapLayout } from '../../src/features/maps/ui/ActiveMapLayout';
-import type { Map } from '../../src/features/maps/domain/types';
-import type { Path } from '../../src/features/paths/domain/types';
-import type { Sound } from '../../src/features/sounds/domain/types';
+import { mockMaps } from '../../src/features/maps/data/mock-maps';
+import { mockSounds } from '../../src/features/sounds/data/mock-sounds';
+import { mockPaths } from '../../src/features/paths/data/mock-paths';
 
 vi.mock('../../src/shared/lib/viewport/MapViewport', () => ({
   MapViewport: ({
@@ -22,64 +22,27 @@ vi.mock('../../src/shared/lib/viewport/MapViewport', () => ({
   ),
 }));
 
-vi.mock('../../src/features/sounds/ui/SoundMarker', () => ({
-  SoundMarker: ({ sound }: { sound: Sound }) => (
-    <div data-testid="sound-marker" data-sound-id={sound.id} />
+vi.mock('@views/sound-tour', () => ({
+  SoundTour: ({
+    sounds,
+    paths,
+  }: {
+    sounds: { id: number }[];
+    paths: unknown[];
+  }) => (
+    <>
+      <div data-testid="path-overlay" data-path-count={paths.length} />
+      {sounds.map((s) => (
+        <div key={s.id} data-testid="sound-marker" data-sound-id={s.id} />
+      ))}
+    </>
   ),
 }));
 
-vi.mock('../../src/features/paths/ui/PathOverlay', () => ({
-  PathOverlay: ({ paths }: { paths: Path[] }) => (
-    <div data-testid="path-overlay" data-path-count={paths.length} />
-  ),
-}));
-
-const mapImage: Map['image'] = {
-  src: '/maps/locacion-1.png',
-  width: 1216,
-  height: 864,
-};
-
-const sounds: Sound[] = [
-  {
-    id: 101,
-    title: 'Fuente central',
-    description: 'Murmullo del agua.',
-    audioUrl: '/sounds/locacion-1/fuente-central.mp3',
-    position: { x: 608, y: 432 },
-    mapId: 1,
-  },
-  {
-    id: 102,
-    title: 'Tráfico peatonal',
-    description: 'Pasos dispersos.',
-    audioUrl: '/sounds/locacion-1/trafico-peatonal.mp3',
-    position: { x: 365, y: 270 },
-    mapId: 1,
-  },
-];
-
-const paths: Path[] = [
-  {
-    id: 1001,
-    mapId: 1,
-    points: [
-      { x: 608, y: 432 },
-      { x: 365, y: 270 },
-    ],
-    soundIds: [101, 102],
-  },
-];
-
-const inactiveMaps: Map[] = [
-  {
-    id: 2,
-    slug: 'locacion-2',
-    title: 'Mercado — Coquimbo',
-    image: { src: '/maps/locacion-2.png', width: 864, height: 1243 },
-    soundPieceId: 2,
-  },
-];
+const mapImage = mockMaps[0].image;
+const sounds = mockSounds.filter((s) => s.mapId === 1).slice(0, 2);
+const paths = mockPaths.filter((p) => p.mapId === 1).slice(0, 1);
+const inactiveMaps = mockMaps.filter((m) => m.slug !== 'locacion-1').slice(0, 1);
 
 describe('ActiveMapLayout', () => {
   it('renders the viewport with the given image dimensions', () => {
@@ -156,8 +119,9 @@ describe('ActiveMapLayout', () => {
     );
 
     expect(screen.getByTestId('right-rail')).toBeInTheDocument();
-    const link = screen.getByRole('link', { name: /mercado/i });
-    expect(link).toHaveAttribute('href', '/locacion-2');
+    expect(screen.getByText(inactiveMaps[0].title)).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: new RegExp(inactiveMaps[0].title) });
+    expect(link).toHaveAttribute('href', `/${inactiveMaps[0].slug}`);
   });
 
   it('renders the warm cream canvas background', () => {
