@@ -2,6 +2,8 @@
 
 @theme {
   --color-background: #ffffff;
+  --color-canvas: #f5f2ed;
+  --color-charcoal: #1a2a3a;
 
   --color-primary-brown: #422b07;
   --color-primary-navy: #071442;
