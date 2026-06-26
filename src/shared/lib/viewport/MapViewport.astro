@@ -1,0 +1,23 @@
+---
+import type { MapViewportConfig } from './types';
+import { MapViewport as MapViewportClient } from './MapViewport';
+
+interface Props {
+  imageUrl: string;
+  width: number;
+  height: number;
+  config?: MapViewportConfig;
+  className?: string;
+}
+
+const { imageUrl, width, height, config, className } = Astro.props;
+---
+
+<MapViewportClient
+  client:only="react"
+  imageUrl={imageUrl}
+  width={width}
+  height={height}
+  config={config}
+  className={className}
+/>
