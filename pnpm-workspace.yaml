@@ -6,3 +6,4 @@ minimumReleaseAgeExclude:
   - eslint-plugin-astro@2.1.0
   - playwright-core@1.61.1
   - playwright@1.61.1
+  - eslint-plugin-tailwindcss@4.0.4

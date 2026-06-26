@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navigation from '../shared/ui/Navigation.astro';
+import { siteContent } from '../shared/data/site-content';
+
+const { team } = siteContent;
+---
+
+<Layout title={team.title} description={team.description}>
+  <div class="flex min-h-screen">
+    <Navigation />
+    <main class="flex-1 p-6 md:p-8">
+      <h1 class="text-3xl font-bold text-primary-navy">{team.heading}</h1>
+      <p class="mt-2 max-w-2xl text-primary-brown">{team.description}</p>
+      <div class="mt-6 max-w-3xl space-y-4 text-primary-brown">
+        {team.body.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+    </main>
+  </div>
+</Layout>

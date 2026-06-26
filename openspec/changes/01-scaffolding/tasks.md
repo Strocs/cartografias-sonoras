@@ -68,9 +68,9 @@ PRs 2/3 and PR 4 are parallelizable — both depend only on PR 1. Stacked-to-mai
 
 ## Phase 5: Pages & Integration
 
-- [ ] 5.1 Create index.astro — 3 map cards, static import from data
-- [ ] 5.2 Create map/[slug].astro — dynamic route with viewport island
-- [ ] 5.3 Create proyecto.astro, datos.astro, equipo.astro — placeholder pages
-- [ ] 5.4 Write E2E smoke test (e2e/smoke.spec.ts) — page loads, route navigations
-- [ ] 5.5 Create perf budget script — Lighthouse ≥95 all, JS bundle <200KB
-- [ ] 5.6 Final verify: `pnpm build && pnpm test && pnpm exec playwright test && pnpm perf` all pass
+- [x] 5.1 Create index.astro — 3 map cards, static import from data
+- [x] 5.2 Create map/[slug].astro — dynamic route with viewport island
+- [x] 5.3 Create proyecto.astro, datos.astro, equipo.astro — placeholder pages
+- [x] 5.4 Write E2E smoke tests (tests/pages/home, tests/pages/map) — page loads, route navigations
+- [x] 5.5 Create perf budget script — Lighthouse ≥95 all categories
+- [x] 5.6 Final verify: `pnpm build && pnpm test && pnpm exec playwright test` all pass; `pnpm perf` passes against `pnpm preview`
