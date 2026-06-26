@@ -49,6 +49,7 @@ vi.mock('@shared/lib/audio-engine', async () => {
     useAudioStore: vi.fn((selector) => {
       const state = {
         activeSounds: new Map(),
+        activePieceId: null,
         playSound,
         pauseSound,
       };
