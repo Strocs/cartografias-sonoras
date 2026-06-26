@@ -1,3 +1,5 @@
+export { MapContext, useMap } from './MapContext';
+export type { MapContextValue } from './MapContext';
 export { MapViewport } from './MapViewport';
 export type { MapViewportProps } from './MapViewport';
 export type {
