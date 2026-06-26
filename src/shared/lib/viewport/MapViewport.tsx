@@ -6,7 +6,7 @@ import {
   useImperativeHandle,
   useRef,
   useState,
-  type ReactNode,
+  type ReactNode
 } from 'react';
 
 import 'leaflet/dist/leaflet.css';
@@ -33,7 +33,7 @@ export function MapViewport({
   config,
   className,
   ref,
-  children,
+  children
 }: MapViewportProps) {
   const mapRef = useRef<L.Map | null>(null);
   const [mapState, setMapState] = useState<L.Map | null>(null);
@@ -47,21 +47,27 @@ export function MapViewport({
 
       const bounds: L.LatLngBoundsExpression = [
         [0, 0],
-        [height, width],
+        [height, width]
       ];
 
       const map = L.map(node, {
         crs: L.CRS.Simple,
-        minZoom: config?.minZoom ?? -2,
-        maxZoom: config?.maxZoom ?? 4,
+        minZoom: config?.minZoom ?? -1,
+        maxZoom: config?.maxZoom ?? 2,
+        zoomSnap: 0,
+        zoomDelta: 0.5,
+        maxBounds: bounds,
+        maxBoundsViscosity: 0.8,
+        wheelPxPerZoomLevel: 100,
+        wheelDebounceTime: 0,
         zoomControl: config?.zoomControl ?? false,
-        attributionControl: config?.attributionControl ?? false,
+        attributionControl: config?.attributionControl ?? false
       });
 
       map.createPane('pathPane');
       map.getPane('pathPane')?.style.setProperty('z-index', '350');
 
-      L.imageOverlay(imageUrl, bounds).addTo(map);
+      L.imageOverlay(imageUrl, bounds, { className: '' }).addTo(map);
       map.fitBounds(bounds);
 
       const container = node;
@@ -90,7 +96,7 @@ export function MapViewport({
       config?.minZoom,
       config?.maxZoom,
       config?.zoomControl,
-      config?.attributionControl,
+      config?.attributionControl
     ]
   );
 
@@ -108,18 +114,20 @@ export function MapViewport({
       }
       const bounds: L.LatLngBoundsExpression = [
         [0, 0],
-        [height, width],
+        [height, width]
       ];
       mapRef.current.fitBounds(bounds);
-    },
+    }
   }));
 
   return (
-    <MapContext.Provider value={{ map: mapState, ready: isReady }}>
+    <MapContext.Provider
+      value={{ map: mapState, ready: isReady, width, height }}
+    >
       <div className={cn('relative size-full', className)}>
         <div
           ref={initContainer}
-          className="size-full"
+          className="size-full bg-transparent!"
           data-testid="map-viewport"
           data-ready={isReady}
           data-zoom="0"

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyPieceSeek,
   AUDIO_STATUS,
   createInitialState,
   pausePiece,
   pauseSound,
+  pendingPieceSeek,
   pendingSeek,
   pieceEnded,
   pieceError,
@@ -75,11 +77,12 @@ describe('Audio engine state machine', () => {
       expect(next.mapId).toBeNull();
     });
 
-    it('transitions a playing sound to ended', () => {
-      const state = soundLoaded(playSound(createInitialState(), 1, 10), 1);
+    it('transitions a playing sound to ended and sets currentTime = duration', () => {
+      const state = soundLoaded(playSound(createInitialState(), 1, 10), 1, 45);
       const next = soundEnded(state, 1);
 
       expect(next.activeSounds.get(1)?.status).toBe(AUDIO_STATUS.ENDED);
+      expect(next.activeSounds.get(1)?.currentTime).toBe(45);
     });
 
     it('transitions a sound to error', () => {
@@ -132,13 +135,15 @@ describe('Audio engine state machine', () => {
   });
 
   describe('sound pieces', () => {
-    it('starts a piece and stops all individual sounds', () => {
+    it('starts a piece and pauses all individual sounds', () => {
       let state = createInitialState();
       state = playSound(state, 1, 10);
       state = soundLoaded(state, 1);
       state = playPiece(state, 100, 10);
 
-      expect(state.activeSounds.size).toBe(0);
+      // Sounds are paused, not stopped: they stay in the map with PAUSED status.
+      expect(state.activeSounds.size).toBe(1);
+      expect(state.activeSounds.get(1)?.status).toBe(AUDIO_STATUS.PAUSED);
       expect(state.activePieceId).toBe(100);
       expect(state.piece.status).toBe(AUDIO_STATUS.LOADING);
       expect(state.mapId).toBe(10);
@@ -165,6 +170,32 @@ describe('Audio engine state machine', () => {
       expect(next.piece.status).toBe(AUDIO_STATUS.PLAYING);
     });
 
+    it('resuming a piece pauses all active individual sounds', () => {
+      // Start a sound, play the piece (pauses the sound), pause the piece,
+      // resume the sound, then resume the piece — sound should be paused again.
+      let state = createInitialState();
+      state = playSound(state, 1, 10);
+      state = soundLoaded(state, 1);
+      expect(state.activeSounds.get(1)?.status).toBe(AUDIO_STATUS.PLAYING);
+
+      // Play piece — pauses the sound.
+      state = playPiece(state, 100, 10);
+      state = pieceLoaded(state);
+      expect(state.activeSounds.get(1)?.status).toBe(AUDIO_STATUS.PAUSED);
+      expect(state.piece.status).toBe(AUDIO_STATUS.PLAYING);
+
+      // Pause piece, resume sound.
+      state = pausePiece(state);
+      expect(state.piece.status).toBe(AUDIO_STATUS.PAUSED);
+      state = resumeSound(state, 1);
+      expect(state.activeSounds.get(1)?.status).toBe(AUDIO_STATUS.PLAYING);
+
+      // Resume piece — should pause the sound again.
+      state = resumePiece(state);
+      expect(state.piece.status).toBe(AUDIO_STATUS.PLAYING);
+      expect(state.activeSounds.get(1)?.status).toBe(AUDIO_STATUS.PAUSED);
+    });
+
     it('stops a piece and clears the active piece id', () => {
       const state = pieceLoaded(playPiece(createInitialState(), 100, 10));
       const next = stopPiece(state);
@@ -173,11 +204,12 @@ describe('Audio engine state machine', () => {
       expect(next.piece.status).toBe(AUDIO_STATUS.IDLE);
     });
 
-    it('transitions a playing piece to ended', () => {
+    it('transitions a playing piece to ended and clears active piece id', () => {
       const state = pieceLoaded(playPiece(createInitialState(), 100, 10));
       const next = pieceEnded(state);
 
       expect(next.piece.status).toBe(AUDIO_STATUS.ENDED);
+      expect(next.activePieceId).toBeNull();
     });
 
     it('transitions a piece to error', () => {
@@ -193,6 +225,23 @@ describe('Audio engine state machine', () => {
       const next = seekPiece(state, 33);
 
       expect(next.piece.currentTime).toBe(33);
+    });
+
+    it('records a pending piece seek', () => {
+      const state = pieceLoaded(playPiece(createInitialState(), 100, 10));
+      const next = pendingPieceSeek(state, 77);
+
+      expect(next.piece.currentTime).toBe(77);
+      expect(next._pendingPieceSeek).toBe(77);
+    });
+
+    it('applies a pending piece seek and clears the flag', () => {
+      let state = pieceLoaded(playPiece(createInitialState(), 100, 10));
+      state = pendingPieceSeek(state, 77);
+      const next = applyPieceSeek(state, 77);
+
+      expect(next.piece.currentTime).toBe(77);
+      expect(next._pendingPieceSeek).toBeNull();
     });
 
     it('ignores individual sound playback while a piece is active', () => {

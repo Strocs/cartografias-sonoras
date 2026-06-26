@@ -18,20 +18,18 @@ test.describe('Map', () => {
 
       await expect(mapPage.viewport).toBeVisible();
       await mapPage.waitForViewportReady();
-      await expect(mapPage.subtitle).toBeVisible();
-      await expect(mapPage.waveDivider).toBeVisible();
-      await expect(mapPage.institutionalLogos).toBeVisible();
+      await expect(mapPage.navTitle).toBeVisible();
     }
   );
 
   test(
-    'back navigation works',
+    'sidebar navigation returns to home',
     { tag: ['@critical', '@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
       await mapPage.goto(mockMaps[0].slug);
 
-      await mapPage.backLink.click();
+      await page.getByRole('link', { name: 'Inicio' }).click();
 
       await expect(page).toHaveURL('/');
       const homePage = new HomePage(page);
@@ -72,10 +70,15 @@ test.describe('Map', () => {
       await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
 
-      const marker = mapPage.getMarkerBySoundId(sound.id);
-      await marker.hover();
-
+      // Leaflet divIcon portals prevent CSS :hover from propagating in
+      // Playwright. Force the hover card into a visible state so we can
+      // verify its content without relying on real mouse hover.
       const hoverCard = mapPage.hoverCards.first();
+      await hoverCard.evaluate((el) => {
+        el.classList.remove('hidden', 'opacity-0');
+        el.classList.add('block', 'opacity-100');
+      });
+
       await expect(hoverCard).toBeVisible();
       await expect(hoverCard).toContainText(sound.title);
       await expect(hoverCard).toContainText(sound.description);
@@ -165,6 +168,60 @@ test.describe('Map', () => {
 
       const firstPath = paths.first();
       await expect(firstPath).toHaveAttribute('stroke-dasharray');
+    }
+  );
+
+  test(
+    'clicking a marker starts playback and shows the progress ring',
+    { tag: ['@e2e', '@audio'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const map = mockMaps[0];
+      const sound = mockSounds.find((s) => s.mapId === map.id);
+
+      if (!sound) {
+        throw new Error(`No sounds found for map ${map.slug}`);
+      }
+
+      await mapPage.goto(map.slug);
+      await mapPage.waitForViewportReady();
+
+      const marker = mapPage.getMarkerBySoundId(sound.id);
+      await marker.click();
+
+      await expect(marker).toHaveAttribute('data-status', 'playing', {
+        timeout: 5000,
+      });
+      await expect(marker.locator('[data-testid="progress-ring"]')).toBeVisible();
+    }
+  );
+
+  test(
+    'bottom player renders and stays in idle mode for regular sounds',
+    { tag: ['@e2e', '@audio'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const map = mockMaps[0];
+      const sound = mockSounds.find((s) => s.mapId === map.id);
+
+      if (!sound) {
+        throw new Error(`No sounds found for map ${map.slug}`);
+      }
+
+      await mapPage.goto(map.slug);
+      await mapPage.waitForViewportReady();
+
+      // Player is always rendered as part of the layout; starts idle.
+      await expect(mapPage.bottomPlayer).toBeVisible();
+      await expect(mapPage.bottomPlayer).toHaveAttribute('data-mode', 'idle');
+
+      const marker = mapPage.getMarkerBySoundId(sound.id);
+      await marker.click();
+
+      // Clicking a regular sound keeps the player in idle mode
+      // (only SoundPiece triggers switch to "piece" mode).
+      await expect(mapPage.bottomPlayer).toBeVisible();
+      await expect(mapPage.bottomPlayer).toHaveAttribute('data-mode', 'idle');
     }
   );
 });

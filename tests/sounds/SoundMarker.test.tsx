@@ -39,6 +39,8 @@ vi.mock('react-dom', async () => {
 
 const playSound = vi.fn();
 const pauseSound = vi.fn();
+const resumeSound = vi.fn();
+const pausePiece = vi.fn();
 
 vi.mock('@shared/lib/audio-engine', async () => {
   const actual = await vi.importActual<typeof import('@shared/lib/audio-engine')>(
@@ -50,8 +52,11 @@ vi.mock('@shared/lib/audio-engine', async () => {
       const state = {
         activeSounds: new Map(),
         activePieceId: null,
+        piece: { status: 'idle' },
         playSound,
         pauseSound,
+        resumeSound,
+        pausePiece,
       };
       return selector(state as never);
     }),
@@ -61,16 +66,20 @@ vi.mock('@shared/lib/audio-engine', async () => {
 describe('SoundMarker', () => {
   it('renders at the correct sound position via Leaflet marker', async () => {
     render(
-      <MapContext.Provider value={{ map: mockMap, ready: true }}>
+      <MapContext.Provider value={{ map: mockMap, ready: true, width: 2289, height: 1636 }}>
         <SoundMarker sound={sound} />
       </MapContext.Provider>
     );
 
     const { default: L } = await import('leaflet');
 
+    // sound 101 position is percentage-based (x: 77, y: 20).
+    // relativeToPixel converts to pixels using the map dimensions above.
+    // Expected: pixelX = round((77/100)*2289) = 1763, pixelY = round((20/100)*1636) = 327.
+    // Leaflet receives [lat, lng] = [pixelY, pixelX].
     await waitFor(() => {
       expect(L.marker).toHaveBeenCalledWith(
-        [sound.position.y, sound.position.x],
+        [327, 1763],
         expect.any(Object)
       );
     });
@@ -78,7 +87,7 @@ describe('SoundMarker', () => {
 
   it('renders in idle state by default', async () => {
     render(
-      <MapContext.Provider value={{ map: mockMap, ready: true }}>
+      <MapContext.Provider value={{ map: mockMap, ready: true, width: 2289, height: 1636 }}>
         <SoundMarker sound={sound} />
       </MapContext.Provider>
     );
@@ -89,13 +98,16 @@ describe('SoundMarker', () => {
 
   it('plays the sound when clicked in idle state', async () => {
     render(
-      <MapContext.Provider value={{ map: mockMap, ready: true }}>
+      <MapContext.Provider value={{ map: mockMap, ready: true, width: 2289, height: 1636 }}>
         <SoundMarker sound={sound} />
       </MapContext.Provider>
     );
 
-    const marker = await screen.findByTestId('sound-marker');
-    await userEvent.click(marker);
+    // The onClick handler lives on the <button> child, not the outer
+    // container with data-testid="sound-marker". Target the button directly.
+    await screen.findByTestId('sound-marker');
+    const button = screen.getByRole('button');
+    await userEvent.click(button);
 
     expect(playSound).toHaveBeenCalledWith(sound.id, sound.mapId);
   });

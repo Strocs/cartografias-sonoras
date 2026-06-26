@@ -10,14 +10,9 @@ const title = 'Cartografías Sensoriales';
 <Layout title={title}>
   <div class="flex min-h-screen">
     <Navigation />
-    <main class="flex-1 p-6 md:p-8">
-      <h1 class="text-3xl font-bold text-primary-navy">{title}</h1>
-      <p class="mt-2 max-w-2xl text-primary-brown">
-        Plataforma de mapeo de marcas sonoras.
-      </p>
-
-      <section aria-label="Cartografías" class="mt-8">
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+    <main class="flex-1 p-4 md:p-4">
+      <section aria-label="Cartografías" class="">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           {mockMaps.map((map) => <MapCard map={map} />)}
         </div>
       </section>

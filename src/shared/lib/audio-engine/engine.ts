@@ -41,6 +41,7 @@ export function createInitialState(): AudioEngineState {
     volume: 1,
     muted: false,
     _pendingSeeks: new Map(),
+    _pendingPieceSeek: null,
   };
 }
 
@@ -77,8 +78,13 @@ export function playSound(
   soundId: number,
   mapId: number
 ): AudioEngineState {
-  // SoundPiece has priority over individual sounds.
-  if (state.activePieceId !== null) {
+  // SoundPiece has priority over individual sounds only while actively playing/loading.
+  // When paused, individual sounds are allowed.
+  if (
+    state.activePieceId !== null &&
+    (state.piece.status === AUDIO_STATUS.PLAYING ||
+      state.piece.status === AUDIO_STATUS.LOADING)
+  ) {
     return state;
   }
 
@@ -103,6 +109,8 @@ export function playSound(
 
   return setSound(next, soundId, {
     status: AUDIO_STATUS.LOADING,
+    currentTime: 0,
+    duration: 0,
     error: null,
   });
 }
@@ -171,6 +179,16 @@ export function stopAllSounds(state: AudioEngineState): AudioEngineState {
   };
 }
 
+export function pauseAllSounds(state: AudioEngineState): AudioEngineState {
+  let next = state;
+  state.activeSounds.forEach((sound, id) => {
+    if (sound.status === AUDIO_STATUS.PLAYING || sound.status === AUDIO_STATUS.LOADING) {
+      next = setSound(next, id, { status: AUDIO_STATUS.PAUSED });
+    }
+  });
+  return next;
+}
+
 export function soundEnded(
   state: AudioEngineState,
   soundId: number
@@ -179,7 +197,10 @@ export function soundEnded(
   if (current?.status !== AUDIO_STATUS.PLAYING) {
     return state;
   }
-  return setSound(state, soundId, { status: AUDIO_STATUS.ENDED });
+  return setSound(state, soundId, {
+    status: AUDIO_STATUS.ENDED,
+    currentTime: current.duration,
+  });
 }
 
 export function soundError(
@@ -253,9 +274,9 @@ export function playPiece(
   pieceId: number,
   mapId: number
 ): AudioEngineState {
-  const stopped = stopAllSounds(state);
+  const paused = pauseAllSounds(state);
   return {
-    ...stopped,
+    ...paused,
     mapId,
     activePieceId: pieceId,
     piece: { ...createIdlePieceState(), status: AUDIO_STATUS.LOADING },
@@ -287,7 +308,9 @@ export function resumePiece(state: AudioEngineState): AudioEngineState {
   if (state.piece.status !== AUDIO_STATUS.PAUSED) {
     return state;
   }
-  return updatePiece(state, { status: AUDIO_STATUS.PLAYING });
+  // Re-establish priority: pause all individual sounds when resuming the piece.
+  const paused = pauseAllSounds(state);
+  return updatePiece(paused, { status: AUDIO_STATUS.PLAYING });
 }
 
 export function stopPiece(state: AudioEngineState): AudioEngineState {
@@ -302,7 +325,11 @@ export function pieceEnded(state: AudioEngineState): AudioEngineState {
   if (state.piece.status !== AUDIO_STATUS.PLAYING) {
     return state;
   }
-  return updatePiece(state, { status: AUDIO_STATUS.ENDED });
+  return {
+    ...state,
+    activePieceId: null,
+    piece: { ...state.piece, status: AUDIO_STATUS.ENDED },
+  };
 }
 
 export function pieceError(
@@ -317,4 +344,24 @@ export function seekPiece(
   time: number
 ): AudioEngineState {
   return updatePiece(state, { currentTime: time });
+}
+
+export function pendingPieceSeek(
+  state: AudioEngineState,
+  time: number
+): AudioEngineState {
+  return {
+    ...updatePiece(state, { currentTime: time }),
+    _pendingPieceSeek: time,
+  };
+}
+
+export function applyPieceSeek(
+  state: AudioEngineState,
+  time: number
+): AudioEngineState {
+  return {
+    ...updatePiece(state, { currentTime: time }),
+    _pendingPieceSeek: null,
+  };
 }

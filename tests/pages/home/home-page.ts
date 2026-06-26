@@ -13,9 +13,7 @@ export class HomePage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.heading = page.getByRole('heading', {
-      name: 'Cartografías Sensoriales',
-    });
+    this.heading = page.getByText('Cartografías Sensoriales').first();
     this.nav = page.getByRole('navigation', { name: 'Principal' });
     this.proyectoLink = page.getByRole('link', { name: 'Proyecto' });
     this.datosLink = page.getByRole('link', { name: 'Datos' });

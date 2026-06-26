@@ -7,7 +7,8 @@ import { mockMaps } from '../../src/features/maps/data/mock-maps';
 
 describe('RightRail', () => {
   it('excludes the active map from the rail', () => {
-    render(<RightRail maps={mockMaps} activeSlug="locacion-1" />);
+    const activeSlug = mockMaps[0].slug;
+    render(<RightRail maps={mockMaps} activeSlug={activeSlug} />);
 
     const activeMap = mockMaps[0];
     const inactive1 = mockMaps[1];
@@ -19,9 +20,10 @@ describe('RightRail', () => {
   });
 
   it('renders a link to each inactive map', () => {
-    render(<RightRail maps={mockMaps} activeSlug="locacion-2" />);
+    const activeSlug = mockMaps[1].slug;
+    render(<RightRail maps={mockMaps} activeSlug={activeSlug} />);
 
-    const inactiveMaps = mockMaps.filter((m) => m.slug !== 'locacion-2');
+    const inactiveMaps = mockMaps.filter((m) => m.slug !== activeSlug);
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(inactiveMaps.length);
     expect(links[0]).toHaveAttribute('href', `/${inactiveMaps[0].slug}`);
@@ -29,9 +31,10 @@ describe('RightRail', () => {
   });
 
   it('renders thumbnails for inactive maps', () => {
-    render(<RightRail maps={mockMaps} activeSlug="locacion-3" />);
+    const activeSlug = mockMaps[2].slug;
+    render(<RightRail maps={mockMaps} activeSlug={activeSlug} />);
 
-    const inactiveMaps = mockMaps.filter((m) => m.slug !== 'locacion-3');
+    const inactiveMaps = mockMaps.filter((m) => m.slug !== activeSlug);
     const images = screen.getAllByRole('img');
     expect(images).toHaveLength(inactiveMaps.length);
     expect(images[0]).toHaveAttribute('src', inactiveMaps[0].image.src);
@@ -39,9 +42,10 @@ describe('RightRail', () => {
   });
 
   it('renders the map titles', () => {
-    render(<RightRail maps={mockMaps} activeSlug="locacion-1" />);
+    const activeSlug = mockMaps[0].slug;
+    render(<RightRail maps={mockMaps} activeSlug={activeSlug} />);
 
-    const inactiveMaps = mockMaps.filter((m) => m.slug !== 'locacion-1');
+    const inactiveMaps = mockMaps.filter((m) => m.slug !== activeSlug);
     expect(screen.getByText(inactiveMaps[0].title)).toBeInTheDocument();
     expect(screen.getByText(inactiveMaps[1].title)).toBeInTheDocument();
   });

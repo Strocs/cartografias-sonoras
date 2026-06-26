@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@import "tailwindcss";
+
 @theme {
   --color-background: #ffffff;
   --color-canvas: #f5f2ed;
@@ -11,6 +13,18 @@
 
   --color-secondary-sand: #c2a576;
   --color-secondary-blue: #7686c2;
+
+  --animate-soundwave: soundwave-active 1s ease-in-out infinite;
+}
+
+@keyframes soundwave-active {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
 @layer base {

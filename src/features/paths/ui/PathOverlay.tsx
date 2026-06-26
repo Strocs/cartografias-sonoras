@@ -2,6 +2,7 @@
 
 import L from 'leaflet';
 
+import { relativeToPixel } from '@shared/lib/coordinates';
 import { useMap } from '@shared/lib/viewport/MapContext';
 import { useMountEffect } from '@shared/hooks/useMountEffect';
 
@@ -17,7 +18,7 @@ const STROKE_WIDTH = 2;
 const STROKE_DASHARRAY = '6 6';
 
 export function PathOverlay({ paths }: PathOverlayProps) {
-  const { map } = useMap();
+  const { map, width, height } = useMap();
 
   useMountEffect(() => {
     if (map === null) {
@@ -52,7 +53,10 @@ export function PathOverlay({ paths }: PathOverlayProps) {
           continue;
         }
 
-        const d = buildSmoothPath(path.points, mapInstance);
+        const pixelPoints = path.points.map((p) =>
+          relativeToPixel(p, width, height)
+        );
+        const d = buildSmoothPath(pixelPoints, mapInstance);
         const pathEl = document.createElementNS(
           'http://www.w3.org/2000/svg',
           'path'

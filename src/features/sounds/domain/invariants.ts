@@ -11,4 +11,15 @@ export function checkSoundInvariants(sound: Sound): void {
   ) {
     throw new Error('Sound position must be finite');
   }
+
+  if (
+    sound.position.x < 0 ||
+    sound.position.x > 100 ||
+    sound.position.y < 0 ||
+    sound.position.y > 100
+  ) {
+    throw new Error(
+      'Sound position must be within 0–100 (percentage of map dimensions)'
+    );
+  }
 }

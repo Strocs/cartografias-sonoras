@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 
 import { useMountEffect } from '@shared/hooks/useMountEffect';
 import { AUDIO_STATUS, audioTransitions, useAudioStore } from '../';
@@ -23,14 +22,14 @@ const ACTIVE_ELEMENT_STATUSES = new Set<AudioStatus>([
   AUDIO_STATUS.PAUSED,
 ]);
 
-function selectActiveSoundIds(state: AudioEngineState): number[] {
+function selectActiveSoundIds(state: AudioEngineState): string {
   const ids: number[] = [];
   state.activeSounds.forEach((sound, id) => {
     if (ACTIVE_ELEMENT_STATUSES.has(sound.status)) {
       ids.push(id);
     }
   });
-  return ids.sort((a, b) => a - b);
+  return ids.sort((a, b) => a - b).join(',');
 }
 
 function selectPieceActive(state: AudioEngineState): boolean {
@@ -53,9 +52,10 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
   const prevVolume = useRef<number>(1);
   const prevMuted = useRef<boolean>(false);
 
-  const activeSoundIds = useAudioStore(
-    useShallow(selectActiveSoundIds)
-  );
+  const activeSoundIdsStr = useAudioStore(selectActiveSoundIds);
+  const activeSoundIds: number[] = activeSoundIdsStr
+    ? activeSoundIdsStr.split(',').map(Number)
+    : [];
   const pieceActive = useAudioStore(selectPieceActive);
 
   const syncAudioElement = (
@@ -105,6 +105,15 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
         audioTransitions.seekSound(id, time);
       }
     });
+
+    if (state._pendingPieceSeek !== null && state.activePieceId !== null) {
+      const pieceAudio = audioRefs.current.get(state.activePieceId);
+      if (pieceAudio) {
+        const time = state._pendingPieceSeek;
+        pieceAudio.currentTime = time;
+        audioTransitions.seekPiece(time);
+      }
+    }
   };
 
   const syncAllActiveAudio = (): void => {

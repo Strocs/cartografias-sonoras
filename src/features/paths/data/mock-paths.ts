@@ -1,14 +1,17 @@
 import type { Path } from '../domain/types';
 
+// Points are percentages relative to the map image:
+//   (0, 0) = top-left corner, (100, 100) = bottom-right corner.
+
 export const mockPaths: Path[] = [
-  // Locación 1 — Plaza de Armas — La Serena (1216×864)
+  // Mapa 1 — Avenida de Aguirre — La Serena (2289×1636)
   {
     id: 1001,
     mapId: 1,
     points: [
-      { x: 608, y: 432 },
-      { x: 486, y: 351 },
-      { x: 365, y: 270 },
+      { x: 26.56, y: 26.41 },
+      { x: 21.23, y: 21.45 },
+      { x: 15.95, y: 16.50 },
     ],
     soundIds: [101, 102],
   },
@@ -16,9 +19,9 @@ export const mockPaths: Path[] = [
     id: 1002,
     mapId: 1,
     points: [
-      { x: 912, y: 324 },
-      { x: 836, y: 486 },
-      { x: 760, y: 648 },
+      { x: 39.84, y: 19.80 },
+      { x: 36.52, y: 29.71 },
+      { x: 33.20, y: 39.61 },
     ],
     soundIds: [103, 105],
   },
@@ -26,21 +29,21 @@ export const mockPaths: Path[] = [
     id: 1003,
     mapId: 1,
     points: [
-      { x: 203, y: 594 },
-      { x: 635, y: 567 },
-      { x: 1067, y: 540 },
+      { x: 8.87, y: 36.31 },
+      { x: 27.74, y: 34.66 },
+      { x: 46.62, y: 33.01 },
     ],
     soundIds: [104, 106],
   },
 
-  // Locación 2 — Mercado — Coquimbo (864×1243, portrait)
+  // Mapa 2 — Plaza de Armas — La Serena (864×1243, portrait)
   {
     id: 2001,
     mapId: 2,
     points: [
-      { x: 216, y: 310 },
-      { x: 360, y: 426 },
-      { x: 504, y: 543 },
+      { x: 25.00, y: 24.94 },
+      { x: 41.67, y: 34.27 },
+      { x: 58.33, y: 43.68 },
     ],
     soundIds: [201, 202],
   },
@@ -48,9 +51,9 @@ export const mockPaths: Path[] = [
     id: 2002,
     mapId: 2,
     points: [
-      { x: 360, y: 930 },
-      { x: 504, y: 891 },
-      { x: 648, y: 853 },
+      { x: 41.67, y: 74.82 },
+      { x: 58.33, y: 71.68 },
+      { x: 75.00, y: 68.62 },
     ],
     soundIds: [203, 204],
   },
@@ -58,21 +61,21 @@ export const mockPaths: Path[] = [
     id: 2003,
     mapId: 2,
     points: [
-      { x: 108, y: 1085 },
-      { x: 162, y: 697 },
-      { x: 216, y: 310 },
+      { x: 12.50, y: 87.29 },
+      { x: 18.75, y: 56.07 },
+      { x: 25.00, y: 24.94 },
     ],
     soundIds: [205, 201],
   },
 
-  // Locación 3 — Borde Costero (1160×912)
+  // Mapa 3 — Cruz del Tercer Milenio — Coquimbo (1160×912)
   {
     id: 3001,
     mapId: 3,
     points: [
-      { x: 580, y: 741 },
-      { x: 483, y: 541 },
-      { x: 387, y: 342 },
+      { x: 50.00, y: 81.25 },
+      { x: 41.64, y: 59.32 },
+      { x: 33.36, y: 37.50 },
     ],
     soundIds: [301, 302],
   },
@@ -80,9 +83,9 @@ export const mockPaths: Path[] = [
     id: 3002,
     mapId: 3,
     points: [
-      { x: 919, y: 456 },
-      { x: 822, y: 342 },
-      { x: 725, y: 228 },
+      { x: 79.22, y: 50.00 },
+      { x: 70.86, y: 37.50 },
+      { x: 62.50, y: 25.00 },
     ],
     soundIds: [303, 304],
   },

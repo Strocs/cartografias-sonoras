@@ -10,24 +10,20 @@ const { map } = Astro.props;
 
 <a
   href={`/${map.slug}`}
-  class="group border-secondary-sand/30 flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md"
+  class="group border-secondary-sand/60 bg-canvas relative h-full overflow-hidden rounded-xl border shadow-lg"
   data-testid="map-card"
 >
-  <div class="bg-secondary-sand/20 aspect-[3/2] w-full">
-    <img
-      src={map.image.src}
-      alt={map.title}
-      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-      loading="lazy"
-      width={map.image.width}
-      height={map.image.height}
-    />
-  </div>
-  <div class="p-4">
-    <h2
-      class="text-primary-navy group-hover:text-primary-brown text-lg font-semibold"
-    >
-      {map.title}
-    </h2>
-  </div>
+  <h2
+    class="text-primary-navy group-hover:text-primary-brown absolute z-10 text-lg font-semibold"
+  >
+    {map.title}
+  </h2>
+  <img
+    src={map.image.src}
+    alt={map.title}
+    class="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
+    loading="eager"
+    width={map.image.width}
+    height={map.image.height}
+  />
 </a>

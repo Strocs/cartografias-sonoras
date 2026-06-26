@@ -1,9 +1,12 @@
 import { create } from 'zustand';
 
 import {
+  applyPieceSeek as applyPieceSeekEngine,
   createInitialState,
+  pauseAllSounds as pauseAllSoundsEngine,
   pausePiece as pausePieceEngine,
   pauseSound as pauseSoundEngine,
+  pendingPieceSeek as pendingPieceSeekEngine,
   pendingSeek as pendingSeekEngine,
   pieceEnded as pieceEndedEngine,
   pieceError as pieceErrorEngine,
@@ -13,7 +16,6 @@ import {
   playSound as playSoundEngine,
   resumePiece as resumePieceEngine,
   resumeSound as resumeSoundEngine,
-  seekPiece as seekPieceEngine,
   seekSound as seekSoundEngine,
   setVolume as setVolumeEngine,
   soundEnded as soundEndedEngine,
@@ -23,7 +25,7 @@ import {
   stopAllSounds as stopAllSoundsEngine,
   stopPiece as stopPieceEngine,
   stopSound as stopSoundEngine,
-  toggleMute as toggleMuteEngine,
+  toggleMute as toggleMuteEngine
 } from './engine';
 import type { AudioStore, AudioTransitions } from './types';
 
@@ -50,6 +52,10 @@ export const useAudioStore = create<AudioStore>((set) => ({
     set((state) => stopAllSoundsEngine(state));
   },
 
+  pauseAllSounds: () => {
+    set((state) => pauseAllSoundsEngine(state));
+  },
+
   playPiece: (pieceId, mapId) => {
     set((state) => playPieceEngine(state, pieceId, mapId));
   },
@@ -62,8 +68,12 @@ export const useAudioStore = create<AudioStore>((set) => ({
     set((state) => resumePieceEngine(state));
   },
 
+  stopPiece: () => {
+    set((state) => stopPieceEngine(state));
+  },
+
   seekPiece: (time) => {
-    set((state) => seekPieceEngine(state, time));
+    set((state) => pendingPieceSeekEngine(state, time));
   },
 
   seekSound: (soundId, time) => {
@@ -76,7 +86,7 @@ export const useAudioStore = create<AudioStore>((set) => ({
 
   toggleMute: () => {
     set((state) => toggleMuteEngine(state));
-  },
+  }
 }));
 
 // Internal transition actions used by audio element event handlers.
@@ -84,7 +94,9 @@ export const useAudioStore = create<AudioStore>((set) => ({
 // but exposed through the store for event wiring.
 export const audioTransitions: AudioTransitions = {
   soundLoaded: (soundId: number, duration: number) => {
-    useAudioStore.setState((state) => soundLoadedEngine(state, soundId, duration));
+    useAudioStore.setState((state) =>
+      soundLoadedEngine(state, soundId, duration)
+    );
   },
 
   soundEnded: (soundId: number) => {
@@ -100,7 +112,9 @@ export const audioTransitions: AudioTransitions = {
   },
 
   soundTimeUpdated: (soundId: number, time: number) => {
-    useAudioStore.setState((state) => soundTimeUpdatedEngine(state, soundId, time));
+    useAudioStore.setState((state) =>
+      soundTimeUpdatedEngine(state, soundId, time)
+    );
   },
 
   pieceLoaded: (duration: number) => {
@@ -119,7 +133,11 @@ export const audioTransitions: AudioTransitions = {
     useAudioStore.setState((state) => pieceTimeUpdatedEngine(state, time));
   },
 
+  seekPiece: (time: number) => {
+    useAudioStore.setState((state) => applyPieceSeekEngine(state, time));
+  },
+
   stopPiece: () => {
     useAudioStore.setState((state) => stopPieceEngine(state));
-  },
+  }
 };

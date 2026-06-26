@@ -40,8 +40,9 @@ const validSound: Sound = {
   id: 100,
   title: 'Sonido Uno',
   description: 'Descripción del sonido',
+  location: 'Test Location',
   audioUrl: '/sonido-uno.mp3',
-  position: { x: 100, y: 200 },
+  position: { x: 50, y: 50 },
   mapId: 1,
 };
 
@@ -50,7 +51,7 @@ const validPath: Path = {
   mapId: 1,
   points: [
     { x: 0, y: 0 },
-    { x: 100, y: 200 },
+    { x: 50, y: 50 },
   ],
   soundIds: [100, 101],
 };
@@ -121,6 +122,13 @@ describe('Sound invariants', () => {
     const invalid: Sound = { ...validSound, position: { x: Infinity, y: 200 } };
     expect(() => checkSoundInvariants(invalid)).toThrow(
       'Sound position must be finite'
+    );
+  });
+
+  it('fails when position is outside the 0–100 percentage range', () => {
+    const invalid: Sound = { ...validSound, position: { x: 50, y: 150 } };
+    expect(() => checkSoundInvariants(invalid)).toThrow(
+      'Sound position must be within 0–100'
     );
   });
 

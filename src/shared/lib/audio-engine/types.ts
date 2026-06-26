@@ -33,6 +33,7 @@ export interface AudioEngineState {
   volume: number;
   muted: boolean;
   _pendingSeeks: Map<number, number>;
+  _pendingPieceSeek: number | null;
 }
 
 export interface AudioActions {
@@ -41,9 +42,11 @@ export interface AudioActions {
   resumeSound: (soundId: number) => void;
   stopSound: (soundId: number) => void;
   stopAllSounds: () => void;
+  pauseAllSounds: () => void;
   playPiece: (pieceId: number, mapId: number) => void;
   pausePiece: () => void;
   resumePiece: () => void;
+  stopPiece: () => void;
   seekPiece: (time: number) => void;
   seekSound: (soundId: number, time: number) => void;
   setVolume: (volume: number) => void;
@@ -60,6 +63,7 @@ export interface AudioTransitions {
   pieceEnded: () => void;
   pieceError: (error: string) => void;
   pieceTimeUpdated: (time: number) => void;
+  seekPiece: (time: number) => void;
   stopPiece: () => void;
 }
 

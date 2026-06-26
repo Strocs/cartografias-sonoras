@@ -23,13 +23,13 @@ describe('HoverCard', () => {
   it('renders the default duration when none is provided', () => {
     render(<HoverCard sound={sound} />);
 
-    expect(screen.getByText('0:30')).toBeInTheDocument();
+    expect(screen.getByText('1:42')).toBeInTheDocument();
   });
 
-  it('renders the location when provided', () => {
-    render(<HoverCard sound={sound} location="Barrio Inglés, Coquimbo" />);
+  it('renders the location from the sound object', () => {
+    render(<HoverCard sound={sound} />);
 
-    expect(screen.getByText('Barrio Inglés, Coquimbo')).toBeInTheDocument();
+    expect(screen.getByText(sound.location)).toBeInTheDocument();
   });
 
   it('renders the sound description', () => {
@@ -39,8 +39,10 @@ describe('HoverCard', () => {
   });
 
   it('does not render the location row when location is missing', () => {
-    render(<HoverCard sound={sound} />);
+    const noLocationSound = { ...sound, location: '' };
+    render(<HoverCard sound={noLocationSound} />);
 
-    expect(screen.queryByText('📍')).not.toBeInTheDocument();
+    expect(screen.getByText(sound.title)).toBeInTheDocument();
+    expect(screen.queryByText(sound.location)).not.toBeInTheDocument();
   });
 });

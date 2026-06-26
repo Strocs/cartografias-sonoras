@@ -36,7 +36,9 @@ export function MapControls({ bounds, className }: MapControlsProps) {
         <MinusIcon />
       </ControlButton>
       <ControlButton
-        onClick={() => (bounds !== undefined ? map?.fitBounds(bounds) : undefined)}
+        onClick={() =>
+          bounds !== undefined ? map?.fitBounds(bounds) : undefined
+        }
         label="Centrar mapa"
         data-testid="center-map"
       >
@@ -57,17 +59,17 @@ function ControlButton({
   onClick,
   label,
   children,
-  'data-testid': testId,
+  'data-testid': testId
 }: ControlButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'flex size-10 items-center justify-center rounded-full',
-        'bg-white text-charcoal shadow-md transition-all',
+        'border-secondary-sand/60 flex size-10 cursor-pointer items-center justify-center rounded-full border',
+        'text-charcoal bg-canvas shadow-md transition-all',
         'hover:scale-105 hover:shadow-lg',
-        'focus:ring-2 focus:ring-charcoal/30 focus:outline-none',
+        'focus:ring-charcoal/30 focus:ring-2 focus:outline-none',
         'active:scale-95'
       )}
       aria-label={label}

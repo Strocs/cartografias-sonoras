@@ -1,10 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Navigation from '../shared/ui/Navigation.astro';
-import ActiveMapLayout from '../features/maps/ui/ActiveMapLayout.astro';
+import { ActiveMapLayout } from '../features/maps/ui/ActiveMapLayout.tsx';
 import { mockMaps } from '../features/maps/data/mock-maps';
 import { mockSounds } from '../features/sounds/data/mock-sounds';
 import { mockPaths } from '../features/paths/data/mock-paths';
+import { mockSoundPieces } from '../features/sound-pieces/data/mock-sound-pieces';
 
 export function getStaticPaths() {
   return mockMaps.map((map) => ({ params: { slug: map.slug } }));
@@ -20,6 +21,8 @@ if (!map) {
 const sounds = mockSounds.filter((sound) => sound.mapId === map.id);
 const paths = mockPaths.filter((path) => path.mapId === map.id);
 const inactiveMaps = mockMaps.filter((m) => m.slug !== slug);
+const soundPiece =
+  mockSoundPieces.find((piece) => piece.mapId === map.id) ?? null;
 const title = map.title;
 ---
 
@@ -28,11 +31,14 @@ const title = map.title;
     <Navigation backHref="/" />
     <main class="relative flex-1 overflow-hidden">
       <ActiveMapLayout
-        slug={map.slug}
+        client:only="react"
+        slug={slug}
         mapImage={map.image}
+        mapTitle={map.title}
         sounds={sounds}
         paths={paths}
         inactiveMaps={inactiveMaps}
+        soundPiece={soundPiece}
       />
     </main>
   </div>
