@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const positionSchema = z.object(
   {
-    x: z.number().finite(),
-    y: z.number().finite(),
+    x: z.number().finite().min(0).max(100),
+    y: z.number().finite().min(0).max(100),
   },
   { error: 'Invalid position' }
 );
