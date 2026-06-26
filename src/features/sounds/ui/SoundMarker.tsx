@@ -3,7 +3,7 @@
 import L from 'leaflet';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useTransform } from 'framer-motion';
 
 import { cn } from '@shared/utils/cn';
 import {
@@ -11,19 +11,20 @@ import {
   useAudioStore,
   type AudioEngineState
 } from '@shared/lib/audio-engine';
+import { relativeToPixel } from '@shared/lib/coordinates';
 import { useMap } from '@shared/lib/viewport/MapContext';
 import { useMountEffect } from '@shared/hooks/useMountEffect';
+import { useSmoothTimedValue } from '@shared/hooks/useSmoothTimedValue';
 
 import type { Sound } from '../domain/types';
 import { HoverCard } from './HoverCard';
 
 export interface SoundMarkerProps {
   sound: Sound;
-  location?: string;
 }
 
-export function SoundMarker({ sound, location }: SoundMarkerProps) {
-  const { map } = useMap();
+export function SoundMarker({ sound }: SoundMarkerProps) {
+  const { map, width, height } = useMap();
   const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
     null
   );
@@ -53,15 +54,22 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
   const RING_STROKE = 4;
   const RING_RADIUS = CENTER - RING_STROKE / 2 - 1.5;
   const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-  const RING_PROGRESS = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const RING_STROKE_DASHOFFSET =
-    RING_CIRCUMFERENCE - (RING_PROGRESS / 100) * RING_CIRCUMFERENCE;
 
-  console.log({
-    sound_id: sound.id,
-    ring_progress: RING_PROGRESS,
-    duration,
-    currentTime
+  // Piece blocks marker interaction only while actively playing/loading, not when paused.
+  const isPiecePlaying =
+    activePieceId !== null &&
+    (pieceStatus === AUDIO_STATUS.PLAYING ||
+      pieceStatus === AUDIO_STATUS.LOADING);
+  const isPlaying =
+    status === AUDIO_STATUS.PLAYING || status === AUDIO_STATUS.LOADING;
+  const isPaused = status === AUDIO_STATUS.PAUSED;
+  const isActive = isPlaying || isPaused;
+
+  // Smooth progress ring: interpolates currentTime at 60fps between store updates.
+  const smoothTime = useSmoothTimedValue(currentTime, duration, isPlaying);
+  const dashoffset = useTransform(smoothTime, (t) => {
+    const pct = duration > 0 ? (t / duration) * 100 : 0;
+    return RING_CIRCUMFERENCE - (pct / 100) * RING_CIRCUMFERENCE;
   });
 
   useMountEffect(() => {
@@ -78,7 +86,8 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
       iconAnchor: [CENTER, CENTER]
     });
 
-    const marker = L.marker([sound.position.y, sound.position.x], {
+    const pixel = relativeToPixel(sound.position, width, height);
+    const marker = L.marker([pixel.y, pixel.x], {
       icon,
       keyboard: false
     }).addTo(map);
@@ -95,16 +104,6 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
   if (portalContainer === null) {
     return null;
   }
-
-  // Piece blocks marker interaction only while actively playing/loading, not when paused.
-  const isPiecePlaying =
-    activePieceId !== null &&
-    (pieceStatus === AUDIO_STATUS.PLAYING ||
-      pieceStatus === AUDIO_STATUS.LOADING);
-  const isPlaying =
-    status === AUDIO_STATUS.PLAYING || status === AUDIO_STATUS.LOADING;
-  const isPaused = status === AUDIO_STATUS.PAUSED;
-  const isActive = isPlaying || isPaused;
 
   function handleClick() {
     // If piece is actively playing, pause it first, then play this sound.
@@ -198,8 +197,7 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
                 className="stroke-primary-brown"
                 strokeWidth={RING_STROKE}
                 strokeDasharray={RING_CIRCUMFERENCE}
-                animate={{ strokeDashoffset: RING_STROKE_DASHOFFSET }}
-                transition={{ ease: 'linear', duration: 0.1 }}
+                style={{ strokeDashoffset: dashoffset }}
                 strokeLinecap="round"
               />
             )}
@@ -219,7 +217,7 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
             title={sound.title}
           >
             <div
-              className="bg-primary-teal flex origin-center items-center justify-center rounded-full text-white transition-all duration-300"
+              className="flex origin-center items-center justify-center rounded-full bg-red-400/90 text-white transition-all duration-300"
               style={{
                 width: `${SIZE - 18}px`,
                 height: `${SIZE - 18}px`
@@ -252,7 +250,7 @@ export function SoundMarker({ sound, location }: SoundMarkerProps) {
           </button>
         </div>
 
-        <HoverCard sound={sound} location={location} />
+        <HoverCard sound={sound} />
       </div>
     </div>,
     portalContainer
