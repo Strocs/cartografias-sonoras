@@ -5,6 +5,9 @@ import type { Sound } from '../domain/types';
 //   marker-mid.mp3    (1.5s, G4+C5)
 //   marker-long.mp3   (2.5s, E4+G4)
 //   piece-drone.mp3   (5.0s, A2+C#3+A3)
+//
+// Positions are percentages relative to the map image:
+//   (0, 0) = top-left corner, (100, 100) = bottom-right corner.
 
 const BEACH = '/sounds/mock/beach.mp3';
 const BIRD = '/sounds/mock/bird.mp3';
@@ -13,23 +16,26 @@ const PEOPLE = '/sounds/mock/people.mp3';
 const TRAFFIC = '/sounds/mock/traffic.mp3';
 
 export const mockSounds: Sound[] = [
-  // Locación 1 — Plaza de Armas — La Serena (1216×864)
+  // Mapa 1 — Avenida de Aguirre — La Serena (2289×1636)
   {
     id: 101,
     title: 'Fuente central',
     description:
       'Murmullo constante del agua cayendo en la pileta principal de la plaza.',
     audioUrl: BEACH,
-    position: { x: 608, y: 432 },
+    location: 'Avenida de Aguirre',
+    position: { x: 77, y: 20 },
     mapId: 1
   },
   {
     id: 102,
-    title: 'Tráfico peatonal',
+    title: 'Conversaciones en bancas',
     description:
-      'Pasos dispersos, conversaciones breves y el vaivén de la gente transitando por la plaza.',
+      'Fragmentos de diálogos entre personas que descansan en las bancas de la plaza.',
+
     audioUrl: BIRD,
-    position: { x: 365, y: 270 },
+    location: 'Avenida de Aguirre',
+    position: { x: 68.4, y: 30 },
     mapId: 1
   },
   {
@@ -38,36 +44,40 @@ export const mockSounds: Sound[] = [
     description:
       'Voces de vendedores ofreciendo productos y el sonido de sus carros moviéndose por las veredas.',
     audioUrl: NIGHT,
-    position: { x: 912, y: 324 },
+    location: 'Avenida de Aguirre',
+    position: { x: 51.2, y: 50 },
     mapId: 1
   },
   {
     id: 104,
-    title: 'Palomas',
+    title: 'Tráfico peatonal',
     description:
-      'Aleteos y arrullos de palomas concentradas cerca de los bordes de la plaza.',
+      'Pasos dispersos, conversaciones breves y el vaivén de la gente transitando por la plaza.',
     audioUrl: PEOPLE,
-    position: { x: 203, y: 594 },
+    location: 'Avenida de Aguirre',
+    position: { x: 27, y: 80 },
     mapId: 1
   },
   {
     id: 105,
-    title: 'Conversaciones en bancas',
+    title: 'Palomas',
     description:
-      'Fragmentos de diálogos entre personas que descansan en las bancas de la plaza.',
+      'Aleteos y arrullos de palomas concentradas cerca de los bordes de la plaza.',
     audioUrl: TRAFFIC,
-    position: { x: 760, y: 648 },
+    location: 'Avenida de Aguirre',
+    position: { x: 14.5, y: 96 },
     mapId: 1
   },
 
-  // Locación 2 — Mercado — Coquimbo (864×1243, portrait)
+  // Mapa 2 — Plaza de Armas — La Serena (864×1243, portrait)
   {
     id: 201,
     title: 'Pescadores',
     description:
       'Voces de pescadores descargando la jornada y el golpe seco de las cajas de pescado.',
     audioUrl: BEACH,
-    position: { x: 216, y: 310 },
+    location: 'Avenida de Aguirre',
+    position: { x: 25.0, y: 24.94 },
     mapId: 2
   },
   {
@@ -76,7 +86,8 @@ export const mockSounds: Sound[] = [
     description:
       'Sonidos mecánicos y digitales de las cajas registradoras en los puestos del mercado.',
     audioUrl: BIRD,
-    position: { x: 504, y: 543 },
+    location: 'Avenida de Aguirre',
+    position: { x: 58.33, y: 43.68 },
     mapId: 2
   },
   {
@@ -85,7 +96,8 @@ export const mockSounds: Sound[] = [
     description:
       'Diálogos animados entre compradores y vendedores regateando precios y eligiendo productos.',
     audioUrl: NIGHT,
-    position: { x: 360, y: 930 },
+    location: 'Avenida de Aguirre',
+    position: { x: 41.67, y: 74.82 },
     mapId: 2
   },
   {
@@ -94,7 +106,8 @@ export const mockSounds: Sound[] = [
     description:
       'Cumbia y boleros que salen de un pequeño radio en uno de los puestos de víveres.',
     audioUrl: PEOPLE,
-    position: { x: 648, y: 853 },
+    location: 'Avenida de Aguirre',
+    position: { x: 75.0, y: 68.62 },
     mapId: 2
   },
   {
@@ -103,18 +116,20 @@ export const mockSounds: Sound[] = [
     description:
       'Eco de pasos sobre el piso húmedo de los pasillos centrales del mercado.',
     audioUrl: TRAFFIC,
-    position: { x: 108, y: 1085 },
+    location: 'Avenida de Aguirre',
+    position: { x: 12.5, y: 87.29 },
     mapId: 2
   },
 
-  // Locación 3 — Borde Costero (1160×912)
+  // Mapa 3 — Cruz del Tercer Milenio — Coquimbo (1160×912)
   {
     id: 301,
     title: 'Olas rompiendo',
     description:
       'Oleaje mediano que rompe contra las rocas y la orilla de la playa.',
     audioUrl: BIRD,
-    position: { x: 580, y: 741 },
+    location: 'Avenida de Aguirre',
+    position: { x: 50.0, y: 81.25 },
     mapId: 3
   },
   {
@@ -122,7 +137,8 @@ export const mockSounds: Sound[] = [
     title: 'Gaviotas',
     description: 'Gritos y vuelo de gaviotas sobrevolando la línea de costa.',
     audioUrl: BEACH,
-    position: { x: 387, y: 342 },
+    location: 'Avenida de Aguirre',
+    position: { x: 33.36, y: 37.5 },
     mapId: 3
   },
   {
@@ -131,7 +147,8 @@ export const mockSounds: Sound[] = [
     description:
       'Viento costero que golpea los postes y cables de la avenida del borde.',
     audioUrl: NIGHT,
-    position: { x: 919, y: 456 },
+    location: 'Avenida de Aguirre',
+    position: { x: 79.22, y: 50.0 },
     mapId: 3
   },
   {
@@ -140,7 +157,8 @@ export const mockSounds: Sound[] = [
     description:
       'Pasos amortiguados de personas caminando por la arena húmeda cerca del agua.',
     audioUrl: PEOPLE,
-    position: { x: 725, y: 228 },
+    location: 'Avenida de Aguirre',
+    position: { x: 62.5, y: 25.0 },
     mapId: 3
   }
 ];

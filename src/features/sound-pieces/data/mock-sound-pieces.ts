@@ -6,8 +6,8 @@ export const mockSoundPieces: SoundPiece[] = [
   {
     id: 1,
     mapId: 1,
-    title: 'Paisaje de la plaza',
-    author: 'Colectivo Marcasonora',
+    title: 'Andando por la Avenida de Aguirre',
+    author: 'Javier Fredes',
     description:
       'Composición sonora construida a partir del registro cotidiano de la Plaza de Armas de La Serena. Entre fuentes, pasos y conversaciones, la obra propone una escucha atenta del centro cívico como espacio de encuentro.',
     audioUrl: SOUND_PIECE
