@@ -5,21 +5,26 @@ import {
   createInitialState,
   pausePiece,
   pauseSound,
+  pendingSeek,
   pieceEnded,
   pieceError,
   pieceLoaded,
+  pieceTimeUpdated,
   playPiece,
   playSound,
   resumePiece,
   resumeSound,
   seekPiece,
   seekSound,
+  setVolume,
   soundEnded,
   soundError,
   soundLoaded,
+  soundTimeUpdated,
   stopAllSounds,
   stopPiece,
   stopSound,
+  toggleMute,
 } from '../../src/shared/lib/audio-engine/engine';
 
 describe('Audio engine state machine', () => {
@@ -204,6 +209,80 @@ describe('Audio engine state machine', () => {
 
       expect(state.activePieceId).toBe(200);
       expect(state.piece.status).toBe(AUDIO_STATUS.LOADING);
+    });
+  });
+
+  describe('volume and mute', () => {
+    it('sets volume on the state', () => {
+      const next = setVolume(createInitialState(), 0.5);
+      expect(next.volume).toBe(0.5);
+    });
+
+    it('toggles muted on the state', () => {
+      const muted = toggleMute(createInitialState());
+      expect(muted.muted).toBe(true);
+
+      const unmuted = toggleMute(muted);
+      expect(unmuted.muted).toBe(false);
+    });
+  });
+
+  describe('pending seek', () => {
+    it('records a pending seek for an active sound', () => {
+      const state = playSound(createInitialState(), 1, 10);
+      const next = pendingSeek(state, 1, 42);
+
+      expect(next._pendingSeeks.get(1)).toBe(42);
+    });
+
+    it('ignores pending seek for an unknown sound', () => {
+      const next = pendingSeek(createInitialState(), 1, 42);
+      expect(next._pendingSeeks.has(1)).toBe(false);
+    });
+
+    it('clears the pending seek when applying a real seek', () => {
+      let state = playSound(createInitialState(), 1, 10);
+      state = pendingSeek(state, 1, 42);
+      const next = seekSound(state, 1, 42);
+
+      expect(next.activeSounds.get(1)?.currentTime).toBe(42);
+      expect(next._pendingSeeks.has(1)).toBe(false);
+    });
+  });
+
+  describe('time updates', () => {
+    it('updates sound currentTime without changing status', () => {
+      const state = soundLoaded(playSound(createInitialState(), 1, 10), 1);
+      const next = soundTimeUpdated(state, 1, 12.5);
+
+      expect(next.activeSounds.get(1)?.currentTime).toBe(12.5);
+      expect(next.activeSounds.get(1)?.status).toBe(AUDIO_STATUS.PLAYING);
+    });
+
+    it('updates piece currentTime without changing status', () => {
+      const state = pieceLoaded(playPiece(createInitialState(), 100, 10));
+      const next = pieceTimeUpdated(state, 12.5);
+
+      expect(next.piece.currentTime).toBe(12.5);
+      expect(next.piece.status).toBe(AUDIO_STATUS.PLAYING);
+    });
+  });
+
+  describe('duration from metadata', () => {
+    it('sets sound duration when loaded', () => {
+      const state = playSound(createInitialState(), 1, 10);
+      const next = soundLoaded(state, 1, 60);
+
+      expect(next.activeSounds.get(1)?.duration).toBe(60);
+      expect(next.activeSounds.get(1)?.status).toBe(AUDIO_STATUS.PLAYING);
+    });
+
+    it('sets piece duration when loaded', () => {
+      const state = playPiece(createInitialState(), 100, 10);
+      const next = pieceLoaded(state, 180);
+
+      expect(next.piece.duration).toBe(180);
+      expect(next.piece.status).toBe(AUDIO_STATUS.PLAYING);
     });
   });
 });

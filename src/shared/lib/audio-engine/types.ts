@@ -9,6 +9,8 @@ export const AUDIO_STATUS = {
 
 export type AudioStatus = (typeof AUDIO_STATUS)[keyof typeof AUDIO_STATUS];
 
+export type AudioElementId = number;
+
 export interface SoundState {
   status: AudioStatus;
   currentTime: number;
@@ -28,6 +30,9 @@ export interface AudioEngineState {
   activePieceId: number | null;
   piece: PieceState;
   mapId: number | null;
+  volume: number;
+  muted: boolean;
+  _pendingSeeks: Map<number, number>;
 }
 
 export interface AudioActions {
@@ -40,6 +45,22 @@ export interface AudioActions {
   pausePiece: () => void;
   resumePiece: () => void;
   seekPiece: (time: number) => void;
+  seekSound: (soundId: number, time: number) => void;
+  setVolume: (volume: number) => void;
+  toggleMute: () => void;
+}
+
+export interface AudioTransitions {
+  soundLoaded: (soundId: number, duration: number) => void;
+  soundEnded: (soundId: number) => void;
+  soundError: (soundId: number, error: string) => void;
+  seekSound: (soundId: number, time: number) => void;
+  soundTimeUpdated: (soundId: number, time: number) => void;
+  pieceLoaded: (duration: number) => void;
+  pieceEnded: () => void;
+  pieceError: (error: string) => void;
+  pieceTimeUpdated: (time: number) => void;
+  stopPiece: () => void;
 }
 
 export interface AudioStore extends AudioEngineState, AudioActions {}

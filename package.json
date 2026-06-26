@@ -14,7 +14,8 @@
     "format": "prettier .",
     "typecheck": "tsc --noEmit",
     "astro": "astro",
-    "test:perf": "playwright test --project=lighthouse"
+    "test:perf": "playwright test --project=lighthouse",
+    "gen:audio": "node scripts/generate-placeholder-audio.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.0",
