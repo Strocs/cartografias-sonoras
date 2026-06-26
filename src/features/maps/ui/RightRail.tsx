@@ -3,42 +3,31 @@
 import { cn } from '@shared/utils/cn';
 
 import type { Map } from '../domain/types';
-import type { SoundPiece } from '../../sound-pieces/domain/types';
-import { SoundPieceTrigger } from '../../sound-pieces/ui/SoundPieceTrigger';
 
 export interface RightRailProps {
   maps: Map[];
   activeSlug: string;
-  soundPiece?: SoundPiece | null;
 }
 
-export function RightRail({ maps, activeSlug, soundPiece }: RightRailProps) {
+export function RightRail({ maps, activeSlug }: RightRailProps) {
   const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
 
   return (
     <aside
-      className="flex h-full w-20 flex-col gap-3 overflow-y-auto p-2 md:w-24"
+      className="flex h-full w-28 flex-col gap-3 overflow-y-auto p-2 pb-28 md:w-36"
       data-testid="right-rail"
     >
-      {soundPiece && (
-        <SoundPieceTrigger soundPiece={soundPiece} mapId={soundPiece.mapId} />
-      )}
       {inactiveMaps.map((map) => (
         <a
           key={map.id}
           href={`/${map.slug}`}
           className={cn(
-            'group flex flex-col overflow-hidden rounded-lg border border-secondary-sand/30',
+            'group flex flex-1 flex-col overflow-hidden rounded-lg border border-secondary-sand/30',
             'bg-white shadow-sm transition-all duration-200',
             'hover:scale-[1.02] hover:shadow-md'
           )}
         >
-          <div
-            className={cn(
-              'relative w-full overflow-hidden',
-              isPortrait(map) ? 'h-[60%]' : 'h-[40%]'
-            )}
-          >
+          <div className="relative w-full flex-1 overflow-hidden">
             <img
               src={map.image.src}
               alt={map.title}
@@ -57,8 +46,4 @@ export function RightRail({ maps, activeSlug, soundPiece }: RightRailProps) {
       ))}
     </aside>
   );
-}
-
-function isPortrait(map: Map): boolean {
-  return map.image.height > map.image.width;
 }

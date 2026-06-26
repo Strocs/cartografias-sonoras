@@ -35,17 +35,22 @@ describe('AudioBottomPlayer', () => {
     vi.restoreAllMocks();
   });
 
-  it('is hidden when no audio is active', () => {
+  it('is always visible in idle state showing piece info', () => {
     render(
       <Wrapper>
         <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
       </Wrapper>
     );
 
-    expect(screen.queryByTestId('audio-bottom-player')).not.toBeInTheDocument();
+    const player = screen.getByTestId('audio-bottom-player');
+    expect(player).toBeInTheDocument();
+    expect(player).toHaveAttribute('data-mode', 'idle');
+    expect(screen.getByText(SOUND_PIECE.title)).toBeInTheDocument();
+    expect(screen.getByText(SOUND_PIECE.author)).toBeInTheDocument();
+    expect(screen.getByTestId('bottom-play-pause')).toBeInTheDocument();
   });
 
-  it('appears in exploration mode when a sound is playing', async () => {
+  it('stays in idle mode even when individual sounds are active', async () => {
     render(
       <Wrapper>
         <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
@@ -57,12 +62,47 @@ describe('AudioBottomPlayer', () => {
       audioTransitions.soundLoaded(101, 60);
     });
 
-    const player = await screen.findByTestId('audio-bottom-player');
-    expect(player).toHaveAttribute('data-mode', 'exploration');
-    expect(screen.getByText('Modo Exploración')).toBeInTheDocument();
+    // Individual sounds do NOT affect the piece-only player.
+    const player = screen.getByTestId('audio-bottom-player');
+    expect(player).toHaveAttribute('data-mode', 'idle');
+    expect(screen.getByText(SOUND_PIECE.title)).toBeInTheDocument();
   });
 
-  it('toggles play/pause for the active sound', async () => {
+  it('toggles play/pause for the sound piece', async () => {
+    render(
+      <Wrapper>
+        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
+      </Wrapper>
+    );
+
+    const button = screen.getByTestId('bottom-play-pause');
+
+    act(() => {
+      fireEvent.click(button);
+    });
+
+    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.LOADING);
+
+    act(() => {
+      audioTransitions.pieceLoaded(60);
+    });
+
+    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.PLAYING);
+
+    act(() => {
+      fireEvent.click(button);
+    });
+
+    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.PAUSED);
+
+    act(() => {
+      fireEvent.click(button);
+    });
+
+    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.PLAYING);
+  });
+
+  it('shows elapsed and total time for the piece', async () => {
     render(
       <Wrapper>
         <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
@@ -70,43 +110,9 @@ describe('AudioBottomPlayer', () => {
     );
 
     act(() => {
-      useAudioStore.getState().playSound(101, 1);
-      audioTransitions.soundLoaded(101, 60);
-    });
-
-    const button = await screen.findByTestId('bottom-play-pause');
-    expect(useAudioStore.getState().activeSounds.get(101)?.status).toBe(
-      AUDIO_STATUS.PLAYING
-    );
-
-    act(() => {
-      fireEvent.click(button);
-    });
-
-    expect(useAudioStore.getState().activeSounds.get(101)?.status).toBe(
-      AUDIO_STATUS.PAUSED
-    );
-
-    act(() => {
-      fireEvent.click(button);
-    });
-
-    expect(useAudioStore.getState().activeSounds.get(101)?.status).toBe(
-      AUDIO_STATUS.PLAYING
-    );
-  });
-
-  it('shows elapsed and total time in mm:ss format', async () => {
-    render(
-      <Wrapper>
-        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
-      </Wrapper>
-    );
-
-    act(() => {
-      useAudioStore.getState().playSound(101, 1);
-      audioTransitions.soundLoaded(101, 125);
-      audioTransitions.soundTimeUpdated(101, 65);
+      useAudioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId);
+      audioTransitions.pieceLoaded(125);
+      audioTransitions.pieceTimeUpdated(65);
     });
 
     const time = await screen.findByTestId('bottom-time');
@@ -120,12 +126,7 @@ describe('AudioBottomPlayer', () => {
       </Wrapper>
     );
 
-    act(() => {
-      useAudioStore.getState().playSound(101, 1);
-      audioTransitions.soundLoaded(101, 60);
-    });
-
-    const slider = await screen.findByTestId('bottom-volume');
+    const slider = screen.getByTestId('bottom-volume');
     act(() => {
       fireEvent.change(slider, { target: { value: '35' } });
     });
@@ -140,12 +141,7 @@ describe('AudioBottomPlayer', () => {
       </Wrapper>
     );
 
-    act(() => {
-      useAudioStore.getState().playSound(101, 1);
-      audioTransitions.soundLoaded(101, 60);
-    });
-
-    const muteButton = await screen.findByTestId('bottom-mute');
+    const muteButton = screen.getByTestId('bottom-mute');
     act(() => {
       fireEvent.click(muteButton);
     });

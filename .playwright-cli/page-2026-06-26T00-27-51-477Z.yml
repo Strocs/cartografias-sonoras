@@ -1,0 +1,115 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - link "Cartografías Sensoriales Paisaje Sonoro Urbano" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]: Cartografías Sensoriales
+          - generic [ref=e7]: Paisaje Sonoro Urbano
+        - img [ref=e8]
+      - navigation "Principal" [ref=e10]:
+        - link "← Volver" [ref=e11] [cursor=pointer]:
+          - /url: /
+        - list [ref=e12]:
+          - listitem [ref=e13]:
+            - link "Inicio" [ref=e14] [cursor=pointer]:
+              - /url: /
+              - img [ref=e15]
+              - generic [ref=e18]: Inicio
+          - listitem [ref=e19]:
+            - link "Proyecto" [ref=e20] [cursor=pointer]:
+              - /url: /proyecto
+              - img [ref=e21]
+              - generic [ref=e24]: Proyecto
+          - listitem [ref=e25]:
+            - link "Datos" [ref=e26] [cursor=pointer]:
+              - /url: /datos
+              - img [ref=e27]
+              - generic [ref=e29]: Datos
+          - listitem [ref=e30]:
+            - link "Equipo" [ref=e31] [cursor=pointer]:
+              - /url: /equipo
+              - img [ref=e32]
+              - generic [ref=e37]: Equipo
+      - generic [ref=e38]:
+        - paragraph [ref=e39]: Instituciones
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - img [ref=e42]
+            - generic [ref=e45]: ULS
+          - generic [ref=e46]:
+            - img [ref=e47]
+            - generic [ref=e50]: Innova Creativa
+          - generic [ref=e51]:
+            - img [ref=e52]
+            - generic [ref=e55]: Escuela de Arquitectura
+    - main [ref=e56]:
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - generic:
+                - generic:
+                  - button "Reproducir sonido" [active] [ref=e64]:
+                    - img [ref=e177]
+                    - generic [ref=e179]:
+                      - generic [ref=e182]:
+                        - heading "Fuente central" [level=3] [ref=e183]
+                        - generic [ref=e184]: 0:30
+                      - paragraph [ref=e185]: Murmullo constante del agua cayendo en la pileta principal de la plaza.
+                  - button "Reproducir sonido" [ref=e71]:
+                    - img [ref=e74]
+                  - button "Reproducir sonido" [ref=e78]:
+                    - img [ref=e81]
+                  - button "Reproducir sonido" [ref=e85]:
+                    - img [ref=e88]
+                  - button "Reproducir sonido" [ref=e92]:
+                    - img [ref=e95]
+                  - button "Reproducir sonido" [ref=e99]:
+                    - img [ref=e102]
+                - generic:
+                  - img
+            - generic [ref=e104]:
+              - button "Acercar mapa" [ref=e105]:
+                - img [ref=e106]
+              - button "Alejar mapa" [ref=e108]:
+                - img [ref=e109]
+              - button "Centrar mapa" [ref=e110]:
+                - img [ref=e111]
+          - generic [ref=e116]:
+            - button "Reproducir" [ref=e118]:
+              - img [ref=e186]
+            - generic [ref=e121]:
+              - generic [ref=e122]: Paisaje de la plaza
+              - generic [ref=e123]: Colectivo Marcasonora
+            - generic [ref=e124]:
+              - slider "Progreso de reproducción" [disabled] [ref=e125]: "0"
+              - generic [ref=e126]: 0:00 / 0:00
+            - generic [ref=e133]:
+              - button "Silenciar" [ref=e134]:
+                - img [ref=e135]
+              - slider "Volumen" [ref=e138] [cursor=pointer]: "100"
+        - complementary [ref=e139]:
+          - link "Mercado — Coquimbo Mercado — Coquimbo" [ref=e140] [cursor=pointer]:
+            - /url: /locacion-2
+            - img "Mercado — Coquimbo" [ref=e142]
+            - generic [ref=e144]: Mercado — Coquimbo
+          - link "Borde Costero Borde Costero" [ref=e145] [cursor=pointer]:
+            - /url: /locacion-3
+            - img "Borde Costero" [ref=e147]
+            - generic [ref=e149]: Borde Costero
+  - generic [ref=e152]:
+    - button "Menu" [ref=e153]:
+      - img [ref=e155]
+      - generic: Menu
+    - button "Inspect" [ref=e159]:
+      - img [ref=e161]
+      - generic: Inspect
+    - button "Audit" [ref=e163]:
+      - generic [ref=e164]:
+        - img [ref=e165]
+        - img [ref=e188]
+      - generic: Audit
+    - button "Settings" [ref=e171]:
+      - img [ref=e173]
+      - generic: Settings

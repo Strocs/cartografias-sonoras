@@ -65,7 +65,6 @@ export function ActiveMapLayout({
       <RightRail
         maps={inactiveMaps}
         activeSlug={slug}
-        soundPiece={soundPiece}
       />
     </div>
   );

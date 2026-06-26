@@ -39,6 +39,8 @@ vi.mock('react-dom', async () => {
 
 const playSound = vi.fn();
 const pauseSound = vi.fn();
+const resumeSound = vi.fn();
+const pausePiece = vi.fn();
 
 vi.mock('@shared/lib/audio-engine', async () => {
   const actual = await vi.importActual<typeof import('@shared/lib/audio-engine')>(
@@ -50,8 +52,11 @@ vi.mock('@shared/lib/audio-engine', async () => {
       const state = {
         activeSounds: new Map(),
         activePieceId: null,
+        piece: { status: 'idle' },
         playSound,
         pauseSound,
+        resumeSound,
+        pausePiece,
       };
       return selector(state as never);
     }),

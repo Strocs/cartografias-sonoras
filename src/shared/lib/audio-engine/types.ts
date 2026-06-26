@@ -42,6 +42,7 @@ export interface AudioActions {
   resumeSound: (soundId: number) => void;
   stopSound: (soundId: number) => void;
   stopAllSounds: () => void;
+  pauseAllSounds: () => void;
   playPiece: (pieceId: number, mapId: number) => void;
   pausePiece: () => void;
   resumePiece: () => void;
