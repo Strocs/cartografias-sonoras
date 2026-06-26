@@ -42,9 +42,12 @@ export function MapViewport({
         crs: L.CRS.Simple,
         minZoom: config?.minZoom ?? -2,
         maxZoom: config?.maxZoom ?? 4,
-        zoomControl: config?.zoomControl ?? true,
+        zoomControl: config?.zoomControl ?? false,
         attributionControl: config?.attributionControl ?? false,
       });
+
+      map.createPane('pathPane');
+      map.getPane('pathPane')?.style.setProperty('z-index', '350');
 
       L.imageOverlay(imageUrl, bounds).addTo(map);
       map.fitBounds(bounds);
