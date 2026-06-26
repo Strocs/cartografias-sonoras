@@ -9,7 +9,7 @@ import {
   AUDIO_STATUS,
   useAudioStore,
   type AudioEngineState,
-  type AudioStatus,
+  type AudioStatus
 } from '@shared/lib/audio-engine';
 
 import type { SoundPiece } from '../domain/types';
@@ -22,15 +22,14 @@ export interface AudioBottomPlayerProps {
 const ACTIVE_STATUSES = new Set<AudioStatus>([
   AUDIO_STATUS.LOADING,
   AUDIO_STATUS.PLAYING,
-  AUDIO_STATUS.PAUSED,
+  AUDIO_STATUS.PAUSED
 ]);
 
 // Primitive selectors — Object.is comparison works natively, no useShallow needed.
 
 function selectIsPieceMode(state: AudioEngineState): boolean {
   return (
-    state.activePieceId !== null &&
-    ACTIVE_STATUSES.has(state.piece.status)
+    state.activePieceId !== null && ACTIVE_STATUSES.has(state.piece.status)
   );
 }
 
@@ -40,7 +39,7 @@ function selectIsPiecePlaying(state: AudioEngineState): boolean {
 
 export function AudioBottomPlayer({
   mapImage,
-  soundPiece,
+  soundPiece
 }: AudioBottomPlayerProps) {
   const isPieceMode = useAudioStore(selectIsPieceMode);
   const isPiecePlaying = useAudioStore(selectIsPiecePlaying);
@@ -96,32 +95,19 @@ export function AudioBottomPlayer({
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className={cn(
-        'fixed bottom-4 left-[19rem] right-4 z-[1001]',
-        'rounded-3xl border border-secondary-sand/30',
-        'bg-primary-teal text-white shadow-2xl'
+        'w-full rounded-3xl shadow-lg',
+        'bg-primary-teal border-charcoal max-w-2xl border text-white shadow-2xl'
       )}
       data-testid="audio-bottom-player"
       data-mode={isIdle ? 'idle' : 'piece'}
     >
       <div className="flex items-center gap-3 p-3 md:gap-4 md:p-4">
-        {mapImage && (
-          <div className="hidden shrink-0 overflow-hidden rounded-2xl sm:block">
-            <img
-              src={mapImage.src}
-              alt=""
-              className="size-12 object-cover md:size-14"
-              width={mapImage.width}
-              height={mapImage.height}
-            />
-          </div>
-        )}
-
         <button
           type="button"
           onClick={handlePlayPause}
           className={cn(
             'flex shrink-0 items-center justify-center rounded-full',
-            'size-10 bg-white text-primary-teal transition-transform',
+            'text-primary-teal size-10 bg-white transition-transform',
             'hover:scale-105 active:scale-95',
             'focus:ring-2 focus:ring-white/50 focus:outline-none'
           )}
@@ -185,7 +171,7 @@ function Scrubber({ progress, disabled, onChange }: ScrubberProps) {
       disabled={disabled}
       className={cn(
         'h-1.5 w-full cursor-pointer appearance-none rounded-full',
-        'bg-white/20 accent-secondary-sand',
+        'accent-secondary-sand bg-white/20',
         disabled && 'cursor-default opacity-60'
       )}
       aria-label="Progreso de reproducción"
@@ -233,12 +219,12 @@ function WaveVisualizer({ active }: WaveVisualizerProps) {
         <span
           key={index}
           className={cn(
-            'w-1 origin-bottom rounded-full bg-secondary-sand',
-            'h-4 animate-soundwave'
+            'bg-secondary-sand w-1 origin-bottom rounded-full',
+            'animate-soundwave h-4'
           )}
           style={{
             animationDelay: `${index * 100}ms`,
-            animationPlayState: active ? 'running' : 'paused',
+            animationPlayState: active ? 'running' : 'paused'
           }}
         />
       ))}
