@@ -43,10 +43,7 @@ export function RightRail({ maps, activeSlug }: RightRailProps) {
             />
           </div>
           <div className="p-2">
-            <span className="block text-center text-xs font-medium text-charcoal opacity-80 transition-opacity group-hover:opacity-100">
-              M{map.id}
-            </span>
-            <span className="block max-h-0 overflow-hidden text-center text-[10px] leading-tight text-gray-600 opacity-0 transition-all duration-200 group-hover:max-h-12 group-hover:opacity-100">
+            <span className="block text-center text-xs font-medium text-charcoal">
               {map.title}
             </span>
           </div>

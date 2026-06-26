@@ -8,10 +8,10 @@ import { lighthouseTest } from './lighthouse-fixture';
  * actual pages and performance budget.
  */
 const THRESHOLDS = {
-  performance: 70,
-  accessibility: 85,
-  'best-practices': 85,
-  seo: 90,
+  performance: 95,
+  accessibility: 95,
+  'best-practices': 95,
+  seo: 95,
 };
 
 /**

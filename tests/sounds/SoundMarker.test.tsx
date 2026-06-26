@@ -6,16 +6,9 @@ import type { ReactNode } from 'react';
 
 import { SoundMarker } from '../../src/features/sounds/ui/SoundMarker';
 import { MapContext } from '../../src/shared/lib/viewport/MapContext';
-import type { Sound } from '../../src/features/sounds/domain/types';
+import { mockSounds } from '../../src/features/sounds/data/mock-sounds';
 
-const sound: Sound = {
-  id: 101,
-  title: 'Fuente central',
-  description: 'Murmullo del agua.',
-  audioUrl: '/sounds/locacion-1/fuente-central.mp3',
-  position: { x: 608, y: 432 },
-  mapId: 1,
-};
+const sound = mockSounds[0];
 
 const mockMap = {
   createPane: vi.fn(),

@@ -64,11 +64,19 @@ export function MapViewport({
       L.imageOverlay(imageUrl, bounds).addTo(map);
       map.fitBounds(bounds);
 
+      const container = node;
+      function updateZoomAttribute() {
+        container.setAttribute('data-zoom', String(map.getZoom()));
+      }
+      map.on('zoomend', updateZoomAttribute);
+      updateZoomAttribute();
+
       mapRef.current = map;
       setMapState(map);
       setIsReady(true);
 
       return () => {
+        map.off('zoomend', updateZoomAttribute);
         map.remove();
         mapRef.current = null;
         setMapState(null);
@@ -114,8 +122,9 @@ export function MapViewport({
           className="size-full"
           data-testid="map-viewport"
           data-ready={isReady}
+          data-zoom="0"
         />
-        {children}
+        {isReady && children}
       </div>
     </MapContext.Provider>
   );

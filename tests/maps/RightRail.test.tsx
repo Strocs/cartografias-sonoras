@@ -3,63 +3,46 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
 import { RightRail } from '../../src/features/maps/ui/RightRail';
-import type { Map } from '../../src/features/maps/domain/types';
-
-const maps: Map[] = [
-  {
-    id: 1,
-    slug: 'locacion-1',
-    title: 'Plaza de Armas — La Serena',
-    image: { src: '/maps/locacion-1.png', width: 1216, height: 864 },
-    soundPieceId: 1,
-  },
-  {
-    id: 2,
-    slug: 'locacion-2',
-    title: 'Mercado — Coquimbo',
-    image: { src: '/maps/locacion-2.png', width: 864, height: 1243 },
-    soundPieceId: 2,
-  },
-  {
-    id: 3,
-    slug: 'locacion-3',
-    title: 'Borde Costero',
-    image: { src: '/maps/locacion-3.png', width: 1160, height: 912 },
-    soundPieceId: 3,
-  },
-];
+import { mockMaps } from '../../src/features/maps/data/mock-maps';
 
 describe('RightRail', () => {
   it('excludes the active map from the rail', () => {
-    render(<RightRail maps={maps} activeSlug="locacion-1" />);
+    render(<RightRail maps={mockMaps} activeSlug="locacion-1" />);
 
-    expect(screen.queryByText('M1')).not.toBeInTheDocument();
-    expect(screen.getByText('M2')).toBeInTheDocument();
-    expect(screen.getByText('M3')).toBeInTheDocument();
+    const activeMap = mockMaps[0];
+    const inactive1 = mockMaps[1];
+    const inactive2 = mockMaps[2];
+
+    expect(screen.queryByText(activeMap.title)).not.toBeInTheDocument();
+    expect(screen.getByText(inactive1.title)).toBeInTheDocument();
+    expect(screen.getByText(inactive2.title)).toBeInTheDocument();
   });
 
   it('renders a link to each inactive map', () => {
-    render(<RightRail maps={maps} activeSlug="locacion-2" />);
+    render(<RightRail maps={mockMaps} activeSlug="locacion-2" />);
 
+    const inactiveMaps = mockMaps.filter((m) => m.slug !== 'locacion-2');
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(2);
-    expect(links[0]).toHaveAttribute('href', '/locacion-1');
-    expect(links[1]).toHaveAttribute('href', '/locacion-3');
+    expect(links).toHaveLength(inactiveMaps.length);
+    expect(links[0]).toHaveAttribute('href', `/${inactiveMaps[0].slug}`);
+    expect(links[1]).toHaveAttribute('href', `/${inactiveMaps[1].slug}`);
   });
 
   it('renders thumbnails for inactive maps', () => {
-    render(<RightRail maps={maps} activeSlug="locacion-3" />);
+    render(<RightRail maps={mockMaps} activeSlug="locacion-3" />);
 
+    const inactiveMaps = mockMaps.filter((m) => m.slug !== 'locacion-3');
     const images = screen.getAllByRole('img');
-    expect(images).toHaveLength(2);
-    expect(images[0]).toHaveAttribute('src', '/maps/locacion-1.png');
-    expect(images[1]).toHaveAttribute('src', '/maps/locacion-2.png');
+    expect(images).toHaveLength(inactiveMaps.length);
+    expect(images[0]).toHaveAttribute('src', inactiveMaps[0].image.src);
+    expect(images[1]).toHaveAttribute('src', inactiveMaps[1].image.src);
   });
 
-  it('renders the map identifiers', () => {
-    render(<RightRail maps={maps} activeSlug="locacion-1" />);
+  it('renders the map titles', () => {
+    render(<RightRail maps={mockMaps} activeSlug="locacion-1" />);
 
-    expect(screen.getByText('M2')).toBeInTheDocument();
-    expect(screen.getByText('M3')).toBeInTheDocument();
+    const inactiveMaps = mockMaps.filter((m) => m.slug !== 'locacion-1');
+    expect(screen.getByText(inactiveMaps[0].title)).toBeInTheDocument();
+    expect(screen.getByText(inactiveMaps[1].title)).toBeInTheDocument();
   });
 });

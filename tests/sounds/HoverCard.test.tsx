@@ -3,16 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
 import { HoverCard } from '../../src/features/sounds/ui/HoverCard';
-import type { Sound } from '../../src/features/sounds/domain/types';
+import { mockSounds } from '../../src/features/sounds/data/mock-sounds';
 
-const sound: Sound = {
-  id: 101,
-  title: 'Fuente central',
-  description: 'Murmullo constante del agua cayendo en la pileta principal.',
-  audioUrl: '/sounds/locacion-1/fuente-central.mp3',
-  position: { x: 608, y: 432 },
-  mapId: 1,
-};
+const sound = mockSounds[0];
 
 describe('HoverCard', () => {
   it('renders the sound title', () => {
