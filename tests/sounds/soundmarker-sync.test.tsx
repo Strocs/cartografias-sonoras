@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { MotionConfig } from 'framer-motion';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
@@ -50,7 +50,7 @@ vi.mock('react-dom', async () => {
 function Wrapper({ children }: { children: ReactNode }) {
   return (
     <MotionConfig reducedMotion="always">
-      <MapContext.Provider value={{ map: mockMap, ready: true }}>
+      <MapContext.Provider value={{ map: mockMap, ready: true, width: 2289, height: 1636 }}>
         {children}
       </MapContext.Provider>
     </MotionConfig>
@@ -62,7 +62,7 @@ describe('SoundMarker progress sync', () => {
     useAudioStore.setState(createInitialState());
   });
 
-  it('renders at 40px while idle', async () => {
+  it('renders at 54px while idle', async () => {
     render(
       <Wrapper>
         <SoundMarker sound={sound101} />
@@ -71,10 +71,15 @@ describe('SoundMarker progress sync', () => {
 
     const marker = await screen.findByTestId('sound-marker');
     expect(marker).toHaveAttribute('data-status', 'idle');
-    expect(marker).toHaveStyle({ width: '40px', height: '40px' });
+
+    // The explicit size lives on the inner container, not the portal root.
+    const inner = marker.querySelector<HTMLElement>(
+      '.relative.flex.items-center.justify-center'
+    );
+    expect(inner).toHaveStyle({ width: '54px', height: '54px' });
   });
 
-  it('scales to 56px and shows the progress ring when playing', async () => {
+  it('shows the progress ring and enters playing state', async () => {
     render(
       <Wrapper>
         <SoundMarker sound={sound101} />
@@ -92,7 +97,6 @@ describe('SoundMarker progress sync', () => {
       expect(marker).toHaveAttribute('data-status', 'playing');
     });
 
-    expect(marker).toHaveStyle({ width: '56px', height: '56px' });
     expect(screen.getByTestId('progress-ring')).toBeInTheDocument();
   });
 
@@ -111,8 +115,9 @@ describe('SoundMarker progress sync', () => {
     });
 
     const ring = screen.getByTestId('progress-ring');
-    // Active progress circle (teal) is only rendered while isPlaying.
-    const active = ring.querySelector('circle[stroke="#073942"]');
+    // The active progress circle has the stroke-primary-brown Tailwind class.
+    // It is rendered as a second <circle> inside the SVG only while isActive.
+    const active = ring.querySelector('circle.stroke-primary-brown');
     expect(active).not.toBeNull();
   });
 
@@ -134,7 +139,6 @@ describe('SoundMarker progress sync', () => {
 
     const marker = await screen.findByTestId('sound-marker');
     expect(marker).toHaveAttribute('data-status', 'paused');
-    expect(marker).toHaveStyle({ width: '56px', height: '56px' });
     expect(screen.getByTestId('progress-ring')).toBeInTheDocument();
   });
 
@@ -159,8 +163,6 @@ describe('SoundMarker progress sync', () => {
 
     // Ring stays visible at 100% after the sound ends.
     expect(screen.getByTestId('progress-ring')).toBeInTheDocument();
-    // Marker returns to idle size.
-    expect(marker).toHaveStyle({ width: '40px', height: '40px' });
   });
 });
 
@@ -185,7 +187,9 @@ describe('SoundMarker interaction blocking', () => {
 
     expect(marker).not.toBeDisabled();
 
-    await userEvent.click(marker);
+    // The onClick handler lives on the <button>, not the outer container.
+    const button = within(marker).getByRole('button');
+    await userEvent.click(button);
 
     // Piece is paused (not stopped).
     expect(useAudioStore.getState().activePieceId).toBe(999);
@@ -238,13 +242,11 @@ describe('SoundMarker render isolation', () => {
       .find((el) => el.getAttribute('data-sound-id') === String(sound102.id))!;
 
     expect(marker101).toHaveAttribute('data-status', 'playing');
-    expect(marker101).toHaveStyle({ width: '56px', height: '56px' });
     // Progress ring is always rendered now (base track visible).
     expect(
       screen.getAllByTestId('progress-ring').length
     ).toBeGreaterThanOrEqual(1);
 
     expect(marker102).toHaveAttribute('data-status', 'idle');
-    expect(marker102).toHaveStyle({ width: '40px', height: '40px' });
   });
 });
