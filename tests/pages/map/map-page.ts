@@ -6,7 +6,6 @@ import { BasePage } from '../base-page';
 export class MapPage extends BasePage {
   readonly heading: Locator;
   readonly viewport: Locator;
-  readonly backLink: Locator;
   readonly markers: Locator;
   readonly hoverCards: Locator;
   readonly mapControls: Locator;
@@ -16,21 +15,17 @@ export class MapPage extends BasePage {
   readonly rightRail: Locator;
   readonly railLinks: Locator;
   readonly pathSvg: Locator;
-  readonly waveDivider: Locator;
-  readonly subtitle: Locator;
-  readonly institutionalLogos: Locator;
+  readonly navTitle: Locator;
   readonly bottomPlayer: Locator;
   readonly bottomPlayPause: Locator;
   readonly bottomScrubber: Locator;
   readonly bottomTime: Locator;
   readonly bottomWave: Locator;
-  readonly soundPieceTrigger: Locator;
 
   constructor(page: Page) {
     super(page);
     this.heading = page.getByRole('heading');
     this.viewport = page.getByTestId('map-viewport');
-    this.backLink = page.getByRole('link', { name: 'Volver' });
     this.markers = page.getByTestId('sound-marker');
     this.hoverCards = page.getByTestId('hover-card');
     this.mapControls = page.getByTestId('map-controls');
@@ -40,15 +35,12 @@ export class MapPage extends BasePage {
     this.rightRail = page.getByTestId('right-rail');
     this.railLinks = page.getByTestId('right-rail').getByRole('link');
     this.pathSvg = page.locator('.leaflet-path-pane path');
-    this.waveDivider = page.locator('aside svg[viewBox="0 0 200 8"]');
-    this.subtitle = page.getByText('Paisaje Sonoro Urbano');
-    this.institutionalLogos = page.getByText('Instituciones');
+    this.navTitle = page.getByText('Cartografías Sensoriales').first();
     this.bottomPlayer = page.getByTestId('audio-bottom-player');
     this.bottomPlayPause = page.getByTestId('bottom-play-pause');
     this.bottomScrubber = page.getByTestId('bottom-scrubber');
     this.bottomTime = page.getByTestId('bottom-time');
     this.bottomWave = page.getByTestId('bottom-wave');
-    this.soundPieceTrigger = page.getByTestId('sound-piece-trigger');
   }
 
   async goto(slug: string): Promise<void> {

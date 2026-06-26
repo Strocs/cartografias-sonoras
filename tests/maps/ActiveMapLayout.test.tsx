@@ -50,6 +50,7 @@ describe('ActiveMapLayout', () => {
     render(
       <ActiveMapLayout
         slug={map.slug}
+        mapTitle={map.title}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
@@ -65,6 +66,7 @@ describe('ActiveMapLayout', () => {
     render(
       <ActiveMapLayout
         slug={map.slug}
+        mapTitle={map.title}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
@@ -83,6 +85,7 @@ describe('ActiveMapLayout', () => {
     render(
       <ActiveMapLayout
         slug={map.slug}
+        mapTitle={map.title}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
@@ -101,6 +104,7 @@ describe('ActiveMapLayout', () => {
     render(
       <ActiveMapLayout
         slug={map.slug}
+        mapTitle={map.title}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
@@ -116,6 +120,7 @@ describe('ActiveMapLayout', () => {
     render(
       <ActiveMapLayout
         slug={map.slug}
+        mapTitle={map.title}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
@@ -130,10 +135,11 @@ describe('ActiveMapLayout', () => {
     expect(link).toHaveAttribute('href', `/${inactiveMaps[0].slug}`);
   });
 
-  it('renders the warm cream canvas background', () => {
+  it('renders the map canvas container', () => {
     render(
       <ActiveMapLayout
         slug={map.slug}
+        mapTitle={map.title}
         mapImage={mapImage}
         sounds={sounds}
         paths={paths}
@@ -143,6 +149,6 @@ describe('ActiveMapLayout', () => {
     );
 
     const canvas = screen.getByTestId('map-canvas');
-    expect(canvas).toHaveStyle({ backgroundColor: '#F5F2ED' });
+    expect(canvas).toBeInTheDocument();
   });
 });

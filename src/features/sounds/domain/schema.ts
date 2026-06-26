@@ -13,6 +13,7 @@ export const soundSchema = z.object(
     id: z.number().int().positive(),
     title: z.string().min(1),
     description: z.string().min(1),
+    location: z.string(),
     audioUrl: z.string(),
     geoReferenceUrl: z.string().optional(),
     position: positionSchema,

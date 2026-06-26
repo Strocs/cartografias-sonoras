@@ -40,6 +40,7 @@ const validSound: Sound = {
   id: 100,
   title: 'Sonido Uno',
   description: 'Descripción del sonido',
+  location: 'Test Location',
   audioUrl: '/sonido-uno.mp3',
   position: { x: 50, y: 50 },
   mapId: 1,

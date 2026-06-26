@@ -86,7 +86,7 @@ describe('MapViewport', () => {
     expect(L.imageOverlay).toHaveBeenCalledWith('/maps/test.png', [
       [0, 0],
       [800, 1200],
-    ]);
+    ], { className: '' });
   });
 
   it('marks the container as ready after initialization', () => {

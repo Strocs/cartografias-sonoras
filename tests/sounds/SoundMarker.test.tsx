@@ -73,13 +73,13 @@ describe('SoundMarker', () => {
 
     const { default: L } = await import('leaflet');
 
-    // sound.position is percentage-based (x: 41.07, y: 10.39).
+    // sound 101 position is percentage-based (x: 77, y: 20).
     // relativeToPixel converts to pixels using the map dimensions above.
-    // Expected: pixelX = round((41.07/100)*2289) = 940, pixelY = round((10.39/100)*1636) = 170.
+    // Expected: pixelX = round((77/100)*2289) = 1763, pixelY = round((20/100)*1636) = 327.
     // Leaflet receives [lat, lng] = [pixelY, pixelX].
     await waitFor(() => {
       expect(L.marker).toHaveBeenCalledWith(
-        [170, 940],
+        [327, 1763],
         expect.any(Object)
       );
     });
