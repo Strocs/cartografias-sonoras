@@ -1,0 +1,44 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navigation from '../../shared/ui/Navigation.astro';
+import RightRail from './RightRail.astro';
+import { MapPage } from './MapPage.tsx';
+
+import type { Map } from '../../features/maps/domain/types';
+import type { Sound } from '../../features/sounds/domain/types';
+import type { Path } from '../../features/paths/domain/types';
+import type { SoundPiece } from '../../features/sound-pieces/domain/types';
+
+interface Props {
+  map: Map;
+  maps: Map[];
+  sounds: Sound[];
+  paths: Path[];
+  soundPiece?: SoundPiece | null;
+}
+
+const { map, maps, sounds, paths, soundPiece } = Astro.props;
+---
+
+<Layout title={map.title}>
+  <div class="flex h-screen">
+    <Navigation />
+    <main class="relative flex-1 overflow-hidden">
+      <div class="relative flex size-full">
+        <MapPage
+          client:only="react"
+          map={map}
+          sounds={sounds}
+          paths={paths}
+          soundPiece={soundPiece}
+        />
+        <RightRail maps={maps} activeSlug={map.slug} />
+        <h2
+          class="text-charcoal/60 absolute bottom-4 left-8 z-[1001] block text-3xl font-black uppercase"
+        >
+          {map.title}
+        </h2>
+      </div>
+    </main>
+  </div>
+</Layout>

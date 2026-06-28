@@ -1,17 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
-
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
-import { ActiveMapLayout } from '../../src/features/maps/ui/ActiveMapLayout';
+import { MapPage } from '../../src/views/map/MapPage';
 import { mockMaps } from '../../src/features/maps/data/mock-maps';
 import { mockSounds } from '../../src/features/sounds/data/mock-sounds';
 import { mockPaths } from '../../src/features/paths/data/mock-paths';
 
-vi.mock('../../src/shared/lib/viewport/MapViewport', () => ({
+vi.mock('@shared/lib/viewport', () => ({
   MapViewport: ({
     children,
-    className,
+    className
   }: {
     children: ReactNode;
     className?: string;
@@ -19,13 +18,13 @@ vi.mock('../../src/shared/lib/viewport/MapViewport', () => ({
     <div data-testid="mock-viewport" className={className}>
       {children}
     </div>
-  ),
+  )
 }));
 
 vi.mock('@views/sound-tour', () => ({
   SoundTour: ({
     sounds,
-    paths,
+    paths
   }: {
     sounds: { id: number }[];
     paths: unknown[];
@@ -36,27 +35,29 @@ vi.mock('@views/sound-tour', () => ({
         <div key={s.id} data-testid="sound-marker" data-sound-id={s.id} />
       ))}
     </>
-  ),
+  )
+}));
+
+vi.mock('@features/maps/ui/MapControls', () => ({
+  MapControls: () => <div data-testid="map-controls" />
+}));
+
+vi.mock('@features/sound-pieces/ui/AudioBottomPlayer', () => ({
+  AudioBottomPlayer: () => <div data-testid="audio-bottom-player" />
+}));
+
+vi.mock('@shared/lib/audio-engine', () => ({
+  AudioPool: () => <div data-testid="audio-pool" />
 }));
 
 const map = mockMaps[0];
-const mapImage = map.image;
 const sounds = mockSounds.filter((s) => s.mapId === map.id).slice(0, 2);
 const paths = mockPaths.filter((p) => p.mapId === map.id).slice(0, 1);
-const inactiveMaps = mockMaps.filter((m) => m.slug !== map.slug).slice(0, 1);
 
-describe('ActiveMapLayout', () => {
+describe('MapPage', () => {
   it('renders the viewport with the given image dimensions', () => {
     render(
-      <ActiveMapLayout
-        slug={map.slug}
-        mapTitle={map.title}
-        mapImage={mapImage}
-        sounds={sounds}
-        paths={paths}
-        inactiveMaps={inactiveMaps}
-        soundPiece={null}
-      />
+      <MapPage map={map} sounds={sounds} paths={paths} soundPiece={null} />
     );
 
     expect(screen.getByTestId('mock-viewport')).toHaveClass('size-full');
@@ -64,15 +65,7 @@ describe('ActiveMapLayout', () => {
 
   it('renders a sound marker for each sound', () => {
     render(
-      <ActiveMapLayout
-        slug={map.slug}
-        mapTitle={map.title}
-        mapImage={mapImage}
-        sounds={sounds}
-        paths={paths}
-        inactiveMaps={inactiveMaps}
-        soundPiece={null}
-      />
+      <MapPage map={map} sounds={sounds} paths={paths} soundPiece={null} />
     );
 
     const markers = screen.getAllByTestId('sound-marker');
@@ -83,15 +76,7 @@ describe('ActiveMapLayout', () => {
 
   it('renders path overlay with the provided paths', () => {
     render(
-      <ActiveMapLayout
-        slug={map.slug}
-        mapTitle={map.title}
-        mapImage={mapImage}
-        sounds={sounds}
-        paths={paths}
-        inactiveMaps={inactiveMaps}
-        soundPiece={null}
-      />
+      <MapPage map={map} sounds={sounds} paths={paths} soundPiece={null} />
     );
 
     expect(screen.getByTestId('path-overlay')).toHaveAttribute(
@@ -102,50 +87,31 @@ describe('ActiveMapLayout', () => {
 
   it('renders map controls', () => {
     render(
-      <ActiveMapLayout
-        slug={map.slug}
-        mapTitle={map.title}
-        mapImage={mapImage}
-        sounds={sounds}
-        paths={paths}
-        inactiveMaps={inactiveMaps}
-        soundPiece={null}
-      />
+      <MapPage map={map} sounds={sounds} paths={paths} soundPiece={null} />
     );
 
     expect(screen.getByTestId('map-controls')).toBeInTheDocument();
   });
 
-  it('renders the right rail with inactive maps', () => {
+  it('renders the audio pool', () => {
     render(
-      <ActiveMapLayout
-        slug={map.slug}
-        mapTitle={map.title}
-        mapImage={mapImage}
-        sounds={sounds}
-        paths={paths}
-        inactiveMaps={inactiveMaps}
-        soundPiece={null}
-      />
+      <MapPage map={map} sounds={sounds} paths={paths} soundPiece={null} />
     );
 
-    expect(screen.getByTestId('right-rail')).toBeInTheDocument();
-    expect(screen.getByText(inactiveMaps[0].title)).toBeInTheDocument();
-    const link = screen.getByRole('link', { name: new RegExp(inactiveMaps[0].title) });
-    expect(link).toHaveAttribute('href', `/${inactiveMaps[0].slug}`);
+    expect(screen.getByTestId('audio-pool')).toBeInTheDocument();
+  });
+
+  it('renders the bottom player', () => {
+    render(
+      <MapPage map={map} sounds={sounds} paths={paths} soundPiece={null} />
+    );
+
+    expect(screen.getByTestId('audio-bottom-player')).toBeInTheDocument();
   });
 
   it('renders the map canvas container', () => {
     render(
-      <ActiveMapLayout
-        slug={map.slug}
-        mapTitle={map.title}
-        mapImage={mapImage}
-        sounds={sounds}
-        paths={paths}
-        inactiveMaps={inactiveMaps}
-        soundPiece={null}
-      />
+      <MapPage map={map} sounds={sounds} paths={paths} soundPiece={null} />
     );
 
     const canvas = screen.getByTestId('map-canvas');

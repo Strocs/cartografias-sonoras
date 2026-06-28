@@ -12,6 +12,10 @@ import { AudioBottomPlayer } from '../../sound-pieces/ui/AudioBottomPlayer';
 import { MapControls } from './MapControls';
 import { RightRail } from './RightRail';
 
+/**
+ * @deprecated Use `src/views/map/MapPage.astro` instead.
+ * Kept temporarily to avoid breaking existing imports while the refactor rolls out.
+ */
 export interface ActiveMapLayoutProps {
   slug: string;
   mapTitle: string;
