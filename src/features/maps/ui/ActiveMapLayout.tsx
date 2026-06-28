@@ -63,11 +63,11 @@ export function ActiveMapLayout({
         </MapViewport>
         <AudioPool sounds={audioPoolSounds} soundPiece={audioPoolPiece} />
 
-        <div className="absolute right-8 bottom-4 left-8 z-[1001] flex items-center justify-between gap-8">
-          <h2 className="text-charcoal/60 block text-3xl font-black uppercase">
+        <div className="absolute inset-x-8 bottom-4 z-[1001] flex items-center justify-between gap-8">
+          <h2 className="block text-3xl font-black text-charcoal/60 uppercase">
             {mapTitle}
           </h2>
-          <AudioBottomPlayer mapImage={mapImage} soundPiece={soundPiece} />
+          <AudioBottomPlayer soundPiece={soundPiece} />
         </div>
       </div>
 

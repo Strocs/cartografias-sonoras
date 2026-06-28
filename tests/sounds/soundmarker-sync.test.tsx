@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
-import { MotionConfig } from 'framer-motion';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 
@@ -16,9 +15,6 @@ import { AUDIO_STATUS } from '../../src/shared/lib/audio-engine/types';
 
 const sound101 = mockSounds.find((s) => s.id === 101)!;
 const sound102 = mockSounds.find((s) => s.id === 102)!;
-
-const RING_RADIUS = 30;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 const mockMap = {
   createPane: vi.fn(),
@@ -49,11 +45,9 @@ vi.mock('react-dom', async () => {
 
 function Wrapper({ children }: { children: ReactNode }) {
   return (
-    <MotionConfig reducedMotion="always">
-      <MapContext.Provider value={{ map: mockMap, ready: true, width: 2289, height: 1636 }}>
-        {children}
-      </MapContext.Provider>
-    </MotionConfig>
+    <MapContext.Provider value={{ map: mockMap, ready: true, width: 2289, height: 1636 }}>
+      {children}
+    </MapContext.Provider>
   );
 }
 

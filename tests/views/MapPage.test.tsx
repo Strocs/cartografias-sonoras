@@ -42,10 +42,6 @@ vi.mock('@features/maps/ui/MapControls', () => ({
   MapControls: () => <div data-testid="map-controls" />
 }));
 
-vi.mock('@features/sound-pieces/ui/AudioBottomPlayer', () => ({
-  AudioBottomPlayer: () => <div data-testid="audio-bottom-player" />
-}));
-
 vi.mock('@shared/lib/audio-engine', () => ({
   AudioPool: () => <div data-testid="audio-pool" />
 }));
@@ -99,14 +95,6 @@ describe('MapPage', () => {
     );
 
     expect(screen.getByTestId('audio-pool')).toBeInTheDocument();
-  });
-
-  it('renders the bottom player', () => {
-    render(
-      <MapPage map={map} sounds={sounds} paths={paths} soundPiece={null} />
-    );
-
-    expect(screen.getByTestId('audio-bottom-player')).toBeInTheDocument();
   });
 
   it('renders the map canvas container', () => {

@@ -1,9 +1,8 @@
 'use client';
 
 import L from 'leaflet';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useTransform } from 'framer-motion';
 
 import { cn } from '@shared/utils/cn';
 import {
@@ -12,9 +11,9 @@ import {
   type AudioEngineState
 } from '@shared/lib/audio-engine';
 import { relativeToPixel } from '@shared/lib/coordinates';
+import { useSmoothProgressRing } from '@shared/lib/motion';
 import { useMap } from '@shared/lib/viewport/MapContext';
 import { useMountEffect } from '@shared/hooks/useMountEffect';
-import { useSmoothTimedValue } from '@shared/hooks/useSmoothTimedValue';
 
 import type { Sound } from '../domain/types';
 import { HoverCard } from './HoverCard';
@@ -28,6 +27,7 @@ export function SoundMarker({ sound }: SoundMarkerProps) {
   const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
     null
   );
+  const progressCircleRef = useRef<SVGCircleElement>(null);
 
   // Primitive selectors — Object.is comparison works natively, no useShallow needed.
   const status = useAudioStore(
@@ -65,11 +65,14 @@ export function SoundMarker({ sound }: SoundMarkerProps) {
   const isPaused = status === AUDIO_STATUS.PAUSED;
   const isActive = isPlaying || isPaused;
 
-  // Smooth progress ring: interpolates currentTime at 60fps between store updates.
-  const smoothTime = useSmoothTimedValue(currentTime, duration, isPlaying);
-  const dashoffset = useTransform(smoothTime, (t) => {
-    const pct = duration > 0 ? (t / duration) * 100 : 0;
-    return RING_CIRCUMFERENCE - (pct / 100) * RING_CIRCUMFERENCE;
+  // Smooth progress ring: interpolates currentTime at 60fps between store updates
+  // by writing strokeDashoffset directly to the SVG circle ref.
+  useSmoothProgressRing({
+    currentTime,
+    duration,
+    isPlaying,
+    circleRef: progressCircleRef,
+    circumference: RING_CIRCUMFERENCE
   });
 
   useMountEffect(() => {
@@ -142,22 +145,14 @@ export function SoundMarker({ sound }: SoundMarkerProps) {
       >
         {/* Playback Ripple Ring (when active) - Keeps the pulse of our project */}
         {isPlaying && (
-          <motion.div
+          <span
             id={`sound-ripple-${sound.id}`}
-            className="border-charcoal absolute rounded-full border-2 opacity-40"
+            className="absolute animate-marker-ripple rounded-full border-2 border-charcoal opacity-40"
             style={{
               width: `${SIZE + 22}px`,
               height: `${SIZE + 22}px`
             }}
-            animate={{
-              scale: [1, 1.25, 1.5, 2],
-              opacity: [0.6, 0.3, 0, 0]
-            }}
-            transition={{
-              duration: 2.0,
-              repeat: Infinity,
-              ease: 'easeOut'
-            }}
+            aria-hidden="true"
           />
         )}
 
@@ -187,9 +182,10 @@ export function SoundMarker({ sound }: SoundMarkerProps) {
               strokeWidth={RING_STROKE - 1}
               opacity="0.8"
             />
-            {/* Active progress — only while playing */}
+            {/* Active progress — only while active */}
             {isActive && (
-              <motion.circle
+              <circle
+                ref={progressCircleRef}
                 cx={CENTER}
                 cy={CENTER}
                 r={RING_RADIUS}
@@ -197,7 +193,7 @@ export function SoundMarker({ sound }: SoundMarkerProps) {
                 className="stroke-primary-brown"
                 strokeWidth={RING_STROKE}
                 strokeDasharray={RING_CIRCUMFERENCE}
-                style={{ strokeDashoffset: dashoffset }}
+                strokeDashoffset={RING_CIRCUMFERENCE}
                 strokeLinecap="round"
               />
             )}
@@ -223,29 +219,28 @@ export function SoundMarker({ sound }: SoundMarkerProps) {
                 height: `${SIZE - 18}px`
               }}
             >
-              <AnimatePresence mode="wait" initial={false}>
-                {isPlaying ? (
-                  <motion.span
-                    key="pause"
-                    initial={{ opacity: 0, scale: 0.6 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.6 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <PauseIcon />
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="play"
-                    initial={{ opacity: 0, scale: 0.6 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.6 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <PlayIcon />
-                  </motion.span>
+              <span
+                className={cn(
+                  'absolute inset-0 flex items-center justify-center transition-all duration-150',
+                  isPlaying
+                    ? 'pointer-events-none scale-60 opacity-0'
+                    : 'scale-100 opacity-100'
                 )}
-              </AnimatePresence>
+                aria-hidden={isPlaying}
+              >
+                <PlayIcon />
+              </span>
+              <span
+                className={cn(
+                  'absolute inset-0 flex items-center justify-center transition-all duration-150',
+                  isPlaying
+                    ? 'scale-100 opacity-100'
+                    : 'pointer-events-none scale-60 opacity-0'
+                )}
+                aria-hidden={!isPlaying}
+              >
+                <PauseIcon />
+              </span>
             </div>
           </button>
         </div>
