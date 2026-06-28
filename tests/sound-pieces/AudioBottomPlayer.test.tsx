@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MotionConfig } from 'framer-motion';
 import type { ReactNode } from 'react';
 
 import { AudioBottomPlayer } from '../../src/features/sound-pieces/ui/AudioBottomPlayer';
@@ -19,8 +20,12 @@ const SOUND_PIECE = {
   audioUrl: '/sound-pieces/piece.mp3',
 };
 
+const MAP_IMAGE = { src: '/maps/locacion-1.png', width: 100, height: 100 };
+
 function Wrapper({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  return (
+    <MotionConfig reducedMotion="always">{children}</MotionConfig>
+  );
 }
 
 describe('AudioBottomPlayer', () => {
@@ -32,7 +37,7 @@ describe('AudioBottomPlayer', () => {
   it('is always visible in idle state showing piece info', () => {
     render(
       <Wrapper>
-        <AudioBottomPlayer soundPiece={SOUND_PIECE} />
+        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
       </Wrapper>
     );
 
@@ -44,21 +49,10 @@ describe('AudioBottomPlayer', () => {
     expect(screen.getByTestId('bottom-play-pause')).toBeInTheDocument();
   });
 
-  it('uses the CSS slide-up entrance animation class', () => {
-    render(
-      <Wrapper>
-        <AudioBottomPlayer soundPiece={SOUND_PIECE} />
-      </Wrapper>
-    );
-
-    const player = screen.getByTestId('audio-bottom-player');
-    expect(player).toHaveClass('animate-slide-up');
-  });
-
   it('stays in idle mode even when individual sounds are active', async () => {
     render(
       <Wrapper>
-        <AudioBottomPlayer soundPiece={SOUND_PIECE} />
+        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
       </Wrapper>
     );
 
@@ -76,7 +70,7 @@ describe('AudioBottomPlayer', () => {
   it('toggles play/pause for the sound piece', async () => {
     render(
       <Wrapper>
-        <AudioBottomPlayer soundPiece={SOUND_PIECE} />
+        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
       </Wrapper>
     );
 
@@ -110,7 +104,7 @@ describe('AudioBottomPlayer', () => {
   it('shows elapsed and total time for the piece', async () => {
     render(
       <Wrapper>
-        <AudioBottomPlayer soundPiece={SOUND_PIECE} />
+        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
       </Wrapper>
     );
 
@@ -127,7 +121,7 @@ describe('AudioBottomPlayer', () => {
   it('updates volume from the slider', async () => {
     render(
       <Wrapper>
-        <AudioBottomPlayer soundPiece={SOUND_PIECE} />
+        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
       </Wrapper>
     );
 
@@ -142,7 +136,7 @@ describe('AudioBottomPlayer', () => {
   it('toggles mute when the mute button is clicked', async () => {
     render(
       <Wrapper>
-        <AudioBottomPlayer soundPiece={SOUND_PIECE} />
+        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
       </Wrapper>
     );
 
@@ -163,7 +157,7 @@ describe('AudioBottomPlayer', () => {
   it('appears in piece mode when a sound piece is playing', async () => {
     render(
       <Wrapper>
-        <AudioBottomPlayer soundPiece={SOUND_PIECE} />
+        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
       </Wrapper>
     );
 
@@ -181,7 +175,7 @@ describe('AudioBottomPlayer', () => {
   it('seeks the piece when the scrubber is changed in piece mode', async () => {
     render(
       <Wrapper>
-        <AudioBottomPlayer soundPiece={SOUND_PIECE} />
+        <AudioBottomPlayer mapImage={MAP_IMAGE} soundPiece={SOUND_PIECE} />
       </Wrapper>
     );
 
@@ -200,3 +194,4 @@ describe('AudioBottomPlayer', () => {
     });
   });
 });
+
