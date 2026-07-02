@@ -5,13 +5,13 @@ import { lighthouseTest } from './lighthouse-fixture';
  * Lighthouse thresholds.
  *
  * Accessibility, best-practices, and SEO are set high — static Astro pages
- * consistently hit 99-100. Performance is set to 50 because the dev server
- * and unoptimized 3MB PNG map assets prevent higher scores. Production
- * images should be converted to WebP/AVIF and resized before raising this.
+ * consistently hit 99-100. Performance is raised to 95 after image
+ * optimization: map card images are now served as WebP/AVIF with srcset,
+ * lazy-loaded below the fold, and processed by Sharp.
  */
 // TODO(PR-4): Raise performance threshold to ≥95 after image optimization.
 const THRESHOLDS = {
-  performance: 50,
+  performance: 95,
   accessibility: 95,
   'best-practices': 95,
   seo: 95,

@@ -6,6 +6,11 @@ export default defineConfig({
   site: 'https://cartografias-sonoras.example.com',
   output: 'static',
   integrations: [react()],
+  image: {
+    service: {
+      entrypoint: 'astro/assets/services/sharp',
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
   },
