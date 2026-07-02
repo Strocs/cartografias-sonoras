@@ -9,6 +9,7 @@ import { lighthouseTest } from './lighthouse-fixture';
  * and unoptimized 3MB PNG map assets prevent higher scores. Production
  * images should be converted to WebP/AVIF and resized before raising this.
  */
+// TODO(PR-4): Raise performance threshold to ≥95 after image optimization.
 const THRESHOLDS = {
   performance: 50,
   accessibility: 95,

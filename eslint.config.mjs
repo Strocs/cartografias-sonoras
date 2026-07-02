@@ -37,6 +37,11 @@ export default defineConfig([
               group: ['@features/*'],
               message:
                 'Features cannot import from other features. Use @shared instead.'
+            },
+            {
+              group: ['../sounds/**', '../paths/**', '../sound-pieces/**'],
+              message:
+                'Features cannot import from sibling features via relative paths. Use @shared instead.'
             }
           ]
         }

@@ -24,4 +24,9 @@ export default defineConfig({
       workers: 1,
     },
   ],
+  webServer: {
+    command: 'pnpm dev',
+    port: 4321,
+    reuseExistingServer: !process.env.CI,
+  },
 });

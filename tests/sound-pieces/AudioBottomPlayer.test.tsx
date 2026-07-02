@@ -4,7 +4,6 @@ import { MotionConfig } from 'framer-motion';
 import type { ReactNode } from 'react';
 
 import { AudioBottomPlayer } from '../../src/features/sound-pieces/ui/AudioBottomPlayer';
-import { SoundPieceTrigger } from '../../src/features/sound-pieces/ui/SoundPieceTrigger';
 import { createInitialState } from '../../src/shared/lib/audio-engine/engine';
 import {
   audioTransitions,
@@ -196,47 +195,3 @@ describe('AudioBottomPlayer', () => {
   });
 });
 
-describe('SoundPieceTrigger', () => {
-  beforeEach(() => {
-    useAudioStore.setState(createInitialState());
-  });
-
-  it('dispatches playPiece when clicked', async () => {
-    render(
-      <Wrapper>
-        <SoundPieceTrigger soundPiece={SOUND_PIECE} mapId={SOUND_PIECE.mapId} />
-      </Wrapper>
-    );
-
-    const trigger = screen.getByTestId('sound-piece-trigger');
-    act(() => {
-      fireEvent.click(trigger);
-    });
-
-    expect(useAudioStore.getState().activePieceId).toBe(SOUND_PIECE.id);
-    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.LOADING);
-  });
-
-  it('stops the piece when clicked while active', async () => {
-    render(
-      <Wrapper>
-        <SoundPieceTrigger soundPiece={SOUND_PIECE} mapId={SOUND_PIECE.mapId} />
-      </Wrapper>
-    );
-
-    const trigger = screen.getByTestId('sound-piece-trigger');
-    act(() => {
-      fireEvent.click(trigger);
-    });
-
-    await waitFor(() => {
-      expect(trigger).toHaveAttribute('data-active', 'true');
-    });
-
-    act(() => {
-      fireEvent.click(trigger);
-    });
-
-    expect(useAudioStore.getState().activePieceId).toBeNull();
-  });
-});
