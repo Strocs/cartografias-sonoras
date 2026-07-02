@@ -6,9 +6,11 @@ import userEvent from '@testing-library/user-event';
 import { MapControls } from '../../src/features/maps/ui/MapControls';
 import { MapContext } from '../../src/shared/lib/viewport/MapContext';
 
+const defaultContext = { width: 0, height: 0, ready: true };
+
 function setup(map: Partial<L.Map>) {
   return render(
-    <MapContext.Provider value={{ map: map as L.Map, ready: true }}>
+    <MapContext.Provider value={{ ...defaultContext, map: map as L.Map }}>
       <MapControls bounds={[
         [0, 0],
         [100, 100],
@@ -47,7 +49,7 @@ describe('MapControls', () => {
     ];
 
     render(
-      <MapContext.Provider value={{ map, ready: true }}>
+      <MapContext.Provider value={{ ...defaultContext, map }}>
         <MapControls bounds={bounds} />
       </MapContext.Provider>
     );
@@ -63,7 +65,7 @@ describe('MapControls', () => {
     const map = { fitBounds } as unknown as L.Map;
 
     render(
-      <MapContext.Provider value={{ map, ready: true }}>
+      <MapContext.Provider value={{ ...defaultContext, map }}>
         <MapControls />
       </MapContext.Provider>
     );

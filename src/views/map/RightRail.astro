@@ -1,0 +1,57 @@
+---
+import type { Map } from '../../features/maps/domain/types';
+
+interface Props {
+  maps: Map[];
+  activeSlug: string;
+}
+
+const { maps, activeSlug } = Astro.props;
+const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
+---
+
+<aside class="h-full w-28 py-4 pr-4 md:w-36" data-testid="right-rail">
+  <div class="flex h-full flex-col gap-4">
+    {
+      inactiveMaps.map((map) => (
+        <a
+          href={`/${map.slug}`}
+          class="group border-secondary-sand/60 relative flex flex-1 flex-col overflow-hidden rounded-xl border shadow-lg"
+          data-rail-card
+        >
+          <div class="absolute inset-0 z-10 flex items-center justify-center p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100" data-rail-title>
+            <span class="text-secondary-sand block text-center text-lg leading-none font-bold tracking-wide uppercase">
+              {map.title}
+            </span>
+          </div>
+          <img
+            src={map.image.src}
+            alt={map.title}
+            class="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="eager"
+            width={map.image.width}
+            height={map.image.height}
+            data-rail-image
+          />
+        </a>
+      ))
+    }
+  </div>
+</aside>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-rail-card]').forEach((card) => {
+    const image = card.querySelector<HTMLElement>('[data-rail-image]');
+    const title = card.querySelector<HTMLElement>('[data-rail-title]');
+
+    card.addEventListener('mouseenter', () => {
+      if (image) image.style.transform = 'scale(1.02)';
+      if (title) title.style.opacity = '1';
+    });
+
+    card.addEventListener('mouseleave', () => {
+      if (image) image.style.transform = '';
+      if (title) title.style.opacity = '';
+    });
+  });
+</script>
