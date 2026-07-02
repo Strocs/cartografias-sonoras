@@ -43,13 +43,25 @@ const mapForClient = {
     <Navigation />
     <main class="relative flex-1 overflow-hidden">
       <div class="relative flex size-full">
-        <MapPage
-          client:only="react"
-          map={mapForClient}
-          sounds={sounds}
-          paths={paths}
-          soundPiece={soundPiece}
-        />
+        <!-- Map area wrapper: flex-1 prevents the RightRail from shifting
+             left while the client:only MapPage island is loading. -->
+        <div class="map-wrapper relative flex-1">
+          <!-- Skeleton loader: absolutely positioned placeholder that fades
+               out via CSS once Leaflet renders its .leaflet-container. -->
+          <div class="map-skeleton pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-canvas transition-opacity duration-300">
+            <div class="animate-pulse flex h-3/5 w-4/5 flex-col items-center justify-center gap-4 rounded-xl bg-charcoal/5">
+              <div class="h-4 w-48 rounded bg-charcoal/10"></div>
+              <div class="h-3 w-32 rounded bg-charcoal/8"></div>
+            </div>
+          </div>
+          <MapPage
+            client:only="react"
+            map={mapForClient}
+            sounds={sounds}
+            paths={paths}
+            soundPiece={soundPiece}
+          />
+        </div>
         <RightRail maps={maps} activeSlug={map.slug} />
         <h2
           class="text-charcoal/60 absolute bottom-4 left-8 z-[1001] block text-3xl font-black uppercase"
@@ -64,3 +76,11 @@ const mapForClient = {
     </main>
   </div>
 </Layout>
+
+<style is:inline>
+  /* Fade out the skeleton loader once Leaflet initializes the map.
+     .leaflet-container is created by L.map() inside MapViewport. */
+  .map-wrapper:has(.leaflet-container) .map-skeleton {
+    opacity: 0;
+  }
+</style>

@@ -2,16 +2,27 @@ import { playAudit } from 'playwright-lighthouse';
 import { lighthouseTest } from './lighthouse-fixture';
 
 /**
- * Lighthouse thresholds.
+ * Lighthouse thresholds for static content pages.
  *
- * Accessibility, best-practices, and SEO are set high — static Astro pages
- * consistently hit 99-100. Performance is raised to 95 after image
- * optimization: map card images are now served as WebP/AVIF with srcset,
- * lazy-loaded below the fold, and processed by Sharp.
+ * Home, proyecto, equipo, and datos are pure Astro pages with minimal JS.
+ * They consistently score 95+ across all categories with optimized images.
  */
-// TODO(PR-4): Raise performance threshold to ≥95 after image optimization.
-const THRESHOLDS = {
+const STATIC_THRESHOLDS = {
   performance: 95,
+  accessibility: 95,
+  'best-practices': 95,
+  seo: 95,
+};
+
+/**
+ * Relaxed thresholds for interactive map pages.
+ *
+ * Map pages load Leaflet (~100 KB JS), React islands, audio engine, and
+ * multiple SoundMarkers. A performance score of 80 is the realistic target;
+ * the remaining categories stay at 95.
+ */
+const MAP_THRESHOLDS = {
+  performance: 80,
   accessibility: 95,
   'best-practices': 95,
   seo: 95,
@@ -30,7 +41,7 @@ lighthouseTest.describe('Lighthouse audits', () => {
     await playAudit({
       page,
       port,
-      thresholds: THRESHOLDS,
+      thresholds: STATIC_THRESHOLDS,
       reports: {
         formats: { html: true, json: true },
         name: 'home',
@@ -46,7 +57,7 @@ lighthouseTest.describe('Lighthouse audits', () => {
     await playAudit({
       page,
       port,
-      thresholds: THRESHOLDS,
+      thresholds: STATIC_THRESHOLDS,
       reports: {
         formats: { html: true },
         name: 'proyecto',
@@ -62,7 +73,7 @@ lighthouseTest.describe('Lighthouse audits', () => {
     await playAudit({
       page,
       port,
-      thresholds: THRESHOLDS,
+      thresholds: STATIC_THRESHOLDS,
       reports: {
         formats: { html: true },
         name: 'equipo',
@@ -78,10 +89,26 @@ lighthouseTest.describe('Lighthouse audits', () => {
     await playAudit({
       page,
       port,
-      thresholds: THRESHOLDS,
+      thresholds: STATIC_THRESHOLDS,
       reports: {
         formats: { html: true },
         name: 'datos',
+        directory: REPORT_DIR,
+      },
+    });
+  });
+
+  lighthouseTest('map page', { tag: ['@perf', '@map'] }, async ({ page, port }) => {
+    await page.goto('/avenida-de-aguirre-la-serena');
+    await page.waitForLoadState('networkidle');
+
+    await playAudit({
+      page,
+      port,
+      thresholds: MAP_THRESHOLDS,
+      reports: {
+        formats: { html: true },
+        name: 'map',
         directory: REPORT_DIR,
       },
     });
