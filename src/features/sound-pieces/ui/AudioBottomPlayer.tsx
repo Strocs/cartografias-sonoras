@@ -1,8 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
-import { motion } from 'framer-motion';
-
 import { cn } from '@shared/utils/cn';
 import { VolumeControl } from '@shared/ui/VolumeControl';
 import {
@@ -15,7 +12,6 @@ import {
 import type { SoundPiece } from '../domain/types';
 
 export interface AudioBottomPlayerProps {
-  mapImage?: { src: string; width?: number; height?: number };
   soundPiece?: SoundPiece | null;
 }
 
@@ -38,7 +34,6 @@ function selectIsPiecePlaying(state: AudioEngineState): boolean {
 }
 
 export function AudioBottomPlayer({
-  mapImage,
   soundPiece
 }: AudioBottomPlayerProps) {
   const isPieceMode = useAudioStore(selectIsPieceMode);
@@ -57,10 +52,8 @@ export function AudioBottomPlayer({
 
   const isIdle = !isPieceMode;
 
-  const progress = useMemo(() => {
-    if (pieceDuration <= 0) return 0;
-    return Math.min(1, Math.max(0, pieceCurrentTime / pieceDuration));
-  }, [pieceCurrentTime, pieceDuration]);
+  const progress =
+    pieceDuration <= 0 ? 0 : Math.min(1, Math.max(0, pieceCurrentTime / pieceDuration));
 
   const handlePlayPause = () => {
     if (isIdle && soundPiece) {
@@ -89,14 +82,10 @@ export function AudioBottomPlayer({
   const subtitle = soundPiece?.author ?? '';
 
   return (
-    <motion.div
-      key="audio-bottom-player"
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+    <div
       className={cn(
-        'w-full rounded-3xl shadow-lg',
-        'bg-primary-teal border-charcoal max-w-2xl border text-white shadow-2xl'
+        'w-full animate-slide-up rounded-3xl shadow-lg',
+        'max-w-2xl border border-charcoal bg-primary-teal text-white shadow-2xl'
       )}
       data-testid="audio-bottom-player"
       data-mode={isIdle ? 'idle' : 'piece'}
@@ -107,7 +96,7 @@ export function AudioBottomPlayer({
           onClick={handlePlayPause}
           className={cn(
             'flex shrink-0 items-center justify-center rounded-full',
-            'text-primary-teal size-10 bg-white transition-transform',
+            'size-10 bg-white text-primary-teal transition-transform',
             'hover:scale-105 active:scale-95',
             'focus:ring-2 focus:ring-white/50 focus:outline-none'
           )}
@@ -149,7 +138,7 @@ export function AudioBottomPlayer({
           onVolumeChange={handleVolume}
         />
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -171,7 +160,7 @@ function Scrubber({ progress, disabled, onChange }: ScrubberProps) {
       disabled={disabled}
       className={cn(
         'h-1.5 w-full cursor-pointer appearance-none rounded-full',
-        'accent-secondary-sand bg-white/20',
+        'bg-white/20 accent-secondary-sand',
         disabled && 'cursor-default opacity-60'
       )}
       aria-label="Progreso de reproducción"
@@ -219,8 +208,8 @@ function WaveVisualizer({ active }: WaveVisualizerProps) {
         <span
           key={index}
           className={cn(
-            'bg-secondary-sand w-1 origin-bottom rounded-full',
-            'animate-soundwave h-4'
+            'w-1 origin-bottom rounded-full bg-secondary-sand',
+            'h-4 animate-soundwave'
           )}
           style={{
             animationDelay: `${index * 100}ms`,

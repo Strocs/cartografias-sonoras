@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import Navigation from '../../shared/ui/Navigation.astro';
 import RightRail from './RightRail.astro';
 import { MapPage } from './MapPage.tsx';
+import { AudioBottomPlayer } from '../../features/sound-pieces/ui/AudioBottomPlayer.tsx';
 
 import type { Map } from '../../features/maps/domain/types';
 import type { Sound } from '../../features/sounds/domain/types';
@@ -38,6 +39,10 @@ const { map, maps, sounds, paths, soundPiece } = Astro.props;
         >
           {map.title}
         </h2>
+      </div>
+
+      <div class="absolute right-8 bottom-4 z-[1001]">
+        <AudioBottomPlayer client:idle soundPiece={soundPiece} />
       </div>
     </main>
   </div>

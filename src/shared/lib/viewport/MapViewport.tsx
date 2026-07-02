@@ -2,7 +2,6 @@
 
 import L from 'leaflet';
 import {
-  useCallback,
   useImperativeHandle,
   useRef,
   useState,
@@ -39,66 +38,55 @@ export function MapViewport({
   const [mapState, setMapState] = useState<L.Map | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  const initContainer = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (node === null || mapRef.current !== null) {
-        return;
-      }
+  function initContainer(node: HTMLDivElement | null) {
+    if (node === null || mapRef.current !== null) {
+      return;
+    }
 
-      const bounds: L.LatLngBoundsExpression = [
-        [0, 0],
-        [height, width]
-      ];
+    const bounds: L.LatLngBoundsExpression = [
+      [0, 0],
+      [height, width]
+    ];
 
-      const map = L.map(node, {
-        crs: L.CRS.Simple,
-        minZoom: config?.minZoom ?? -1,
-        maxZoom: config?.maxZoom ?? 2,
-        zoomSnap: 0,
-        zoomDelta: 0.5,
-        maxBounds: bounds,
-        maxBoundsViscosity: 0.8,
-        wheelPxPerZoomLevel: 100,
-        wheelDebounceTime: 0,
-        zoomControl: config?.zoomControl ?? false,
-        attributionControl: config?.attributionControl ?? false
-      });
+    const map = L.map(node, {
+      crs: L.CRS.Simple,
+      minZoom: config?.minZoom ?? -1,
+      maxZoom: config?.maxZoom ?? 2,
+      zoomSnap: 0,
+      zoomDelta: 0.5,
+      maxBounds: bounds,
+      maxBoundsViscosity: 0.8,
+      wheelPxPerZoomLevel: 100,
+      wheelDebounceTime: 0,
+      zoomControl: config?.zoomControl ?? false,
+      attributionControl: config?.attributionControl ?? false
+    });
 
-      map.createPane('pathPane');
-      map.getPane('pathPane')?.style.setProperty('z-index', '350');
+    map.createPane('pathPane');
+    map.getPane('pathPane')?.style.setProperty('z-index', '350');
 
-      L.imageOverlay(imageUrl, bounds, { className: '' }).addTo(map);
-      map.fitBounds(bounds);
+    L.imageOverlay(imageUrl, bounds, { className: '' }).addTo(map);
+    map.fitBounds(bounds);
 
-      const container = node;
-      function updateZoomAttribute() {
-        container.setAttribute('data-zoom', String(map.getZoom()));
-      }
-      map.on('zoomend', updateZoomAttribute);
-      updateZoomAttribute();
+    const container = node;
+    function updateZoomAttribute() {
+      container.setAttribute('data-zoom', String(map.getZoom()));
+    }
+    map.on('zoomend', updateZoomAttribute);
+    updateZoomAttribute();
 
-      mapRef.current = map;
-      setMapState(map);
-      setIsReady(true);
+    mapRef.current = map;
+    setMapState(map);
+    setIsReady(true);
 
-      return () => {
-        map.off('zoomend', updateZoomAttribute);
-        map.remove();
-        mapRef.current = null;
-        setMapState(null);
-        setIsReady(false);
-      };
-    },
-    [
-      imageUrl,
-      width,
-      height,
-      config?.minZoom,
-      config?.maxZoom,
-      config?.zoomControl,
-      config?.attributionControl
-    ]
-  );
+    return () => {
+      map.off('zoomend', updateZoomAttribute);
+      map.remove();
+      mapRef.current = null;
+      setMapState(null);
+      setIsReady(false);
+    };
+  }
 
   useImperativeHandle(ref, () => ({
     getMap: () => mapRef.current,
