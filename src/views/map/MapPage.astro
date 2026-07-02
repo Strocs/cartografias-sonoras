@@ -43,9 +43,10 @@ const mapForClient = {
     <Navigation />
     <main class="relative flex-1 overflow-hidden">
       <div class="relative flex size-full">
-        <!-- Map area wrapper: flex-1 prevents the RightRail from shifting
-             left while the client:only MapPage island is loading. -->
-        <div class="map-wrapper relative flex-1">
+        <!-- Map area wrapper: flex-1 keeps the RightRail in place during
+             SSR loading. flex + flex-col passes height constraints down
+             through the client:only island's display:contents boundary. -->
+        <div class="map-wrapper relative flex flex-1 flex-col">
           <!-- Skeleton loader: absolutely positioned placeholder that fades
                out via CSS once Leaflet renders its .leaflet-container. -->
           <div class="map-skeleton pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-canvas transition-opacity duration-300">
