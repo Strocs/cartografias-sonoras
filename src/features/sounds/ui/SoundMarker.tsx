@@ -80,25 +80,39 @@ export function SoundMarker({ sound }: SoundMarkerProps) {
       return;
     }
 
+    let cancelled = false;
     const container = document.createElement('div');
+    let marker: L.Marker | null = null;
 
-    const icon = L.divIcon({
-      html: container,
-      className: '',
-      iconSize: [SIZE, SIZE],
-      iconAnchor: [CENTER, CENTER]
+    // Defer marker creation until the Leaflet map has fully initialized its
+    // panes. Calling addTo() before the markerPane exists causes _initIcon
+    // to crash with "Cannot read properties of undefined (reading 'appendChild')".
+    map.whenReady(() => {
+      if (cancelled) {
+        return;
+      }
+
+      const icon = L.divIcon({
+        html: container,
+        className: '',
+        iconSize: [SIZE, SIZE],
+        iconAnchor: [CENTER, CENTER]
+      });
+
+      const pixel = relativeToPixel(sound.position, width, height);
+      marker = L.marker([pixel.y, pixel.x], {
+        icon,
+        keyboard: false
+      }).addTo(map);
+
+      setPortalContainer(container);
     });
 
-    const pixel = relativeToPixel(sound.position, width, height);
-    const marker = L.marker([pixel.y, pixel.x], {
-      icon,
-      keyboard: false
-    }).addTo(map);
-
-    setPortalContainer(container);
-
     return () => {
-      marker.remove();
+      cancelled = true;
+      if (marker) {
+        marker.remove();
+      }
       container.remove();
       setPortalContainer(null);
     };

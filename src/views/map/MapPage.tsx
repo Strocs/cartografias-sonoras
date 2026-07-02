@@ -5,13 +5,25 @@ import { MapViewport } from '@shared/lib/viewport';
 import { SoundTour } from '@views/sound-tour';
 import { MapControls } from '@features/maps/ui/MapControls';
 
-import type { Map } from '@features/maps/domain/types';
 import type { Sound } from '@features/sounds/domain/types';
 import type { Path } from '@features/paths/domain/types';
 import type { SoundPiece } from '@features/sound-pieces/domain/types';
 
+/** Sanitized map shape for client islands — only plain-serializable fields. */
+interface SerializableMap {
+  id: number;
+  slug: string;
+  title: string;
+  image: {
+    src: string;
+    width: number;
+    height: number;
+  };
+  soundPieceId: number;
+}
+
 export interface MapPageProps {
-  map: Map;
+  map: SerializableMap;
   sounds: Sound[];
   paths: Path[];
   soundPiece?: SoundPiece | null;

@@ -2,6 +2,7 @@
 
 import L from 'leaflet';
 import {
+  useCallback,
   useImperativeHandle,
   useRef,
   useState,
@@ -38,7 +39,11 @@ export function MapViewport({
   const [mapState, setMapState] = useState<L.Map | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  function initContainer(node: HTMLDivElement | null) {
+  // Ref callbacks MUST have stable identity across renders — otherwise React
+  // detaches and re-attaches on every render, triggering an infinite setState
+  // loop. This is the one exception to the React 19 no-manual-memoization rule.
+  const initContainer = useCallback(
+    (node: HTMLDivElement | null) => {
     if (node === null || mapRef.current !== null) {
       return;
     }
@@ -86,7 +91,7 @@ export function MapViewport({
       setMapState(null);
       setIsReady(false);
     };
-  }
+  }, [height, width, config]);
 
   useImperativeHandle(ref, () => ({
     getMap: () => mapRef.current,

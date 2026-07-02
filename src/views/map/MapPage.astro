@@ -19,6 +19,23 @@ interface Props {
 }
 
 const { map, maps, sounds, paths, soundPiece } = Astro.props;
+
+// Sanitize: strip non-serializable ImageMetadata before passing to client:only.
+// The `asset` field (Astro ImageMetadata) contains Vite-internal references
+// that cannot be serialized by Astro's devalue serializer. Passing it to a
+// client:only island corrupts the entire props payload, causing the React
+// component to receive malformed data and render nothing.
+const mapForClient = {
+  id: map.id,
+  slug: map.slug,
+  title: map.title,
+  image: {
+    src: map.image.src,
+    width: map.image.width,
+    height: map.image.height,
+  },
+  soundPieceId: map.soundPieceId,
+};
 ---
 
 <Layout title={map.title}>
@@ -28,7 +45,7 @@ const { map, maps, sounds, paths, soundPiece } = Astro.props;
       <div class="relative flex size-full">
         <MapPage
           client:only="react"
-          map={map}
+          map={mapForClient}
           sounds={sounds}
           paths={paths}
           soundPiece={soundPiece}

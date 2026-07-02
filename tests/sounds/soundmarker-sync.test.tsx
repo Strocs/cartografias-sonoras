@@ -19,6 +19,7 @@ const sound102 = mockSounds.find((s) => s.id === 102)!;
 const mockMap = {
   createPane: vi.fn(),
   getPane: vi.fn(),
+  whenReady: vi.fn((cb: () => void) => cb()),
 } as unknown as L.Map;
 
 const mockMarker = {
