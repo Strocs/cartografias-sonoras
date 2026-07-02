@@ -16,10 +16,10 @@ The progress ring MUST reflect real `currentTime / duration` from the store. The
 
 ### Requirement: Marker Visual States
 
-The marker MUST animate between idle, playing, and paused states using Motion.
+The marker MUST animate between idle, playing, and paused states using CSS transitions.
 
 | Scenario | GIVEN | WHEN | THEN |
 |----------|-------|------|------|
-| Idle → playing | marker is idle | user clicks | marker scales up (56px), progress ring appears, icon → pause |
-| Playing → paused | marker is playing | user clicks | marker stays 56px, ring holds position, icon → play |
-| Paused → playing | marker is paused | user clicks | ring resumes advancing, icon → pause |
+| Idle to playing | marker is idle | user clicks | marker scales to 56px via CSS transition; progress ring appears; icon changes to pause |
+| Playing to paused | marker is playing | user clicks | marker stays 56px; ring holds; icon changes to play via CSS transition |
+| Paused to playing | marker is paused | user clicks | ring resumes; icon changes to pause via CSS transition |

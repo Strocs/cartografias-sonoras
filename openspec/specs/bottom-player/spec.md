@@ -6,12 +6,12 @@
 
 ### Requirement: Persistent Bottom Bar
 
-The system MUST render a fixed bottom bar when ANY audio is active (piece or sound). The bar MUST NOT render when all audio is idle. Background: teal `#073942`, border: bronze `#C2A576/30`, rounded-3xl.
+The system MUST render a fixed bottom bar when ANY audio is active. The bar MUST NOT render when all audio is idle. Background: teal `#073942`, border: bronze `#C2A576/30`, rounded-3xl. Entry/exit animations MUST use CSS transitions.
 
 | Scenario | GIVEN | WHEN | THEN |
 |----------|-------|------|------|
-| Bar appears | no audio active | user plays a sound | bottom bar animates in (Motion) |
-| Bar hides | sound is playing | user stops last sound | bottom bar animates out |
+| Bar appears | no audio active | user plays a sound | bottom bar slides in via CSS transition |
+| Bar hides | sound is playing | user stops last sound | bottom bar slides out via CSS transition |
 | Piece mode | piece is playing | bar renders | shows piece title, author, map thumbnail |
 
 ### Requirement: Playback Controls
