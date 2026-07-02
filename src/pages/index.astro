@@ -13,7 +13,15 @@ const title = 'Cartografías Sensoriales';
     <main class="flex-1 p-4 md:p-4">
       <section aria-label="Cartografías" class="">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {mockMaps.map((map) => <MapCard map={map} />)}
+          {mockMaps.map((map, index) => {
+            const isAboveFold = index < 2;
+            return (
+              <MapCard
+                map={map}
+                loading={isAboveFold ? 'eager' : 'lazy'}
+              />
+            );
+          })}
         </div>
       </section>
     </main>

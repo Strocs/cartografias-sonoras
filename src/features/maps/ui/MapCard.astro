@@ -1,11 +1,17 @@
 ---
+import { Picture } from 'astro:assets';
+
 import type { Map } from '../domain/types';
 
 interface Props {
   map: Map;
+  loading?: 'eager' | 'lazy';
 }
 
-const { map } = Astro.props;
+const { map, loading = 'lazy' } = Astro.props;
+
+const widths = [400, 800, 1200];
+const sizes = '(max-width: 767px) 50vw, 33vw';
 ---
 
 <a
@@ -18,12 +24,31 @@ const { map } = Astro.props;
   >
     {map.title}
   </h2>
-  <img
-    src={map.image.src}
-    alt={map.title}
-    class="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
-    loading="eager"
-    width={map.image.width}
-    height={map.image.height}
-  />
+  {
+    map.image.asset ? (
+      <Picture
+        src={map.image.asset}
+        formats={['avif', 'webp']}
+        fallbackFormat="png"
+        widths={widths}
+        sizes={sizes}
+        alt={map.title}
+        loading={loading}
+        width={map.image.width}
+        height={map.image.height}
+        class="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
+        {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
+      />
+    ) : (
+      <img
+        src={map.image.src}
+        alt={map.title}
+        class="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
+        loading={loading}
+        width={map.image.width}
+        height={map.image.height}
+        {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
+      />
+    )
+  }
 </a>

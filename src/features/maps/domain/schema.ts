@@ -5,6 +5,15 @@ export const mapImageSchema = z.object(
     src: z.string(),
     width: z.number().int().positive(),
     height: z.number().int().positive(),
+    asset: z.custom<import('astro').ImageMetadata>((value) =>
+      value === undefined || (
+        typeof value === 'object' &&
+        value !== null &&
+        'src' in value &&
+        'width' in value &&
+        'height' in value
+      )
+    ).optional(),
   },
   { error: 'Invalid map image' }
 );

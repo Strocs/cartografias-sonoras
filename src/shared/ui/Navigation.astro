@@ -1,4 +1,10 @@
 ---
+import { Picture } from 'astro:assets';
+
+import anidLogo from '../../assets/logos/anid.png';
+import innovaLogo from '../../assets/logos/innova.png';
+import arqulsLogo from '../../assets/logos/arquls.png';
+
 const currentPath = Astro.url.pathname;
 
 const navItems = [
@@ -130,9 +136,27 @@ const navItems = [
       </div>
       <div class="border-secondary-sand/20 border-t pt-4">
         <div class="mx-auto flex w-full max-w-32 flex-col items-center gap-1">
-          <img class="aspect-auto w-full" src="/logos/anid.png" />
-          <img class="aspect-auto invert" src="/logos/innova.png" />
-          <img class="aspect-auto w-25" src="/logos/arquls.png" />
+          <Picture
+            src={anidLogo}
+            formats={['avif', 'webp']}
+            fallbackFormat="png"
+            alt="ANID"
+            class="aspect-auto w-full"
+          />
+          <Picture
+            src={innovaLogo}
+            formats={['avif', 'webp']}
+            fallbackFormat="png"
+            alt="Innova"
+            class="aspect-auto invert"
+          />
+          <Picture
+            src={arqulsLogo}
+            formats={['avif', 'webp']}
+            fallbackFormat="png"
+            alt="ARQULS"
+            class="aspect-auto w-25"
+          />
         </div>
       </div>
     </footer>
