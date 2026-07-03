@@ -9,12 +9,31 @@
 ---
 
 <div
-  class="map-skeleton pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-canvas transition-opacity duration-300"
+  class="map-skeleton pointer-events-none absolute inset-0 z-10 flex items-center justify-center pt-4 pr-4 pb-20 transition-opacity duration-300"
 >
   <div
-    class="animate-pulse flex h-3/5 w-4/5 flex-col items-center justify-center gap-4 rounded-xl bg-charcoal/5"
+    class="bg-charcoal/5 flex size-full animate-pulse flex-col items-center justify-center rounded-xl"
   >
-    <div class="h-4 w-48 rounded bg-charcoal/10"></div>
-    <div class="h-3 w-32 rounded bg-charcoal/8"></div>
+    <!--
+version: "2.34"
+unicode: "fc79"
+-->
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke-width="1"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="stroke-charcoal/10 size-60"
+    >
+      <path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13"></path>
+      <path d="M9 12v.01"></path>
+      <path d="M6 13v.01"></path>
+      <path d="M17 15l-4 -4"></path>
+      <path d="M13 15l4 -4"></path>
+    </svg>
   </div>
 </div>
