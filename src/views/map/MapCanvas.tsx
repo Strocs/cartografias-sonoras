@@ -22,14 +22,20 @@ interface SerializableMap {
   soundPieceId: number;
 }
 
-export interface MapPageProps {
+export interface MapCanvasProps {
   map: SerializableMap;
   sounds: Sound[];
   paths: Path[];
   soundPiece?: SoundPiece | null;
 }
 
-export function MapPage({ map, sounds, paths, soundPiece }: MapPageProps) {
+/**
+ * Interactive cartography canvas — the client:only React island that composes
+ * the Leaflet viewport with sound markers, perceptual paths, zoom controls,
+ * and the hidden audio element pool. Lives in views/ because it orchestrates
+ * three features: maps (viewport + controls), sounds (markers), and paths.
+ */
+export function MapCanvas({ map, sounds, paths, soundPiece }: MapCanvasProps) {
   const bounds: L.LatLngBoundsExpression = [
     [0, 0],
     [map.image.height, map.image.width]

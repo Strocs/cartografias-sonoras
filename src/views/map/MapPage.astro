@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import Navigation from '../../shared/ui/Navigation.astro';
 import RightRail from '../../features/maps/ui/RightRail.astro';
 import MapSkeleton from './MapSkeleton.astro';
-import { MapPage } from './MapPage.tsx';
+import { MapCanvas } from './MapCanvas.tsx';
 import { AudioBottomPlayer } from '../../features/sound-pieces/ui/AudioBottomPlayer.tsx';
 
 import type { Map } from '../../features/maps/domain/types';
@@ -49,7 +49,7 @@ const mapForClient = {
              through the client:only island's display:contents boundary. -->
         <div class="map-wrapper relative flex flex-1 flex-col">
           <MapSkeleton />
-          <MapPage
+          <MapCanvas
             client:only="react"
             map={mapForClient}
             sounds={sounds}
