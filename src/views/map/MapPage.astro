@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Navigation from '../../shared/ui/Navigation.astro';
 import RightRail from './RightRail.astro';
+import MapSkeleton from './MapSkeleton.astro';
 import { MapPage } from './MapPage.tsx';
 import { AudioBottomPlayer } from '../../features/sound-pieces/ui/AudioBottomPlayer.tsx';
 
@@ -47,14 +48,7 @@ const mapForClient = {
              SSR loading. flex + flex-col passes height constraints down
              through the client:only island's display:contents boundary. -->
         <div class="map-wrapper relative flex flex-1 flex-col">
-          <!-- Skeleton loader: absolutely positioned placeholder that fades
-               out via CSS once Leaflet renders its .leaflet-container. -->
-          <div class="map-skeleton pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-canvas transition-opacity duration-300">
-            <div class="animate-pulse flex h-3/5 w-4/5 flex-col items-center justify-center gap-4 rounded-xl bg-charcoal/5">
-              <div class="h-4 w-48 rounded bg-charcoal/10"></div>
-              <div class="h-3 w-32 rounded bg-charcoal/8"></div>
-            </div>
-          </div>
+          <MapSkeleton />
           <MapPage
             client:only="react"
             map={mapForClient}

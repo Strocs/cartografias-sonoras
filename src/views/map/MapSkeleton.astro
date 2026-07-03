@@ -1,0 +1,20 @@
+---
+/**
+ * Skeleton loader shown while the client:only MapPage React island
+ * initializes the Leaflet viewport. Prevents the RightRail from
+ * shifting left during SSR by occupying flex-1 space in the layout.
+ *
+ * Hidden via CSS `:has(.leaflet-container)` once the map renders.
+ */
+---
+
+<div
+  class="map-skeleton pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-canvas transition-opacity duration-300"
+>
+  <div
+    class="animate-pulse flex h-3/5 w-4/5 flex-col items-center justify-center gap-4 rounded-xl bg-charcoal/5"
+  >
+    <div class="h-4 w-48 rounded bg-charcoal/10"></div>
+    <div class="h-3 w-32 rounded bg-charcoal/8"></div>
+  </div>
+</div>
