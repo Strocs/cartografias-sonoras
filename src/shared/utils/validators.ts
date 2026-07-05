@@ -16,7 +16,8 @@ export interface DatasetSoundPiece {
 export interface DatasetPath {
   id: number;
   mapId: number;
-  soundIds: [number, number];
+  startSoundId: number;
+  endSoundId: number;
 }
 
 export interface Dataset<
@@ -78,7 +79,7 @@ export function validateDataset<
       continue;
     }
 
-    for (const soundId of path.soundIds) {
+    for (const soundId of [path.startSoundId, path.endSoundId]) {
       const sound = dataset.sounds.find((s) => s.id === soundId);
       if (!sound) {
         errors.push(`Path ${path.id} references missing sound ${soundId}`);

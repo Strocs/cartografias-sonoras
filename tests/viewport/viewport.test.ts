@@ -65,17 +65,6 @@ describe('MapViewport', () => {
     expect(config.zoomControl).toBe(false);
   });
 
-  it('creates a custom path pane between image and marker panes', () => {
-    render(createElement(MapViewport, {
-      imageUrl: '/maps/test.png',
-      width: 1200,
-      height: 800,
-    }));
-
-    expect(mockMap.createPane).toHaveBeenCalledWith('pathPane');
-    expect(mockPane.style.setProperty).toHaveBeenCalledWith('z-index', '350');
-  });
-
   it('adds an image overlay matching the provided dimensions', () => {
     render(createElement(MapViewport, {
       imageUrl: '/maps/test.png',

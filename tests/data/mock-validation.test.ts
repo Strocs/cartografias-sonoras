@@ -39,7 +39,7 @@ describe('Mock data validation', () => {
     // Filter out paths that reference non-existent sounds — these are known
     // data gaps in the mock dataset that the validator is designed to catch.
     const completePaths = mockPaths.filter((path) =>
-      path.soundIds.every((sid) => mockSounds.some((s) => s.id === sid))
+      [path.startSoundId, path.endSoundId].every((sid) => mockSounds.some((s) => s.id === sid))
     );
 
     const result = validateDataset({
@@ -79,7 +79,7 @@ describe('Mock data validation', () => {
 
   it('connects each path to sounds that belong to the same map', () => {
     for (const path of mockPaths) {
-      const sounds = mockSounds.filter((s) => path.soundIds.includes(s.id));
+      const sounds = mockSounds.filter((s) => [path.startSoundId, path.endSoundId].includes(s.id));
 
       // Skip paths that reference non-existent sounds (data gap).
       if (sounds.length !== 2) {

@@ -10,7 +10,7 @@ const title = 'Cartografías Sensoriales';
 <Layout title={title}>
   <div class="flex min-h-screen">
     <Navigation />
-    <main class="flex-1 p-4 md:p-4">
+    <main class="flex-1 p-4 md:p-4" transition:animate="fade">
       <section aria-label="Cartografías" class="">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           {mockMaps.map((map, index) => {

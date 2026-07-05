@@ -42,7 +42,7 @@ const mapForClient = {
 <Layout title={map.title}>
   <div class="flex h-screen">
     <Navigation />
-    <main class="relative flex-1 overflow-hidden">
+    <main class="relative flex-1 overflow-hidden" transition:animate="fade">
       <div class="relative flex size-full">
         <!-- Map area wrapper: flex-1 keeps the RightRail in place during
              SSR loading. flex + flex-col passes height constraints down
@@ -60,6 +60,7 @@ const mapForClient = {
         <RightRail maps={maps} activeSlug={map.slug} />
         <h2
           class="text-charcoal/60 absolute bottom-4 left-8 z-[1001] block text-3xl font-black uppercase"
+          transition:name={`map-title-${map.slug}`}
         >
           {map.title}
         </h2>

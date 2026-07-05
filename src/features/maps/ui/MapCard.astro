@@ -21,6 +21,7 @@ const sizes = '(max-width: 767px) 50vw, 33vw';
 >
   <h2
     class="text-primary-navy group-hover:text-primary-brown absolute z-10 text-lg font-semibold"
+    transition:name={`map-title-${map.slug}`}
   >
     {map.title}
   </h2>
@@ -37,6 +38,7 @@ const sizes = '(max-width: 767px) 50vw, 33vw';
         width={map.image.width}
         height={map.image.height}
         class="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
+        transition:name={`map-thumb-${map.slug}`}
         {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
       />
     ) : (
@@ -44,6 +46,7 @@ const sizes = '(max-width: 767px) 50vw, 33vw';
         src={map.image.src}
         alt={map.title}
         class="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
+        transition:name={`map-thumb-${map.slug}`}
         loading={loading}
         width={map.image.width}
         height={map.image.height}

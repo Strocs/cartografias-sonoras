@@ -31,6 +31,7 @@ const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
             src={map.image.src}
             alt={map.title}
             class="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+            transition:name={`map-thumb-${map.slug}`}
             style={{ aspectRatio: `${map.image.width} / ${map.image.height}` }}
             loading="eager"
             width={map.image.width}

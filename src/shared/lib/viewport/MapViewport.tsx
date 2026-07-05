@@ -67,9 +67,6 @@ export function MapViewport({
       attributionControl: config?.attributionControl ?? false
     });
 
-    map.createPane('pathPane');
-    map.getPane('pathPane')?.style.setProperty('z-index', '350');
-
     L.imageOverlay(imageUrl, bounds, { className: '' }).addTo(map);
     map.fitBounds(bounds);
 

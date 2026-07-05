@@ -52,3 +52,12 @@ React 19 Compiler handles optimization. `useMemo` and `useCallback` MUST NOT app
 |----------|-------|------|------|
 | Derived value | component needs filtered list | renders | computed inline; no `useMemo` |
 | Event handler | component defines onClick | renders | plain function; no `useCallback` |
+
+### Requirement: View Transition Directives on Map Page
+
+The map detail page MUST include Astro view transition directives to enable smooth page-to-page morphing.
+
+| Scenario | GIVEN | WHEN | THEN |
+|----------|-------|------|------|
+| Map title morph source | MapPage.astro renders | `<h2>` inspected | has `transition:name={`map-title-${map.slug}`}` |
+| Main fade transition | MapPage.astro renders | `<main>` inspected | has `transition:animate="fade"` |

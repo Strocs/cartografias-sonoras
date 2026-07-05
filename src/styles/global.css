@@ -65,3 +65,8 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/*
+ * Path styles moved to src/features/paths/styles/path-styles.css
+ * so they colocate with the feature that owns them.
+ */

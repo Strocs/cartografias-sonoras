@@ -12,11 +12,9 @@ export const pathSchema = z.object(
   {
     id: z.number().int().positive(),
     mapId: z.number().int().positive(),
-    points: z.array(pointSchema),
-    soundIds: z.tuple([
-      z.number().int().positive(),
-      z.number().int().positive(),
-    ]),
+    waypoints: z.array(pointSchema),
+    startSoundId: z.number().int().positive(),
+    endSoundId: z.number().int().positive(),
   },
   { error: 'Invalid path' }
 );

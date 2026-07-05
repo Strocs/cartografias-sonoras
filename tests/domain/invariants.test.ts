@@ -49,11 +49,11 @@ const validSound: Sound = {
 const validPath: Path = {
   id: 1000,
   mapId: 1,
-  points: [
-    { x: 0, y: 0 },
+  waypoints: [
     { x: 50, y: 50 },
   ],
-  soundIds: [100, 101],
+  startSoundId: 100,
+  endSoundId: 101,
 };
 
 describe('Map invariants', () => {
@@ -154,18 +154,18 @@ describe('Path invariants', () => {
     );
   });
 
-  it('fails when soundIds does not have exactly two elements', () => {
+  it('fails when startSoundId equals endSoundId', () => {
     const invalid: Path = {
       ...validPath,
-      soundIds: [100] as unknown as [number, number],
+      endSoundId: validPath.startSoundId,
     };
     expect(() => checkPathInvariants(invalid)).toThrow(
-      'Path must connect exactly two sounds'
+      'Path must connect two different sounds'
     );
   });
 
   it('validates schema against invalid data', () => {
-    const invalid = { ...validPath, soundIds: [100] };
+    const invalid = { ...validPath, startSoundId: 'not-a-number' };
     expect(() => pathSchema.parse(invalid)).toThrow();
   });
 

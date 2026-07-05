@@ -1,124 +1,169 @@
 'use client';
 
 import L from 'leaflet';
+import type { LatLngExpression } from 'leaflet';
+import { useEffect, useRef } from 'react';
 
 import { relativeToPixel } from '@shared/lib/coordinates';
 import { useMap } from '@shared/lib/viewport/MapContext';
 import { useMountEffect } from '@shared/hooks/useMountEffect';
 
-import type { Path } from '../domain/types';
+import type { PathStyleConfig, PathVisualState } from '../domain';
+import type { Point } from '../domain/types';
+
+import '../styles/path-styles.css';
 
 export interface PathOverlayProps {
-  paths: Path[];
+  pathStates: PathVisualState[];
 }
 
-const STROKE_COLOR = '#1a2a3a';
-const STROKE_OPACITY = 0.35;
-const STROKE_WIDTH = 2;
-const STROKE_DASHARRAY = '6 6';
+const PULSE_DURATION = '1.5s';
+const PULSE_RADIUS = '4';
 
-export function PathOverlay({ paths }: PathOverlayProps) {
+function pointsToLatLngs(
+  points: Point[],
+  width: number,
+  height: number
+): LatLngExpression[] {
+  return points.map((p) => {
+    const pixel = relativeToPixel(p, width, height);
+    return L.latLng(pixel.y, pixel.x);
+  });
+}
+
+/** Applies per-path style overrides as inline SVG attributes on the <path>. */
+function applyPathStyle(
+  pathEl: SVGPathElement,
+  style?: PathStyleConfig
+): void {
+  if (style === undefined) return;
+  if (style.strokeColor !== undefined) {
+    pathEl.setAttribute('stroke', style.strokeColor);
+  }
+  if (style.strokeWidth !== undefined) {
+    pathEl.setAttribute('stroke-width', String(style.strokeWidth));
+  }
+  if (style.dashArray !== undefined) {
+    pathEl.setAttribute('stroke-dasharray', style.dashArray);
+  }
+}
+
+export function PathOverlay({ pathStates }: PathOverlayProps) {
   const { map, width, height } = useMap();
 
-  useMountEffect(() => {
-    if (map === null) {
-      return;
-    }
+  const pathStatesRef = useRef(pathStates);
+  pathStatesRef.current = pathStates;
 
-    const mapInstance = map;
-    const pane = mapInstance.getPane('pathPane');
-    if (pane === undefined) {
-      return;
-    }
+  const mapRef = useRef<L.Map | null>(null);
+  const polylinesRef = useRef<L.Polyline[]>([]);
+  const pulseGroupsRef = useRef<SVGGElement[]>([]);
 
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'leaflet-zoom-animated');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-    svg.setAttribute(
-      'style',
-      'position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible;'
-    );
+  function renderPaths() {
+    const mapInstance = mapRef.current;
+    if (mapInstance === null) return;
 
-    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    svg.appendChild(group);
+    for (const pl of polylinesRef.current) pl.remove();
+    for (const pg of pulseGroupsRef.current) pg.remove();
+    polylinesRef.current = [];
+    pulseGroupsRef.current = [];
 
-    function renderPaths() {
-      while (group.firstChild !== null) {
-        group.removeChild(group.firstChild);
+    const current = pathStatesRef.current;
+
+    for (const state of current) {
+      if (state.points.length < 2) continue;
+
+      const latlngs = pointsToLatLngs(state.points, width, height);
+      const routeId = `path-${state.pathId}`;
+
+      const polyline = L.polyline(latlngs, {
+        className: `path-base path-${state.variant}`,
+      }).addTo(mapInstance);
+      polylinesRef.current.push(polyline);
+
+      const pathEl = polyline.getElement();
+      if (pathEl instanceof SVGPathElement) {
+        pathEl.setAttribute('id', routeId);
+        pathEl.removeAttribute('stroke');
+        pathEl.removeAttribute('stroke-opacity');
+        pathEl.removeAttribute('stroke-width');
+        pathEl.removeAttribute('fill');
+        applyPathStyle(pathEl, state.style);
       }
 
-      for (const path of paths) {
-        if (path.points.length < 2) {
-          continue;
+      if (state.variant === 'single' && pathEl instanceof SVGPathElement) {
+        const pulseGroup = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'g'
+        );
+        pulseGroup.setAttribute('class', 'path-pulse');
+        pulseGroupsRef.current.push(pulseGroup);
+
+        const circle = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'circle'
+        );
+        circle.setAttribute('r', PULSE_RADIUS);
+
+        const animateMotion = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'animateMotion'
+        );
+        animateMotion.setAttribute('dur', PULSE_DURATION);
+        animateMotion.setAttribute('repeatCount', 'indefinite');
+
+        if (state.activeEndpoint === 'end') {
+          animateMotion.setAttribute('keyPoints', '1;0');
+          animateMotion.setAttribute('keyTimes', '0;1');
+          animateMotion.setAttribute('calcMode', 'linear');
         }
 
-        const pixelPoints = path.points.map((p) =>
-          relativeToPixel(p, width, height)
-        );
-        const d = buildSmoothPath(pixelPoints, mapInstance);
-        const pathEl = document.createElementNS(
+        const mpath = document.createElementNS(
           'http://www.w3.org/2000/svg',
-          'path'
+          'mpath'
         );
-        pathEl.setAttribute('d', d);
-        pathEl.setAttribute('fill', 'none');
-        pathEl.setAttribute('stroke', STROKE_COLOR);
-        pathEl.setAttribute('stroke-opacity', String(STROKE_OPACITY));
-        pathEl.setAttribute('stroke-width', String(STROKE_WIDTH));
-        pathEl.setAttribute('stroke-dasharray', STROKE_DASHARRAY);
-        pathEl.setAttribute('stroke-linecap', 'round');
-        pathEl.setAttribute('stroke-linejoin', 'round');
-        group.appendChild(pathEl);
+        mpath.setAttribute('href', `#${routeId}`);
+
+        animateMotion.appendChild(mpath);
+        circle.appendChild(animateMotion);
+        pulseGroup.appendChild(circle);
+
+        if (state.style?.strokeColor !== undefined) {
+          circle.setAttribute('fill', state.style.strokeColor);
+        }
+
+        const parent = pathEl.parentNode;
+        if (parent !== null) {
+          parent.appendChild(pulseGroup);
+        }
       }
     }
+  }
 
-    renderPaths();
+  useMountEffect(() => {
+    if (map === null) return;
+
+    const mapInstance = map;
+    mapRef.current = mapInstance;
+
+    mapInstance.whenReady(() => {
+      if (mapRef.current !== mapInstance) return;
+      renderPaths();
+    });
+
     mapInstance.on('moveend zoomend', renderPaths);
-    pane.appendChild(svg);
 
     return () => {
       mapInstance.off('moveend zoomend', renderPaths);
-      svg.remove();
+      for (const pl of polylinesRef.current) pl.remove();
+      for (const pg of pulseGroupsRef.current) pg.remove();
     };
   });
 
+  useEffect(() => {
+    if (mapRef.current !== null) {
+      renderPaths();
+    }
+  }, [pathStates]);
+
   return null;
-}
-
-function buildSmoothPath(
-  points: Array<{ x: number; y: number }>,
-  map: L.Map
-): string {
-  const layerPoints = points.map((p) =>
-    map.latLngToLayerPoint(L.latLng(p.y, p.x))
-  );
-
-  if (layerPoints.length < 2) {
-    return '';
-  }
-
-  const commands: Array<string> = [
-    `M ${layerPoints[0].x} ${layerPoints[0].y}`,
-  ];
-
-  for (let i = 0; i < layerPoints.length - 1; i++) {
-    const current = layerPoints[i];
-    const next = layerPoints[i + 1];
-    const prev = i > 0 ? layerPoints[i - 1] : current;
-    const after = i + 2 < layerPoints.length ? layerPoints[i + 2] : next;
-
-    const cp1 = L.point(
-      current.x + (next.x - prev.x) * 0.2,
-      current.y + (next.y - prev.y) * 0.2
-    );
-    const cp2 = L.point(
-      next.x - (after.x - current.x) * 0.2,
-      next.y - (after.y - current.y) * 0.2
-    );
-
-    commands.push(`C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${next.x} ${next.y}`);
-  }
-
-  return commands.join(' ');
 }
