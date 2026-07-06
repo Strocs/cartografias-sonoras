@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   AudioPool,
-  useAudioStore,
+  audioStore,
 } from '../../src/shared/lib/audio-engine';
 import { createInitialState } from '../../src/shared/lib/audio-engine/engine';
 import { AUDIO_STATUS } from '../../src/shared/lib/audio-engine/types';
@@ -17,7 +17,7 @@ const PIECE = { id: 100, audioUrl: '/sound-pieces/piece.mp3' };
 
 describe('AudioPool subscription', () => {
   beforeEach(() => {
-    useAudioStore.setState(createInitialState());
+    audioStore.setState(createInitialState());
     vi.restoreAllMocks();
   });
 
@@ -31,7 +31,7 @@ describe('AudioPool subscription', () => {
     const playSpy = vi.spyOn(HTMLAudioElement.prototype, 'play');
 
     act(() => {
-      useAudioStore.getState().playSound(1, 10);
+      audioStore.getState().playSound(1, 10);
     });
 
     const audios = container.querySelectorAll('audio');
@@ -46,7 +46,7 @@ describe('AudioPool subscription', () => {
     const pauseSpy = vi.spyOn(HTMLAudioElement.prototype, 'pause');
 
     act(() => {
-      useAudioStore.getState().playSound(1, 10);
+      audioStore.getState().playSound(1, 10);
     });
 
     const audio = container.querySelector('audio');
@@ -55,12 +55,12 @@ describe('AudioPool subscription', () => {
     });
 
     act(() => {
-      useAudioStore.getState().pauseSound(1);
+      audioStore.getState().pauseSound(1);
     });
     expect(pauseSpy).toHaveBeenCalledTimes(1);
 
     act(() => {
-      useAudioStore.getState().resumeSound(1);
+      audioStore.getState().resumeSound(1);
     });
     expect(playSpy).toHaveBeenCalledTimes(3);
 
@@ -71,7 +71,7 @@ describe('AudioPool subscription', () => {
     const { container } = render(<AudioPool sounds={SOUNDS} />);
 
     act(() => {
-      useAudioStore.getState().playSound(1, 10);
+      audioStore.getState().playSound(1, 10);
     });
 
     const audio = container.querySelector('audio');
@@ -85,7 +85,7 @@ describe('AudioPool subscription', () => {
       fireEvent.ended(audio!);
     });
 
-    expect(useAudioStore.getState().activeSounds.get(1)?.status).toBe(
+    expect(audioStore.getState().activeSounds.get(1)?.status).toBe(
       AUDIO_STATUS.ENDED
     );
     expect(container.querySelectorAll('audio')).toHaveLength(0);
@@ -95,7 +95,7 @@ describe('AudioPool subscription', () => {
     render(<AudioPool sounds={SOUNDS} />);
 
     act(() => {
-      useAudioStore.getState().playSound(1, 10);
+      audioStore.getState().playSound(1, 10);
     });
 
     const audio = document.querySelector('audio');
@@ -107,7 +107,7 @@ describe('AudioPool subscription', () => {
       fireEvent.loadedMetadata(audio!);
     });
 
-    const sound = useAudioStore.getState().activeSounds.get(1);
+    const sound = audioStore.getState().activeSounds.get(1);
     expect(sound?.status).toBe(AUDIO_STATUS.PLAYING);
     expect(sound?.duration).toBe(60);
   });
@@ -116,7 +116,7 @@ describe('AudioPool subscription', () => {
     render(<AudioPool sounds={SOUNDS} />);
 
     act(() => {
-      useAudioStore.getState().playSound(1, 10);
+      audioStore.getState().playSound(1, 10);
     });
 
     const audio = document.querySelector('audio');
@@ -131,14 +131,14 @@ describe('AudioPool subscription', () => {
       fireEvent.timeUpdate(audio!);
     });
 
-    expect(useAudioStore.getState().activeSounds.get(1)?.currentTime).toBe(12.5);
+    expect(audioStore.getState().activeSounds.get(1)?.currentTime).toBe(12.5);
   });
 
   it('applies volume and mute to active audio elements', () => {
     render(<AudioPool sounds={SOUNDS} />);
 
     act(() => {
-      useAudioStore.getState().playSound(1, 10);
+      audioStore.getState().playSound(1, 10);
     });
 
     const audio = document.querySelector('audio') as HTMLAudioElement;
@@ -146,12 +146,12 @@ describe('AudioPool subscription', () => {
     expect(audio.muted).toBe(false);
 
     act(() => {
-      useAudioStore.getState().setVolume(0.5);
+      audioStore.getState().setVolume(0.5);
     });
     expect(audio.volume).toBe(0.5);
 
     act(() => {
-      useAudioStore.getState().toggleMute();
+      audioStore.getState().toggleMute();
     });
     expect(audio.muted).toBe(true);
   });
@@ -160,12 +160,12 @@ describe('AudioPool subscription', () => {
     render(<AudioPool sounds={SOUNDS} />);
 
     act(() => {
-      useAudioStore.getState().setVolume(0.25);
-      useAudioStore.getState().toggleMute();
+      audioStore.getState().setVolume(0.25);
+      audioStore.getState().toggleMute();
     });
 
     act(() => {
-      useAudioStore.getState().playSound(1, 10);
+      audioStore.getState().playSound(1, 10);
     });
 
     const audio = document.querySelector('audio') as HTMLAudioElement;
@@ -177,18 +177,18 @@ describe('AudioPool subscription', () => {
     render(<AudioPool sounds={SOUNDS} />);
 
     act(() => {
-      useAudioStore.getState().playSound(1, 10);
+      audioStore.getState().playSound(1, 10);
     });
 
     const audio = document.querySelector('audio') as HTMLAudioElement;
 
     act(() => {
-      useAudioStore.getState().seekSound(1, 42);
+      audioStore.getState().seekSound(1, 42);
     });
 
     expect(audio.currentTime).toBe(42);
-    expect(useAudioStore.getState().activeSounds.get(1)?.currentTime).toBe(42);
-    expect(useAudioStore.getState()._pendingSeeks.has(1)).toBe(false);
+    expect(audioStore.getState().activeSounds.get(1)?.currentTime).toBe(42);
+    expect(audioStore.getState()._pendingSeeks.has(1)).toBe(false);
   });
 
   it('renders a piece audio element when a piece is active', () => {
@@ -197,7 +197,7 @@ describe('AudioPool subscription', () => {
     );
 
     act(() => {
-      useAudioStore.getState().playPiece(100, 10);
+      audioStore.getState().playPiece(100, 10);
     });
 
     const audios = container.querySelectorAll('audio');
@@ -209,7 +209,7 @@ describe('AudioPool subscription', () => {
     render(<AudioPool sounds={SOUNDS} soundPiece={PIECE} />);
 
     act(() => {
-      useAudioStore.getState().playPiece(100, 10);
+      audioStore.getState().playPiece(100, 10);
     });
 
     const audio = document.querySelector('audio');
@@ -221,7 +221,7 @@ describe('AudioPool subscription', () => {
       fireEvent.loadedMetadata(audio!);
     });
 
-    const { piece } = useAudioStore.getState();
+    const { piece } = audioStore.getState();
     expect(piece.status).toBe(AUDIO_STATUS.PLAYING);
     expect(piece.duration).toBe(180);
   });

@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 
 import { useMountEffect } from '@shared/hooks/useMountEffect';
-import { AUDIO_STATUS, audioTransitions, useAudioStore } from '../';
+import { AUDIO_STATUS, audioStore, audioTransitions, useAudioStore } from '../';
 import type { AudioElementId, AudioEngineState, AudioStatus } from '../types';
 
 interface AudioPoolItem {
@@ -117,7 +117,7 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
   };
 
   const syncAllActiveAudio = (): void => {
-    const state = useAudioStore.getState();
+    const state = audioStore.getState();
 
     applyGlobalVolume(state);
     applyPendingSeeks(state);
@@ -151,7 +151,7 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
 
   useMountEffect(() => {
     syncAllActiveAudio();
-    const unsubscribe = useAudioStore.subscribe(syncAllActiveAudio);
+    const unsubscribe = audioStore.subscribe(syncAllActiveAudio);
     return unsubscribe;
   });
 
@@ -165,7 +165,7 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
     element.volume = prevVolume.current;
     element.muted = prevMuted.current;
     audioRefs.current.set(id, element);
-    syncAudioElement(id, element, useAudioStore.getState());
+    syncAudioElement(id, element, audioStore.getState());
   };
 
   const handleLoadedMetadata =
