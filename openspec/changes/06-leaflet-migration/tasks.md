@@ -33,10 +33,10 @@ Chain strategy: pending
 
 ## Phase 2: Map Engine — PR 2a
 
-- [ ] 2.1 `panzoom-setup.ts`: `initPanzoom()` with contain, min/maxScale, wheel, destroy [map-engine]
-- [ ] 2.2 `layers.ts`: `createSvgLayer()`, `createMarkerLayer()` [map-engine]
-- [ ] 2.3 `map-view.ts`: custom element — connectedCallback → img decode → Panzoom → layers; public API (scaleFactor, zoomIn/Out, resetView); ResizeObserver; disconnectedCallback [map-engine]
-- [ ] 2.4 `MapControls.tsx`: remove Leaflet/MapContext; query `<map-view>`; call public methods [cross-feature]
+- [x] 2.1 `panzoom-setup.ts`: `initPanzoom()` with contain, min/maxScale, wheel, destroy [map-engine]
+- [x] 2.2 `layers.ts`: `createSvgLayer()`, `createMarkerLayer()` [map-engine]
+- [x] 2.3 `map-view.ts`: custom element — connectedCallback → img decode → Panzoom → layers; public API (scaleFactor, zoomIn/Out, resetView); ResizeObserver; disconnectedCallback [map-engine]
+- [x] 2.4 `MapControls.tsx`: remove Leaflet/MapContext; query `<map-view>`; call public methods [cross-feature]
 
 ## Phase 3: Vanilla Renderers + Bindings — PR 2b
 
