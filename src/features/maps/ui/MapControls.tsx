@@ -1,17 +1,20 @@
 'use client';
 
-import L from 'leaflet';
-
 import { cn } from '@shared/utils/cn';
-import { useMap } from '@shared/lib/viewport/MapContext';
+import type { MapViewElement } from './map-view';
 
 export interface MapControlsProps {
-  bounds?: L.LatLngBoundsExpression;
+  /** Optional id of the `<map-view>` element to control. Falls back to the first `<map-view>` on the page. */
+  mapViewId?: string;
   className?: string;
 }
 
-export function MapControls({ bounds, className }: MapControlsProps) {
-  const { map } = useMap();
+export function MapControls({ mapViewId, className }: MapControlsProps) {
+  const getMapView = (): MapViewElement | null => {
+    if (typeof document === 'undefined') return null;
+    const selector = mapViewId ? `map-view#${CSS.escape(mapViewId)}` : 'map-view';
+    return document.querySelector(selector) as MapViewElement | null;
+  };
 
   return (
     <div
@@ -22,23 +25,21 @@ export function MapControls({ bounds, className }: MapControlsProps) {
       data-testid="map-controls"
     >
       <ControlButton
-        onClick={() => map?.zoomIn()}
+        onClick={() => getMapView()?.zoomIn()}
         label="Acercar mapa"
         data-testid="zoom-in"
       >
         <PlusIcon />
       </ControlButton>
       <ControlButton
-        onClick={() => map?.zoomOut()}
+        onClick={() => getMapView()?.zoomOut()}
         label="Alejar mapa"
         data-testid="zoom-out"
       >
         <MinusIcon />
       </ControlButton>
       <ControlButton
-        onClick={() =>
-          bounds !== undefined ? map?.fitBounds(bounds) : undefined
-        }
+        onClick={() => getMapView()?.resetView()}
         label="Centrar mapa"
         data-testid="center-map"
       >
