@@ -4,6 +4,8 @@ import type { PanzoomObject } from '@panzoom/panzoom';
 
 export interface MapViewElement extends HTMLElement {
   readonly scaleFactor: number;
+  readonly imageWidth: number;
+  readonly imageHeight: number;
   readonly svgLayer: SVGSVGElement | null;
   readonly markerLayer: HTMLDivElement | null;
   zoomIn(): void;
@@ -53,6 +55,16 @@ export class MapView extends HTMLElement implements MapViewElement {
   get scaleFactor(): number {
     const scale = this._panzoom?.getScale() ?? 1;
     return 1 / scale;
+  }
+
+  /** Returns the natural width of the decoded map image. */
+  get imageWidth(): number {
+    return this._visibleImg?.naturalWidth ?? 0;
+  }
+
+  /** Returns the natural height of the decoded map image. */
+  get imageHeight(): number {
+    return this._visibleImg?.naturalHeight ?? 0;
   }
 
   /** Returns the current Panzoom scale. */
@@ -144,7 +156,11 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._svgLayer = createSvgLayer(this._container);
     this._markerLayer = createMarkerLayer(this._container);
 
-    const { panzoom, destroy } = initPanzoom(this._container, visibleImg);
+    const startScale = this._computeStartScale();
+    const { panzoom, destroy } = initPanzoom(this._container, visibleImg, {
+      startScale,
+      minScale: startScale,
+    });
     this._panzoom = panzoom;
     this._destroyPanzoom = destroy;
 
@@ -166,6 +182,27 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._setupResizeObserver();
 
     this.setAttribute(READY_ATTR, 'true');
+  }
+
+  private _computeStartScale(): number {
+    if (this._viewport === null || this._container === null) {
+      return 1;
+    }
+
+    const viewportWidth = this._viewport.clientWidth;
+    const viewportHeight = this._viewport.clientHeight;
+    const containerWidth = this._container.clientWidth;
+    const containerHeight = this._container.clientHeight;
+
+    if (containerWidth === 0 || containerHeight === 0) {
+      return 1;
+    }
+
+    return Math.min(
+      1,
+      viewportWidth / containerWidth,
+      viewportHeight / containerHeight
+    );
   }
 
   private _setupResizeObserver() {

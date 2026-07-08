@@ -52,16 +52,11 @@ const mapData = {
              once it hydrates. -->
         <div class="map-wrapper relative flex flex-1 flex-col">
           <MapSkeleton />
-          <map-view
-            map-src={map.image.src}
-            id="main-map"
-            class="flex-1"
-            style={`width: 100%; aspect-ratio: ${map.image.width} / ${map.image.height};`}
-          >
+          <map-view map-src={map.image.src} id="main-map" class="flex-1">
           </map-view>
           <MapControls client:visible mapViewId="main-map" />
         </div>
-        <RightRail maps={maps} activeSlug={map.slug} />
+        <RightRail maps={maps} activeSlug={map.slug} class="shrink-0" />
         <h2
           class="text-charcoal/60 absolute bottom-4 left-8 z-[1001] block text-3xl font-black uppercase"
           transition:name={`map-title-${map.slug}`}

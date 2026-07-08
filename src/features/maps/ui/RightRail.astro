@@ -4,13 +4,14 @@ import type { Map } from '../../features/maps/domain/types';
 interface Props {
   maps: Map[];
   activeSlug: string;
+  class?: string;
 }
 
-const { maps, activeSlug } = Astro.props;
+const { maps, activeSlug, class: className } = Astro.props;
 const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
 ---
 
-<aside class="h-full w-28 py-4 pr-4 md:w-36" data-testid="right-rail">
+<aside class={`h-full w-28 shrink-0 py-4 pr-4 md:w-36 ${className ?? ''}`} data-testid="right-rail">
   <div class="flex h-full flex-col gap-4">
     {
       inactiveMaps.map((map) => (
