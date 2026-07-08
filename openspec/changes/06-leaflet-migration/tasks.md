@@ -53,6 +53,15 @@ Chain strategy: pending
 - [x] 4.2 Skeleton fade: `.leaflet-container` → `map-view[data-ready]` [design]
 - [x] 4.3 Verify AudioBottomPlayer via `useAudioStore` wrapper [bottom-player]
 
+## PR 3 Bug Fixes
+
+- [x] Bug 1: Map too large — fit Panzoom container to viewport on initial load
+- [x] Bug 2: Cannot pause playing sound by clicking marker — toggle play/pause/resume in `marker:activate` handler
+- [x] Bug 3: Progress ring not appearing — use percentage values for `--progress` and thicken ring mask
+- [x] Bug 4: Right rail missing — add `shrink-0` and accept `class` prop so rail stays visible
+- [x] Bug 5: Sounds not correctly positioned — use decoded natural image dimensions from `<map-view>`
+- [x] Bug 6: Paths not correctly positioned — use decoded natural image dimensions from `<map-view>`
+
 ## Phase 5: Legacy Cleanup + E2E — PR 4
 
 - [ ] 5.1 Delete: MapViewport, MapContext, types.ts, MapCanvas, SoundTour, SoundMarker, PathOverlay [design]
