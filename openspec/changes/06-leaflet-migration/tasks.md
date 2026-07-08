@@ -64,7 +64,7 @@ Chain strategy: pending
 
 ## Phase 5: Legacy Cleanup + E2E — PR 4
 
-- [ ] 5.1 Delete: MapViewport, MapContext, types.ts, MapCanvas, SoundTour, SoundMarker, PathOverlay [design]
-- [ ] 5.2 `package.json`: add `@panzoom/panzoom`; rm `leaflet` + `@types/leaflet`
-- [ ] 5.3 ESLint rule: only `features/maps` imports Panzoom [cross-feature]
-- [ ] 5.4 E2E: pan, zoom, marker click, audio via Playwright [testing]
+- [x] 5.1 Delete: MapViewport, MapContext, types.ts, MapCanvas, SoundTour, SoundMarker, PathOverlay [design]
+- [x] 5.2 `package.json`: add `@panzoom/panzoom`; rm `leaflet` + `@types/leaflet`
+- [x] 5.3 ESLint rule: only `features/maps` imports Panzoom [cross-feature]
+- [x] 5.4 E2E: pan, zoom, marker click, audio via Playwright [testing]
