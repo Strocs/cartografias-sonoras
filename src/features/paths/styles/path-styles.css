@@ -38,6 +38,21 @@
     stroke-opacity: 1;
   }
 
+  /* BEM aliases used by the vanilla pathRenderer. */
+  .path--idle {
+    stroke: var(--color-charcoal);
+    stroke-opacity: 0.4;
+  }
+
+  .path--single {
+    stroke-opacity: 0.85;
+  }
+
+  .path--both {
+    filter: drop-shadow(0 0 10px var(--color-secondary-blue));
+    stroke-opacity: 1;
+  }
+
   /* ── Pulse animation (single variant) ─────────────────────────── */
 
   .path-pulse circle {
