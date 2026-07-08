@@ -3,8 +3,12 @@ import Layout from '../../layouts/Layout.astro';
 import Navigation from '../../shared/ui/Navigation.astro';
 import RightRail from '../../features/maps/ui/RightRail.astro';
 import MapSkeleton from './MapSkeleton.astro';
-import { MapCanvas } from './MapCanvas.tsx';
+import { AudioPool } from '../../shared/lib/audio-engine';
 import { AudioBottomPlayer } from '../../features/sound-pieces/ui/AudioBottomPlayer.tsx';
+import { MapControls } from '../../features/maps/ui/MapControls.tsx';
+
+import '../../features/sounds/ui/marker-styles.css';
+import '../../features/paths/styles/path-styles.css';
 
 import type { Map } from '../../features/maps/domain/types';
 import type { Sound } from '../../features/sounds/domain/types';
@@ -21,21 +25,20 @@ interface Props {
 
 const { map, maps, sounds, paths, soundPiece } = Astro.props;
 
-// Sanitize: strip non-serializable ImageMetadata before passing to client:only.
-// The `asset` field (Astro ImageMetadata) contains Vite-internal references
-// that cannot be serialized by Astro's devalue serializer. Passing it to a
-// client:only island corrupts the entire props payload, causing the React
-// component to receive malformed data and render nothing.
-const mapForClient = {
-  id: map.id,
-  slug: map.slug,
-  title: map.title,
-  image: {
-    src: map.image.src,
-    width: map.image.width,
-    height: map.image.height
-  },
-  soundPieceId: map.soundPieceId
+const audioPoolSounds = sounds.map((sound) => ({
+  id: sound.id,
+  audioUrl: sound.audioUrl
+}));
+
+const audioPoolPiece = soundPiece
+  ? { id: soundPiece.id, audioUrl: soundPiece.audioUrl }
+  : null;
+
+const mapData = {
+  sounds,
+  paths,
+  imgWidth: map.image.width,
+  imgHeight: map.image.height
 };
 ---
 
@@ -45,17 +48,18 @@ const mapForClient = {
     <main class="relative flex-1 overflow-hidden" transition:animate="fade">
       <div class="relative flex size-full">
         <!-- Map area wrapper: flex-1 keeps the RightRail in place during
-             SSR loading. flex + flex-col passes height constraints down
-             through the client:only island's display:contents boundary. -->
+             SSR loading. The <map-view> custom element fills this wrapper
+             once it hydrates. -->
         <div class="map-wrapper relative flex flex-1 flex-col">
           <MapSkeleton />
-          <MapCanvas
-            client:only="react"
-            map={mapForClient}
-            sounds={sounds}
-            paths={paths}
-            soundPiece={soundPiece}
-          />
+          <map-view
+            map-src={map.image.src}
+            id="main-map"
+            class="flex-1"
+            style={`width: 100%; aspect-ratio: ${map.image.width} / ${map.image.height};`}
+          >
+          </map-view>
+          <MapControls client:visible mapViewId="main-map" />
         </div>
         <RightRail maps={maps} activeSlug={map.slug} />
         <h2
@@ -69,14 +73,65 @@ const mapForClient = {
       <div class="absolute right-8 bottom-4 z-[1001]">
         <AudioBottomPlayer client:idle soundPiece={soundPiece} />
       </div>
+
+      <AudioPool client:idle sounds={audioPoolSounds} soundPiece={audioPoolPiece} />
     </main>
   </div>
 </Layout>
 
+<script type="application/json" id="map-data" set:html={JSON.stringify(mapData)}></script>
+
+<script>
+  import '@features/maps/ui/map-view';
+  import { bindMapView } from '@views/map/mapViewBindings';
+  import type { MapViewElement } from '@features/maps/ui/map-view';
+
+  const mapDataScript = document.getElementById('map-data');
+  const data = mapDataScript
+    ? JSON.parse(mapDataScript.textContent || '{}')
+    : { sounds: [], paths: [], imgWidth: 0, imgHeight: 0 };
+
+  const mapView = document.querySelector('map-view#main-map');
+  if (!(mapView instanceof HTMLElement)) {
+    console.error('<map-view id="main-map"> not found');
+    throw new Error('<map-view id="main-map"> not found');
+  }
+
+  function bindWhenReady(): void {
+    if (mapView.hasAttribute('data-ready')) {
+      bindMapViewToElement();
+      return;
+    }
+
+    const observer = new MutationObserver((mutations, obs) => {
+      if (mapView.hasAttribute('data-ready')) {
+        obs.disconnect();
+        bindMapViewToElement();
+      }
+    });
+
+    observer.observe(mapView, {
+      attributes: true,
+      attributeFilter: ['data-ready']
+    });
+  }
+
+  function bindMapViewToElement(): void {
+    bindMapView({
+      mapView: mapView as MapViewElement,
+      sounds: data.sounds,
+      paths: data.paths,
+      imgWidth: data.imgWidth,
+      imgHeight: data.imgHeight
+    });
+  }
+
+  bindWhenReady();
+</script>
+
 <style is:inline>
-  /* Fade out the skeleton loader once Leaflet initializes the map.
-     .leaflet-container is created by L.map() inside MapViewport. */
-  .map-wrapper:has(.leaflet-container) .map-skeleton {
+  /* Fade out the skeleton loader once <map-view> signals it is ready. */
+  .map-wrapper:has(map-view[data-ready]) .map-skeleton {
     opacity: 0;
   }
 </style>
