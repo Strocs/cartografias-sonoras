@@ -41,7 +41,7 @@ export function createSoundMarker(
   button.setAttribute('data-sound-id', String(sound.id));
   button.setAttribute('data-map-id', String(sound.mapId));
   button.setAttribute('data-state', 'idle');
-  button.style.setProperty('--progress', '0');
+  button.style.setProperty('--progress', '0%');
   button.style.width = `${SIZE}px`;
   button.style.height = `${SIZE}px`;
 
@@ -89,7 +89,7 @@ export function updateSoundMarker(
   }
 
   if (state.progress !== undefined) {
-    button.style.setProperty('--progress', String(state.progress));
+    button.style.setProperty('--progress', `${state.progress}%`);
   }
 
   if (state.scaleFactor !== undefined) {
