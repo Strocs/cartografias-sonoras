@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { mockMaps } from '../../../src/features/maps/data/mock-maps';
+import { mapFixtures } from '../../fixtures/maps';
 import { HomePage } from './home-page';
 
 test.describe('Home', () => {
@@ -25,7 +25,7 @@ test.describe('Home', () => {
 
       await expect(homePage.mapCards).toHaveCount(3);
 
-      for (const map of mockMaps) {
+      for (const map of mapFixtures) {
         await expect(homePage.getMapCard(map.title)).toBeVisible();
       }
     }

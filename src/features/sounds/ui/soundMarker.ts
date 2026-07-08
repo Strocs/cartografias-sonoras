@@ -38,6 +38,7 @@ export function createSoundMarker(
   button.type = 'button';
   button.className = MARKER_CLASS;
   button.setAttribute('aria-label', sound.title);
+  button.setAttribute('data-testid', 'sound-marker');
   button.setAttribute('data-sound-id', String(sound.id));
   button.setAttribute('data-map-id', String(sound.mapId));
   button.setAttribute('data-state', 'idle');

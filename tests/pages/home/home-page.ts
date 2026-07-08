@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { mockMaps } from '../../../src/features/maps/data/mock-maps';
+import { mapFixtures } from '../../fixtures/maps';
 import { BasePage } from '../base-page';
 
 export class HomePage extends BasePage {
@@ -30,10 +30,10 @@ export class HomePage extends BasePage {
   }
 
   get firstMapTitle(): string {
-    return mockMaps[0].title;
+    return mapFixtures[0].title;
   }
 
   get firstMapSlug(): string {
-    return mockMaps[0].slug;
+    return mapFixtures[0].slug;
   }
 }
