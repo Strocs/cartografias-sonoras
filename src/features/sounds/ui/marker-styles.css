@@ -8,7 +8,7 @@
 
 @property --progress {
   syntax: '<percentage>';
-  inherits: false;
+  inherits: true;
   initial-value: 0%;
 }
 
@@ -38,24 +38,8 @@
     --progress 100ms linear;
 }
 
+/* Red circle — background of the marker, inside the perimeter ring. */
 .sound-marker::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: conic-gradient(
-    var(--color-primary-brown, #8b5a2b) var(--progress),
-    transparent var(--progress)
-  );
-  opacity: 0;
-  transition: opacity 200ms ease-out;
-
-  /* Ring shape: transparent centre, visible outer band. */
-  mask: radial-gradient(transparent 58%, black 64%);
-  -webkit-mask: radial-gradient(transparent 58%, black 64%);
-}
-
-.sound-marker::after {
   content: '';
   position: absolute;
   inset: 8px;
@@ -65,6 +49,39 @@
     inset 0 1px 2px rgba(255, 255, 255, 0.25),
     0 2px 6px rgba(0, 0, 0, 0.2);
   transition: transform 200ms ease-out;
+  z-index: 1;
+}
+
+/* Progress ring — single element with fill + base track.
+ *   - Base track: semi-transparent white ring, always visible when active
+ *   - Progress: maroon conic-gradient that fills clockwise from 12 o'clock
+ *
+ * The ring renders at the perimeter (~20px–24px radius on a 54px marker) so
+ * it appears to wrap around the red circle rather than being hidden behind it.
+ */
+.sound-marker::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 2;
+
+  /* Track base + progress fill layered on the same element. */
+  background:
+    conic-gradient(
+      var(--color-primary-brown, #8b5a2b) var(--progress),
+      transparent var(--progress)
+    ),
+    rgba(255, 255, 255, 0.25);
+  background-origin: border-box;
+  background-clip: padding-box;
+
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+
+  /* Ring shape: narrow band at the perimeter (74%–89% of radius). */
+  mask: radial-gradient(transparent 74%, black 89%);
+  -webkit-mask: radial-gradient(transparent 74%, black 89%);
 }
 
 .sound-marker:hover,
@@ -72,8 +89,8 @@
   filter: brightness(1.1);
 }
 
-.sound-marker:hover::after,
-.sound-marker:focus-visible::after {
+.sound-marker:hover::before,
+.sound-marker:focus-visible::before {
   transform: scale(1.12);
 }
 
@@ -89,12 +106,12 @@
   z-index: 10;
 }
 
-.sound-marker[data-state='playing']::before,
-.sound-marker[data-state='paused']::before {
+.sound-marker[data-state='playing']::after,
+.sound-marker[data-state='paused']::after {
   opacity: 1;
 }
 
-.sound-marker[data-state='playing']::after {
+.sound-marker[data-state='playing']::before {
   animation: marker-ripple 1.8s ease-out infinite;
 }
 
@@ -117,8 +134,7 @@
   opacity: 1;
 }
 
-.sound-marker[data-state='playing'] .sound-marker__icon--play,
-.sound-marker[data-state='paused'] .sound-marker__icon--play {
+.sound-marker[data-state='playing'] .sound-marker__icon--play {
   transform: scale(0.6);
   opacity: 0;
 }
@@ -128,8 +144,7 @@
   opacity: 0;
 }
 
-.sound-marker[data-state='playing'] .sound-marker__icon--pause,
-.sound-marker[data-state='paused'] .sound-marker__icon--pause {
+.sound-marker[data-state='playing'] .sound-marker__icon--pause {
   transform: scale(1);
   opacity: 1;
 }
@@ -228,7 +243,7 @@
     animation: none;
   }
 
-  .sound-marker[data-state='playing']::after {
+  .sound-marker[data-state='playing']::before {
     animation: none;
   }
 }

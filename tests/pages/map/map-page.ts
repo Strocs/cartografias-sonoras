@@ -3,6 +3,11 @@ import { expect } from '@playwright/test';
 
 import { BasePage } from '../base-page';
 
+export interface MapBounds {
+  viewport: { left: number; right: number; top: number; bottom: number };
+  image: { left: number; right: number; top: number; bottom: number };
+}
+
 export class MapPage extends BasePage {
   readonly heading: Locator;
   readonly viewport: Locator;
@@ -65,6 +70,20 @@ export class MapPage extends BasePage {
     return this.page.evaluate(() => {
       const mapView = document.querySelector('map-view#main-map');
       return (mapView as HTMLMapViewElement | null)?.getScale() ?? 1;
+    });
+  }
+
+  async getBounds(): Promise<MapBounds> {
+    return this.page.evaluate(() => {
+      const viewport = document.querySelector('.map-viewport')?.getBoundingClientRect();
+      const image = document.querySelector('.map-panzoom')?.getBoundingClientRect();
+      if (viewport === undefined || image === undefined) {
+        throw new Error('Map viewport is not ready');
+      }
+      return {
+        viewport: { left: viewport.left, right: viewport.right, top: viewport.top, bottom: viewport.bottom },
+        image: { left: image.left, right: image.right, top: image.top, bottom: image.bottom },
+      };
     });
   }
 }

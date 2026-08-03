@@ -113,10 +113,13 @@ function applyTransform(
 ): void {
   button.style.setProperty('--marker-x', String(x));
   button.style.setProperty('--marker-y', String(y));
-  button.style.transform = `translate(${x}px, ${y}px) scale(${scaleFactor})`;
+  button.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scaleFactor})`;
 }
 
-function createIconSpan(className: string, svg: SVGSVGElement): HTMLSpanElement {
+function createIconSpan(
+  className: string,
+  svg: SVGSVGElement
+): HTMLSpanElement {
   const span = document.createElement('span');
   span.className = `sound-marker__icon ${className}`;
   span.setAttribute('aria-hidden', 'true');

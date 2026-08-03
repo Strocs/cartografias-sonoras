@@ -3,36 +3,27 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-vi.mock('../../src/features/maps/lib/panzoom-setup', () => ({
-  initPanzoom: vi.fn((container: HTMLElement) => {
-    const panzoom = {
-      zoomIn: vi.fn(() => {
-        container.dispatchEvent(
-          new CustomEvent('panzoomzoom', {
-            detail: { scale: 1.3, x: 0, y: 0, isSVG: false, originalEvent: new Event('zoom') },
-          })
-        );
-        return { x: 0, y: 0, scale: 1.3 };
-      }),
-      zoomOut: vi.fn(() => ({ x: 0, y: 0, scale: 1 })),
-      reset: vi.fn(() => ({ x: 0, y: 0, scale: 1 })),
-      getScale: vi.fn(() => 1.3),
-      getPan: vi.fn(() => ({ x: 0, y: 0 })),
-      setOptions: vi.fn(),
+const engineInstances = vi.hoisted(() => [] as Array<{
+  zoomIn: ReturnType<typeof vi.fn>;
+  zoomOut: ReturnType<typeof vi.fn>;
+  reset: ReturnType<typeof vi.fn>;
+  destroy: ReturnType<typeof vi.fn>;
+  getState: ReturnType<typeof vi.fn>;
+  subscribe: ReturnType<typeof vi.fn>;
+}>);
+
+vi.mock('../../src/features/maps/lib/viewport/engine', () => ({
+  ViewportEngine: vi.fn(function () {
+    const instance = {
+      zoomIn: vi.fn(),
+      zoomOut: vi.fn(),
+      reset: vi.fn(),
       destroy: vi.fn(),
-      bind: vi.fn(),
-      eventNames: { down: 'pointerdown', move: 'pointermove', up: 'pointerup' },
-      handleDown: vi.fn(),
-      handleMove: vi.fn(),
-      handleUp: vi.fn(),
-      pan: vi.fn(),
-      resetStyle: vi.fn(),
-      setStyle: vi.fn(),
-      zoom: vi.fn(),
-      zoomToPoint: vi.fn(),
-      zoomWithWheel: vi.fn(),
+      getState: vi.fn(() => ({ scale: 1, x: 0, y: 0 })),
+      subscribe: vi.fn(() => () => undefined),
     };
-    return { panzoom, destroy: vi.fn() };
+    engineInstances.push(instance);
+    return instance;
   }),
 }));
 

@@ -41,7 +41,20 @@ describe('createSoundMarker', () => {
     expect(marker.tagName).toBe('BUTTON');
     expect(marker.classList.contains('sound-marker')).toBe(true);
     expect(marker.style.transform).toContain('translate(400px, 150px)');
+    expect(marker.style.transform).toContain('translate(-50%, -50%)');
     expect(marker.style.transform).toContain('scale(0.75)');
+  });
+
+  it('maps x to image width and y to image height', () => {
+    const marker = createSoundMarker(
+      { ...mockSound, position: { x: 25, y: 75 } },
+      800,
+      600
+    );
+
+    expect(marker.style.getPropertyValue('--marker-x')).toBe('200');
+    expect(marker.style.getPropertyValue('--marker-y')).toBe('450');
+    expect(marker.style.transform).toContain('translate(200px, 450px)');
   });
 
   it('sets accessibility and identification attributes', () => {
@@ -65,7 +78,10 @@ describe('createSoundMarker', () => {
 
     expect(handler).toHaveBeenCalledOnce();
     const event = handler.mock.calls[0][0] as CustomEvent;
-    expect(event.detail).toEqual({ soundId: mockSound.id, mapId: mockSound.mapId });
+    expect(event.detail).toEqual({
+      soundId: mockSound.id,
+      mapId: mockSound.mapId
+    });
     expect(event.bubbles).toBe(true);
   });
 
@@ -76,7 +92,9 @@ describe('createSoundMarker', () => {
     const handler = vi.fn();
     container.addEventListener('marker:activate', handler);
 
-    marker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    marker.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+    );
 
     expect(handler).toHaveBeenCalledOnce();
   });
@@ -88,7 +106,9 @@ describe('createSoundMarker', () => {
     const handler = vi.fn();
     container.addEventListener('marker:activate', handler);
 
-    marker.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    marker.dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true })
+    );
 
     expect(handler).toHaveBeenCalledOnce();
   });
