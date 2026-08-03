@@ -4,8 +4,8 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { AudioBottomPlayer } from '../../src/features/sound-pieces/ui/AudioBottomPlayer';
 import { createInitialState } from '../../src/shared/lib/audio-engine/engine';
 import {
+  audioStore,
   audioTransitions,
-  useAudioStore,
 } from '../../src/shared/lib/audio-engine/store';
 import { AUDIO_STATUS } from '../../src/shared/lib/audio-engine/types';
 
@@ -20,7 +20,7 @@ const SOUND_PIECE = {
 
 describe('AudioBottomPlayer', () => {
   beforeEach(() => {
-    useAudioStore.setState(createInitialState());
+    audioStore.setState(createInitialState());
     vi.restoreAllMocks();
   });
 
@@ -39,7 +39,7 @@ describe('AudioBottomPlayer', () => {
     render(<AudioBottomPlayer soundPiece={SOUND_PIECE} />);
 
     act(() => {
-      useAudioStore.getState().playSound(101, 1);
+      audioStore.getState().playSound(101, 1);
       audioTransitions.soundLoaded(101, 60);
     });
 
@@ -58,32 +58,32 @@ describe('AudioBottomPlayer', () => {
       fireEvent.click(button);
     });
 
-    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.LOADING);
+    expect(audioStore.getState().piece.status).toBe(AUDIO_STATUS.LOADING);
 
     act(() => {
       audioTransitions.pieceLoaded(60);
     });
 
-    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.PLAYING);
+    expect(audioStore.getState().piece.status).toBe(AUDIO_STATUS.PLAYING);
 
     act(() => {
       fireEvent.click(button);
     });
 
-    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.PAUSED);
+    expect(audioStore.getState().piece.status).toBe(AUDIO_STATUS.PAUSED);
 
     act(() => {
       fireEvent.click(button);
     });
 
-    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.PLAYING);
+    expect(audioStore.getState().piece.status).toBe(AUDIO_STATUS.PLAYING);
   });
 
   it('shows elapsed and total time for the piece', async () => {
     render(<AudioBottomPlayer soundPiece={SOUND_PIECE} />);
 
     act(() => {
-      useAudioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId);
+      audioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId);
       audioTransitions.pieceLoaded(125);
       audioTransitions.pieceTimeUpdated(65);
     });
@@ -100,7 +100,7 @@ describe('AudioBottomPlayer', () => {
       fireEvent.change(slider, { target: { value: '35' } });
     });
 
-    expect(useAudioStore.getState().volume).toBe(0.35);
+    expect(audioStore.getState().volume).toBe(0.35);
   });
 
   it('toggles mute when the mute button is clicked', () => {
@@ -111,20 +111,20 @@ describe('AudioBottomPlayer', () => {
       fireEvent.click(muteButton);
     });
 
-    expect(useAudioStore.getState().muted).toBe(true);
+    expect(audioStore.getState().muted).toBe(true);
 
     act(() => {
       fireEvent.click(muteButton);
     });
 
-    expect(useAudioStore.getState().muted).toBe(false);
+    expect(audioStore.getState().muted).toBe(false);
   });
 
   it('appears in piece mode when a sound piece is playing', async () => {
     render(<AudioBottomPlayer soundPiece={SOUND_PIECE} />);
 
     act(() => {
-      useAudioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId);
+      audioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId);
       audioTransitions.pieceLoaded(180);
     });
 
@@ -138,7 +138,7 @@ describe('AudioBottomPlayer', () => {
     render(<AudioBottomPlayer soundPiece={SOUND_PIECE} />);
 
     act(() => {
-      useAudioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId);
+      audioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId);
       audioTransitions.pieceLoaded(180);
     });
 
@@ -148,7 +148,7 @@ describe('AudioBottomPlayer', () => {
     });
 
     await waitFor(() => {
-      expect(useAudioStore.getState().piece.currentTime).toBe(90);
+      expect(audioStore.getState().piece.currentTime).toBe(90);
     });
   });
 });

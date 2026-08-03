@@ -8,8 +8,8 @@ import { MapContext } from '../../src/shared/lib/viewport/MapContext';
 import { mockSounds } from '../../src/features/sounds/data/mock-sounds';
 import { createInitialState } from '../../src/shared/lib/audio-engine/engine';
 import {
+  audioStore,
   audioTransitions,
-  useAudioStore,
 } from '../../src/shared/lib/audio-engine/store';
 import { AUDIO_STATUS } from '../../src/shared/lib/audio-engine/types';
 
@@ -54,7 +54,7 @@ function Wrapper({ children }: { children: ReactNode }) {
 
 describe('SoundMarker progress sync', () => {
   beforeEach(() => {
-    useAudioStore.setState(createInitialState());
+    audioStore.setState(createInitialState());
   });
 
   it('renders at 54px while idle', async () => {
@@ -84,7 +84,7 @@ describe('SoundMarker progress sync', () => {
     const marker = await screen.findByTestId('sound-marker');
 
     act(() => {
-      useAudioStore.getState().playSound(sound101.id, sound101.mapId);
+      audioStore.getState().playSound(sound101.id, sound101.mapId);
       audioTransitions.soundLoaded(sound101.id, 60);
     });
 
@@ -105,7 +105,7 @@ describe('SoundMarker progress sync', () => {
     await screen.findByTestId('sound-marker');
 
     act(() => {
-      useAudioStore.getState().playSound(sound101.id, sound101.mapId);
+      audioStore.getState().playSound(sound101.id, sound101.mapId);
       audioTransitions.soundLoaded(sound101.id, 60);
     });
 
@@ -126,10 +126,10 @@ describe('SoundMarker progress sync', () => {
     await screen.findByTestId('sound-marker');
 
     act(() => {
-      useAudioStore.getState().playSound(sound101.id, sound101.mapId);
+      audioStore.getState().playSound(sound101.id, sound101.mapId);
       audioTransitions.soundLoaded(sound101.id, 60);
       audioTransitions.soundTimeUpdated(sound101.id, 20);
-      useAudioStore.getState().pauseSound(sound101.id);
+      audioStore.getState().pauseSound(sound101.id);
     });
 
     const marker = await screen.findByTestId('sound-marker');
@@ -147,7 +147,7 @@ describe('SoundMarker progress sync', () => {
     const marker = await screen.findByTestId('sound-marker');
 
     act(() => {
-      useAudioStore.getState().playSound(sound101.id, sound101.mapId);
+      audioStore.getState().playSound(sound101.id, sound101.mapId);
       audioTransitions.soundLoaded(sound101.id, 60);
       audioTransitions.soundEnded(sound101.id);
     });
@@ -163,7 +163,7 @@ describe('SoundMarker progress sync', () => {
 
 describe('SoundMarker interaction blocking', () => {
   beforeEach(() => {
-    useAudioStore.setState(createInitialState());
+    audioStore.setState(createInitialState());
   });
 
   it('pauses the SoundPiece and plays the marker sound when clicked while piece is active', async () => {
@@ -176,7 +176,7 @@ describe('SoundMarker interaction blocking', () => {
     const marker = await screen.findByTestId('sound-marker');
 
     act(() => {
-      useAudioStore.getState().playPiece(999, sound101.mapId);
+      audioStore.getState().playPiece(999, sound101.mapId);
       audioTransitions.pieceLoaded(60);
     });
 
@@ -187,11 +187,11 @@ describe('SoundMarker interaction blocking', () => {
     await userEvent.click(button);
 
     // Piece is paused (not stopped).
-    expect(useAudioStore.getState().activePieceId).toBe(999);
-    expect(useAudioStore.getState().piece.status).toBe(AUDIO_STATUS.PAUSED);
+    expect(audioStore.getState().activePieceId).toBe(999);
+    expect(audioStore.getState().piece.status).toBe(AUDIO_STATUS.PAUSED);
     // Marker sound starts playing.
-    expect(useAudioStore.getState().activeSounds.has(sound101.id)).toBe(true);
-    expect(useAudioStore.getState().activeSounds.get(sound101.id)?.status).toBe(
+    expect(audioStore.getState().activeSounds.has(sound101.id)).toBe(true);
+    expect(audioStore.getState().activeSounds.get(sound101.id)?.status).toBe(
       AUDIO_STATUS.LOADING
     );
   });
@@ -199,7 +199,7 @@ describe('SoundMarker interaction blocking', () => {
 
 describe('SoundMarker render isolation', () => {
   beforeEach(() => {
-    useAudioStore.setState(createInitialState());
+    audioStore.setState(createInitialState());
   });
 
   it('only updates the marker whose sound receives a timeupdate', async () => {
@@ -215,7 +215,7 @@ describe('SoundMarker render isolation', () => {
     });
 
     act(() => {
-      useAudioStore.getState().playSound(sound101.id, sound101.mapId);
+      audioStore.getState().playSound(sound101.id, sound101.mapId);
       audioTransitions.soundLoaded(sound101.id, 60);
       audioTransitions.soundTimeUpdated(sound101.id, 5);
     });
