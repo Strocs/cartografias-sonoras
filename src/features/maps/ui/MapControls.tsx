@@ -67,10 +67,10 @@ function ControlButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'border-secondary-sand/60 flex size-10 cursor-pointer items-center justify-center rounded-full border',
-        'text-charcoal bg-canvas shadow-md transition-all',
+        'flex size-10 cursor-pointer items-center justify-center rounded-full border border-secondary-sand/60',
+        'bg-canvas text-charcoal shadow-md transition-all',
         'hover:scale-105 hover:shadow-lg',
-        'focus:ring-charcoal/30 focus:ring-2 focus:outline-none',
+        'focus:ring-2 focus:ring-charcoal/30 focus:outline-none',
         'active:scale-95'
       )}
       aria-label={label}
