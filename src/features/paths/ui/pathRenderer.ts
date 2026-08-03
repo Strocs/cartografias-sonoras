@@ -7,7 +7,7 @@ const PULSE_DURATION = '1.5s';
 const PULSE_RADIUS = '4';
 const PATH_CLASS_BASE = 'path-base';
 
-/** Maps a PathVisualState variant to the legacy CSS class used by PathOverlay. */
+/** Maps a PathVisualState variant to the legacy CSS class used by the React PathOverlay. */
 const VARIANT_LEGACY_CLASS: Record<PathVisualState['variant'], string> = {
   idle: 'path-idle',
   single: 'path-single',
@@ -66,6 +66,7 @@ export function renderPaths(
     const legacyClass = VARIANT_LEGACY_CLASS[state.variant];
     const bemClass = VARIANT_BEM_CLASS[state.variant];
     pathEl.setAttribute('d', d);
+    pathEl.setAttribute('data-testid', 'map-path');
     pathEl.setAttribute('data-path-id', String(state.pathId));
     pathEl.setAttribute('vector-effect', 'non-scaling-stroke');
     pathEl.setAttribute('class', `${PATH_CLASS_BASE} ${legacyClass} ${bemClass}`);

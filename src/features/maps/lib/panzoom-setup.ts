@@ -10,6 +10,9 @@ export interface InitPanzoomOptions {
   minScale?: number;
   maxScale?: number;
   step?: number;
+  startScale?: number;
+  startX?: number;
+  startY?: number;
 }
 
 const DEFAULT_MIN_SCALE = 0.5;
@@ -33,14 +36,23 @@ export function initPanzoom(
     throw new Error('Panzoom container must have a parent element');
   }
 
+  const startScale = options.startScale ?? 1;
+  const minScale = Math.min(
+    startScale,
+    options.minScale ?? DEFAULT_MIN_SCALE
+  );
+
   const panzoomOptions: PanzoomGlobalOptions = {
     contain: 'outside',
     cursor: 'grab',
     disablePan: false,
     disableZoom: false,
-    minScale: options.minScale ?? DEFAULT_MIN_SCALE,
+    minScale,
     maxScale: options.maxScale ?? DEFAULT_MAX_SCALE,
     step: options.step ?? DEFAULT_STEP,
+    startScale,
+    startX: options.startX ?? 0,
+    startY: options.startY ?? 0,
   };
 
   const panzoom = Panzoom(container, panzoomOptions);

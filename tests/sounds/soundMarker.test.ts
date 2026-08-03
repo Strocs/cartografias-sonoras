@@ -48,6 +48,7 @@ describe('createSoundMarker', () => {
     const marker = createSoundMarker(mockSound, 800, 600);
 
     expect(marker.getAttribute('aria-label')).toBe(mockSound.title);
+    expect(marker.getAttribute('data-testid')).toBe('sound-marker');
     expect(marker.getAttribute('data-sound-id')).toBe(String(mockSound.id));
     expect(marker.getAttribute('data-map-id')).toBe(String(mockSound.mapId));
     expect(marker.getAttribute('data-state')).toBe('idle');
@@ -119,7 +120,7 @@ describe('updateSoundMarker', () => {
 
     expect(marker.getAttribute('data-state')).toBe('playing');
     expect(marker.classList.contains('sound-marker--selected')).toBe(true);
-    expect(marker.style.getPropertyValue('--progress')).toBe('75');
+    expect(marker.style.getPropertyValue('--progress')).toBe('75%');
   });
 
   it('removes the selected class when status returns to idle', () => {

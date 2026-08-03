@@ -49,14 +49,16 @@ export function bindMapView({
   const soundsById = new Map(sounds.map((sound) => [sound.id, sound]));
   const markersById = new Map<number, HTMLButtonElement>();
 
+  const imageWidth = mapView.imageWidth || imgWidth;
+  const imageHeight = mapView.imageHeight || imgHeight;
   let currentScaleFactor = mapView.scaleFactor;
 
   // Initial render.
   for (const sound of sounds) {
     const marker = createSoundMarker(
       sound,
-      imgWidth,
-      imgHeight,
+      imageWidth,
+      imageHeight,
       currentScaleFactor
     );
     markerLayer.appendChild(marker);
@@ -74,7 +76,7 @@ export function bindMapView({
     }
   );
 
-  // Marker activation triggers playback.
+  // Marker activation toggles playback.
   const markerActivateHandler = (event: Event) => {
     const customEvent = event as CustomEvent;
     const detail = customEvent.detail as
@@ -82,7 +84,16 @@ export function bindMapView({
       | undefined;
     if (detail === undefined) return;
 
-    audioStore.getState().playSound(detail.soundId, detail.mapId);
+    const state = audioStore.getState().activeSounds.get(detail.soundId);
+    const status = state?.status ?? AUDIO_STATUS.IDLE;
+
+    if (status === AUDIO_STATUS.PLAYING || status === AUDIO_STATUS.LOADING) {
+      audioStore.getState().pauseSound(detail.soundId);
+    } else if (status === AUDIO_STATUS.PAUSED) {
+      audioStore.getState().resumeSound(detail.soundId);
+    } else {
+      audioStore.getState().playSound(detail.soundId, detail.mapId);
+    }
   };
 
   // Viewport scale changes require compensating marker size.
@@ -131,7 +142,7 @@ export function bindMapView({
   function updatePaths(): void {
     const activeSounds = audioStore.getState().activeSounds;
     const pathStates = computePathVisualStates(paths, soundsById, activeSounds);
-    renderPaths(Array.from(pathStates.values()), svg, imgWidth, imgHeight);
+    renderPaths(Array.from(pathStates.values()), svg, imageWidth, imageHeight);
   }
 
   return function unbind(): void {

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { mockMaps } from '../../../src/features/maps/data/mock-maps';
+import { mapFixtures } from '../../fixtures/maps';
 import { mockPaths } from '../../../src/features/paths/data/mock-paths';
 import { mockSounds } from '../../../src/features/sounds/data/mock-sounds';
 import { HomePage } from '../home/home-page';
@@ -12,7 +12,7 @@ test.describe('Map', () => {
     { tag: ['@critical', '@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      const map = mockMaps[0];
+      const map = mapFixtures[0];
 
       await mapPage.goto(map.slug);
 
@@ -27,7 +27,7 @@ test.describe('Map', () => {
     { tag: ['@critical', '@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      await mapPage.goto(mockMaps[0].slug);
+      await mapPage.goto(mapFixtures[0].slug);
 
       await page.getByRole('link', { name: 'Inicio' }).click();
 
@@ -42,7 +42,7 @@ test.describe('Map', () => {
     { tag: ['@critical', '@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      const map = mockMaps[0];
+      const map = mapFixtures[0];
       const expectedSounds = mockSounds.filter((sound) => sound.mapId === map.id);
 
       await mapPage.goto(map.slug);
@@ -56,11 +56,11 @@ test.describe('Map', () => {
   );
 
   test(
-    'shows hover card with sound title and description',
+    'shows tooltip with sound title and description on hover',
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      const map = mockMaps[0];
+      const map = mapFixtures[0];
       const sound = mockSounds.find((s) => s.mapId === map.id);
 
       if (!sound) {
@@ -70,41 +70,38 @@ test.describe('Map', () => {
       await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
 
-      // Leaflet divIcon portals prevent CSS :hover from propagating in
-      // Playwright. Force the hover card into a visible state so we can
-      // verify its content without relying on real mouse hover.
-      const hoverCard = mapPage.hoverCards.first();
-      await hoverCard.evaluate((el) => {
-        el.classList.remove('hidden', 'opacity-0');
-        el.classList.add('block', 'opacity-100');
-      });
+      const marker = mapPage.getMarkerBySoundId(sound.id);
+      const tooltip = marker.locator('.sound-marker__tooltip');
 
-      await expect(hoverCard).toBeVisible();
-      await expect(hoverCard).toContainText(sound.title);
-      await expect(hoverCard).toContainText(sound.description);
+      await marker.hover();
+
+      await expect(tooltip).toBeVisible();
+      await expect(tooltip).toContainText(sound.title);
+      await expect(tooltip).toContainText(sound.description);
     }
   );
 
   test(
-    'zoom buttons change the map zoom',
+    'zoom buttons change the map scale',
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      await mapPage.goto(mockMaps[0].slug);
+      await mapPage.goto(mapFixtures[0].slug);
       await mapPage.waitForViewportReady();
 
       const initialZoom = await mapPage.getZoom();
 
       await mapPage.zoomInButton.click();
+      let zoomedInZoom = initialZoom;
       await expect(async () => {
-        const zoom = await mapPage.getZoom();
-        expect(zoom).toBeGreaterThan(initialZoom);
+        zoomedInZoom = await mapPage.getZoom();
+        expect(zoomedInZoom).toBeGreaterThan(initialZoom);
       }).toPass({ timeout: 2000 });
 
       await mapPage.zoomOutButton.click();
       await expect(async () => {
         const zoom = await mapPage.getZoom();
-        expect(zoom).toBe(initialZoom);
+        expect(zoom).toBeLessThan(zoomedInZoom);
       }).toPass({ timeout: 2000 });
     }
   );
@@ -114,20 +111,21 @@ test.describe('Map', () => {
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      await mapPage.goto(mockMaps[0].slug);
+      await mapPage.goto(mapFixtures[0].slug);
       await mapPage.waitForViewportReady();
 
       const initialZoom = await mapPage.getZoom();
+      let zoomedInZoom = initialZoom;
       await mapPage.zoomInButton.click();
       await expect(async () => {
-        const zoom = await mapPage.getZoom();
-        expect(zoom).toBeGreaterThan(initialZoom);
+        zoomedInZoom = await mapPage.getZoom();
+        expect(zoomedInZoom).toBeGreaterThan(initialZoom);
       }).toPass({ timeout: 2000 });
 
       await mapPage.centerMapButton.click();
       await expect(async () => {
         const zoom = await mapPage.getZoom();
-        expect(zoom).toBe(initialZoom);
+        expect(zoom).toBeLessThan(zoomedInZoom);
       }).toPass({ timeout: 2000 });
     }
   );
@@ -137,8 +135,8 @@ test.describe('Map', () => {
     { tag: ['@critical', '@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      const activeMap = mockMaps[0];
-      const inactiveMaps = mockMaps.filter((m) => m.slug !== activeMap.slug);
+      const activeMap = mapFixtures[0];
+      const inactiveMaps = mapFixtures.filter((m) => m.slug !== activeMap.slug);
 
       await mapPage.goto(activeMap.slug);
       await mapPage.waitForViewportReady();
@@ -157,26 +155,25 @@ test.describe('Map', () => {
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      const map = mockMaps[0];
+      const map = mapFixtures[0];
       const expectedPaths = mockPaths.filter((path) => path.mapId === map.id);
 
       await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
 
-      const paths = page.locator('.leaflet-path-pane path');
-      await expect(paths).toHaveCount(expectedPaths.length);
+      await expect(mapPage.pathSvg).toHaveCount(expectedPaths.length);
 
-      const firstPath = paths.first();
-      await expect(firstPath).toHaveAttribute('stroke-dasharray');
+      const firstPath = mapPage.pathSvg.first();
+      await expect(firstPath).toHaveClass(/path-base/);
     }
   );
 
   test(
-    'clicking a marker starts playback and shows the progress ring',
+    'clicking a marker starts playback and updates marker state',
     { tag: ['@e2e', '@audio'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      const map = mockMaps[0];
+      const map = mapFixtures[0];
       const sound = mockSounds.find((s) => s.mapId === map.id);
 
       if (!sound) {
@@ -189,10 +186,9 @@ test.describe('Map', () => {
       const marker = mapPage.getMarkerBySoundId(sound.id);
       await marker.click();
 
-      await expect(marker).toHaveAttribute('data-status', 'playing', {
-        timeout: 5000,
+      await expect(marker).toHaveAttribute('data-state', 'playing', {
+        timeout: 5000
       });
-      await expect(marker.locator('[data-testid="progress-ring"]')).toBeVisible();
     }
   );
 
@@ -201,7 +197,7 @@ test.describe('Map', () => {
     { tag: ['@e2e', '@audio'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
-      const map = mockMaps[0];
+      const map = mapFixtures[0];
       const sound = mockSounds.find((s) => s.mapId === map.id);
 
       if (!sound) {

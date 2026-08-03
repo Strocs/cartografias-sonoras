@@ -7,15 +7,15 @@
  */
 
 @property --progress {
-  syntax: '<number>';
+  syntax: '<percentage>';
   inherits: false;
-  initial-value: 0;
+  initial-value: 0%;
 }
 
 .sound-marker {
   --marker-x: 0;
   --marker-y: 0;
-  --progress: 0;
+  --progress: 0%;
 
   position: absolute;
   top: 0;
@@ -44,15 +44,15 @@
   inset: 0;
   border-radius: inherit;
   background: conic-gradient(
-    var(--color-primary-brown, #8b5a2b) calc(var(--progress) * 1%),
-    transparent calc(var(--progress) * 1%)
+    var(--color-primary-brown, #8b5a2b) var(--progress),
+    transparent var(--progress)
   );
   opacity: 0;
   transition: opacity 200ms ease-out;
 
   /* Ring shape: transparent centre, visible outer band. */
-  mask: radial-gradient(transparent 54%, black 56%);
-  -webkit-mask: radial-gradient(transparent 54%, black 56%);
+  mask: radial-gradient(transparent 58%, black 64%);
+  -webkit-mask: radial-gradient(transparent 58%, black 64%);
 }
 
 .sound-marker::after {

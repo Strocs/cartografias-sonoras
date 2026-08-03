@@ -1,7 +1,7 @@
 import type { Path } from '../domain/types';
 
 // Waypoints are intermediate points between start and end sounds.
-// Endpoints are derived from the sound positions at runtime (see SoundTour).
+// Endpoints are derived from the sound positions at runtime.
 // All values are percentages relative to the map image:
 //   (0, 0) = top-left corner, (100, 100) = bottom-right corner.
 
