@@ -25,7 +25,7 @@ vi.spyOn(L, 'polyline').mockImplementation(((latlngs: any, options: any) => {
     _latlngs: latlngs,
     _path: pathEl,
     options,
-    addTo(_map: unknown) {
+    addTo() {
       mockPane.appendChild(container);
       return this;
     },

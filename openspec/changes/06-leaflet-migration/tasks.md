@@ -40,12 +40,12 @@ Chain strategy: pending
 
 ## Phase 3: Vanilla Renderers + Bindings — PR 2b
 
-- [ ] 3.1 `soundMarker.ts`: `<button>` via `relativeToPixel`, `data-state`, `marker:activate` event, keyboard a11y [sound-marker]
-- [ ] 3.2 `marker-styles.css`: `@property --progress` + CSS transition; ripple; hover/focus [sound-marker]
-- [ ] 3.3 `pathRenderer.ts`: `<path>` via `buildPolylineD`, `vector-effect="non-scaling-stroke"`, CSS classes, animateMotion pulse [path-overlay]
-- [ ] 3.4 `pathStateEngine.ts`: extract `computePathVisualStates` from SoundTour [design]
-- [ ] 3.5 `mapViewBindings.ts`: subscribe store → update markers/paths; handle `marker:activate` → `playSound()` [design]
-- [ ] 3.6 Tests: pure fn + DOM output [testing]
+- [x] 3.1 `soundMarker.ts`: `<button>` via `relativeToPixel`, `data-state`, `marker:activate` event, keyboard a11y [sound-marker]
+- [x] 3.2 `marker-styles.css`: `@property --progress` + CSS transition; ripple; hover/focus [sound-marker]
+- [x] 3.3 `pathRenderer.ts`: `<path>` via `buildPolylineD`, `vector-effect="non-scaling-stroke"`, CSS classes, animateMotion pulse [path-overlay]
+- [x] 3.4 `pathStateEngine.ts`: extract `computePathVisualStates` from SoundTour [design]
+- [x] 3.5 `mapViewBindings.ts`: subscribe store → update markers/paths; handle `marker:activate` → `playSound()` [design]
+- [x] 3.6 Tests: pure fn + DOM output [testing]
 
 ## Phase 4: Page Integration — PR 3
 

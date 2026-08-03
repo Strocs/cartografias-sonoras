@@ -4,6 +4,8 @@ import type { PanzoomObject } from '@panzoom/panzoom';
 
 export interface MapViewElement extends HTMLElement {
   readonly scaleFactor: number;
+  readonly svgLayer: SVGSVGElement | null;
+  readonly markerLayer: HTMLDivElement | null;
   zoomIn(): void;
   zoomOut(): void;
   resetView(): void;
@@ -39,7 +41,7 @@ export class MapView extends HTMLElement implements MapViewElement {
       throw new Error(`<map-view> requires a "${MAP_SRC_ATTR}" attribute`);
     }
 
-    this._buildDom(src);
+    this._buildDom();
     void this._initialize(src);
   }
 
@@ -80,7 +82,7 @@ export class MapView extends HTMLElement implements MapViewElement {
     return this._markerLayer;
   }
 
-  private _buildDom(src: string) {
+  private _buildDom() {
     this.style.display = 'block';
     this.style.position = 'relative';
     this.style.overflow = 'hidden';
