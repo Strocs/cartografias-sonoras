@@ -45,14 +45,24 @@ const mapData = {
 <Layout title={map.title}>
   <div class="flex h-screen">
     <Navigation />
-    <main class="relative flex-1 overflow-hidden" transition:animate="fade">
+    <main
+      class="relative min-w-0 flex-1 overflow-hidden"
+      transition:animate="fade"
+    >
       <div class="relative flex size-full">
         <!-- Map area wrapper: flex-1 keeps the RightRail in place during
              SSR loading. The <map-view> custom element fills this wrapper
              once it hydrates. -->
-        <div class="map-wrapper relative flex flex-1 flex-col">
+        <div class="map-wrapper relative flex min-h-0 min-w-0 flex-1 flex-col">
           <MapSkeleton />
-          <map-view map-src={map.image.src} id="main-map" class="flex-1">
+          <map-view
+            map-src={map.image.src}
+            id="main-map"
+            class="min-h-0 min-w-0 flex-1"
+            start-zoom={0.3}
+            min-zoom={0.2}
+            max-zoom={2.0}
+          >
           </map-view>
           <MapControls client:visible mapViewId="main-map" />
         </div>
@@ -69,12 +79,20 @@ const mapData = {
         <AudioBottomPlayer client:idle soundPiece={soundPiece} />
       </div>
 
-      <AudioPool client:idle sounds={audioPoolSounds} soundPiece={audioPoolPiece} />
+      <AudioPool
+        client:idle
+        sounds={audioPoolSounds}
+        soundPiece={audioPoolPiece}
+      />
     </main>
   </div>
 </Layout>
 
-<script type="application/json" id="map-data" set:html={JSON.stringify(mapData)}></script>
+<script
+  type="application/json"
+  id="map-data"
+  set:html={JSON.stringify(mapData)}
+/>
 
 <script>
   import '@features/maps/ui/map-view';

@@ -24,7 +24,7 @@ export const mockSounds: Sound[] = [
       'Murmullo constante del agua cayendo en la pileta principal de la plaza.',
     audioUrl: BEACH,
     location: 'Avenida de Aguirre',
-    position: { x: 77, y: 20 },
+    position: { x: 17, y: 8 },
     mapId: 1
   },
   {
@@ -35,7 +35,7 @@ export const mockSounds: Sound[] = [
 
     audioUrl: BIRD,
     location: 'Avenida de Aguirre',
-    position: { x: 68.4, y: 30 },
+    position: { x: 26, y: 20 },
     mapId: 1
   },
   {
@@ -45,7 +45,7 @@ export const mockSounds: Sound[] = [
       'Voces de vendedores ofreciendo productos y el sonido de sus carros moviéndose por las veredas.',
     audioUrl: NIGHT,
     location: 'Avenida de Aguirre',
-    position: { x: 51.2, y: 50 },
+    position: { x: 42, y: 40 },
     mapId: 1
   },
   {
@@ -55,7 +55,7 @@ export const mockSounds: Sound[] = [
       'Pasos dispersos, conversaciones breves y el vaivén de la gente transitando por la plaza.',
     audioUrl: PEOPLE,
     location: 'Avenida de Aguirre',
-    position: { x: 27, y: 80 },
+    position: { x: 59, y: 60 },
     mapId: 1
   },
   {
@@ -65,7 +65,7 @@ export const mockSounds: Sound[] = [
       'Aleteos y arrullos de palomas concentradas cerca de los bordes de la plaza.',
     audioUrl: TRAFFIC,
     location: 'Avenida de Aguirre',
-    position: { x: 14.5, y: 96 },
+    position: { x: 76, y: 80 },
     mapId: 1
   },
 

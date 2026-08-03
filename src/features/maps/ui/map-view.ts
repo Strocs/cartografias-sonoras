@@ -1,6 +1,6 @@
-import { initPanzoom } from '../lib/panzoom-setup';
+import { DEFAULT_MAX_ZOOM } from '../config';
 import { createSvgLayer, createMarkerLayer } from '../lib/layers';
-import type { PanzoomObject } from '@panzoom/panzoom';
+import { ViewportEngine } from '../lib/viewport/engine';
 
 export interface MapViewElement extends HTMLElement {
   readonly scaleFactor: number;
@@ -15,7 +15,16 @@ export interface MapViewElement extends HTMLElement {
 }
 
 const MAP_SRC_ATTR = 'map-src';
+const MIN_ZOOM_ATTR = 'min-zoom';
+const MAX_ZOOM_ATTR = 'max-zoom';
+const START_ZOOM_ATTR = 'start-zoom';
 const READY_ATTR = 'data-ready';
+
+interface ZoomAttributes {
+  minScale?: number;
+  maxScale?: number;
+  startScale?: number;
+}
 
 /**
  * `<map-view>` is a light-DOM custom element that renders a navigable map
@@ -23,12 +32,11 @@ const READY_ATTR = 'data-ready';
  * overlay for paths, and a DOM marker layer.
  *
  * The element exposes a small public API so React islands (MapControls) and
- * page scripts can zoom and reset the view without touching Panzoom directly.
+ * page scripts can zoom and reset the view without touching the transform owner.
  */
 export class MapView extends HTMLElement implements MapViewElement {
-  private _panzoom: PanzoomObject | null = null;
-  private _destroyPanzoom: (() => void) | null = null;
-  private _resizeObserver: ResizeObserver | null = null;
+  private _lifecycle = 0;
+  private _engine: ViewportEngine | null = null;
   private _viewport: HTMLDivElement | null = null;
   private _container: HTMLDivElement | null = null;
   private _visibleImg: HTMLImageElement | null = null;
@@ -43,8 +51,9 @@ export class MapView extends HTMLElement implements MapViewElement {
       throw new Error(`<map-view> requires a "${MAP_SRC_ATTR}" attribute`);
     }
 
+    const zoomAttributes = this._parseZoomAttributes();
     this._buildDom();
-    void this._initialize(src);
+    void this._initialize(src, zoomAttributes, ++this._lifecycle);
   }
 
   disconnectedCallback() {
@@ -53,7 +62,7 @@ export class MapView extends HTMLElement implements MapViewElement {
 
   /** Returns the visual scale compensation factor (1 / current zoom). */
   get scaleFactor(): number {
-    const scale = this._panzoom?.getScale() ?? 1;
+    const scale = this._engine?.getState().scale ?? 1;
     return 1 / scale;
   }
 
@@ -67,21 +76,21 @@ export class MapView extends HTMLElement implements MapViewElement {
     return this._visibleImg?.naturalHeight ?? 0;
   }
 
-  /** Returns the current Panzoom scale. */
+  /** Returns the current viewport scale. */
   getScale(): number {
-    return this._panzoom?.getScale() ?? 1;
+    return this._engine?.getState().scale ?? 1;
   }
 
   zoomIn(): void {
-    this._panzoom?.zoomIn();
+    this._engine?.zoomIn();
   }
 
   zoomOut(): void {
-    this._panzoom?.zoomOut();
+    this._engine?.zoomOut();
   }
 
   resetView(): void {
-    this._panzoom?.reset();
+    this._engine?.reset();
   }
 
   /** The SVG layer used for path overlays. */
@@ -126,15 +135,25 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._container = container;
   }
 
-  private async _initialize(src: string) {
-    if (this._hiddenImg === null || this._container === null) {
+  private async _initialize(src: string, zoomAttributes: ZoomAttributes, lifecycle: number) {
+    const hiddenImg = this._hiddenImg;
+    if (hiddenImg === null || this._container === null) {
       return;
     }
 
-    this._hiddenImg.src = src;
-    await this._hiddenImg.decode();
+    hiddenImg.src = src;
+    try {
+      await hiddenImg.decode();
+    } catch {
+      if (this._isCurrentLifecycle(lifecycle, hiddenImg)) {
+        this.dispatchEvent(new CustomEvent('viewport-error', { detail: { message: 'Map image failed to decode' } }));
+      }
+      return;
+    }
 
-    const { naturalWidth, naturalHeight } = this._hiddenImg;
+    if (!this._isCurrentLifecycle(lifecycle, hiddenImg) || this._container === null) return;
+
+    const { naturalWidth, naturalHeight } = hiddenImg;
     if (naturalWidth === 0 || naturalHeight === 0) {
       throw new Error(`Map image has invalid dimensions: ${naturalWidth}x${naturalHeight}`);
     }
@@ -156,30 +175,33 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._svgLayer = createSvgLayer(this._container);
     this._markerLayer = createMarkerLayer(this._container);
 
-    const startScale = this._computeStartScale();
-    const { panzoom, destroy } = initPanzoom(this._container, visibleImg, {
-      startScale,
-      minScale: startScale,
+    const startScale = zoomAttributes.startScale ?? this._computeStartScale();
+    const minScale = zoomAttributes.minScale ?? startScale;
+    const maxScale = zoomAttributes.maxScale ?? DEFAULT_MAX_ZOOM;
+
+    this._assertZoomRange(minScale, startScale, maxScale);
+
+    this._engine = new ViewportEngine(this._container, {
+      content: { width: naturalWidth, height: naturalHeight },
+      minScale,
+      maxScale,
+      zoomStep: 0.3,
     });
-    this._panzoom = panzoom;
-    this._destroyPanzoom = destroy;
 
     this._viewportChangeHandler = (event: Event) => {
-      const detail = (event as CustomEvent).detail as { scale: number; x: number; y: number } | undefined;
-      if (detail === undefined) return;
+      const detail = (event as CustomEvent).detail as { state?: { scale: number; x: number; y: number } } | undefined;
+      const state = detail?.state;
+      if (state === undefined) return;
 
       this.dispatchEvent(
         new CustomEvent('viewport-change', {
           bubbles: true,
-          detail: { scale: detail.scale, x: detail.x, y: detail.y },
+          detail: { scale: state.scale, x: state.x, y: state.y },
         })
       );
     };
 
-    this._container.addEventListener('panzoomend', this._viewportChangeHandler);
-    this._container.addEventListener('panzoomzoom', this._viewportChangeHandler);
-
-    this._setupResizeObserver();
+    this._container.addEventListener('viewport-change', this._viewportChangeHandler);
 
     this.setAttribute(READY_ATTR, 'true');
   }
@@ -205,29 +227,59 @@ export class MapView extends HTMLElement implements MapViewElement {
     );
   }
 
-  private _setupResizeObserver() {
-    if (this._viewport === null || this._panzoom === null) return;
+  private _parseZoomAttributes(): ZoomAttributes {
+    const attributes = {
+      minScale: this._parsePositiveNumberAttribute(MIN_ZOOM_ATTR),
+      maxScale: this._parsePositiveNumberAttribute(MAX_ZOOM_ATTR),
+      startScale: this._parsePositiveNumberAttribute(START_ZOOM_ATTR),
+    };
 
-    this._resizeObserver = new ResizeObserver(() => {
-      this._panzoom?.setOptions({});
-    });
+    if (attributes.startScale !== undefined) {
+      this._assertZoomRange(
+        attributes.minScale ?? attributes.startScale,
+        attributes.startScale,
+        attributes.maxScale ?? DEFAULT_MAX_ZOOM
+      );
+    }
 
-    this._resizeObserver.observe(this._viewport);
+    return attributes;
+  }
+
+  private _parsePositiveNumberAttribute(name: string): number | undefined {
+    const rawValue = this.getAttribute(name);
+    if (rawValue === null) return undefined;
+
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new Error(
+        `<map-view> "${name}" attribute must be a finite positive number; received "${rawValue}"`
+      );
+    }
+
+    return value;
+  }
+
+  private _assertZoomRange(minScale: number, startScale: number, maxScale: number): void {
+    if (minScale <= startScale && startScale <= maxScale) return;
+
+    throw new Error(
+      `<map-view> zoom configuration must satisfy ${MIN_ZOOM_ATTR} <= ${START_ZOOM_ATTR} <= ${MAX_ZOOM_ATTR}; resolved values were ${minScale} <= ${startScale} <= ${maxScale}`
+    );
+  }
+
+  private _isCurrentLifecycle(lifecycle: number, hiddenImg: HTMLImageElement): boolean {
+    return this.isConnected && this._lifecycle === lifecycle && this._hiddenImg === hiddenImg;
   }
 
   private _cleanup() {
+    this._lifecycle += 1;
     if (this._viewportChangeHandler !== null && this._container !== null) {
-      this._container.removeEventListener('panzoomend', this._viewportChangeHandler);
-      this._container.removeEventListener('panzoomzoom', this._viewportChangeHandler);
+      this._container.removeEventListener('viewport-change', this._viewportChangeHandler);
       this._viewportChangeHandler = null;
     }
 
-    this._resizeObserver?.disconnect();
-    this._resizeObserver = null;
-
-    this._destroyPanzoom?.();
-    this._destroyPanzoom = null;
-    this._panzoom = null;
+    this._engine?.destroy();
+    this._engine = null;
 
     this._svgLayer = null;
     this._markerLayer = null;
@@ -235,6 +287,7 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._hiddenImg = null;
     this._container = null;
     this._viewport = null;
+    this.replaceChildren();
 
     this.removeAttribute(READY_ATTR);
   }

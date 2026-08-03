@@ -8,7 +8,7 @@
 
 @property --progress {
   syntax: '<percentage>';
-  inherits: false;
+  inherits: true;
   initial-value: 0%;
 }
 
