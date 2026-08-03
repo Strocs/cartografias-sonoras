@@ -1,10 +1,10 @@
 ---
 /**
- * Skeleton loader shown while the client:only MapCanvas React island
- * initializes the Leaflet viewport. Prevents the RightRail from
- * shifting left during SSR by occupying flex-1 space in the layout.
+ * Skeleton loader shown while the <map-view> custom element loads and
+ * initializes the Panzoom viewport. Prevents the RightRail from shifting
+ * left during SSR by occupying flex-1 space in the layout.
  *
- * Hidden via CSS `:has(.leaflet-container)` once the map renders.
+ * Hidden via CSS `:has(map-view[data-ready])` once the map renders.
  */
 ---
 

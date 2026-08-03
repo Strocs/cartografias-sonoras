@@ -49,9 +49,9 @@ Chain strategy: pending
 
 ## Phase 4: Page Integration — PR 3
 
-- [ ] 4.1 `MapPage.astro`: replace `<MapCanvas client:only>` with `<map-view>` + `<script>` + `<AudioPool client:idle>` [map-page]
-- [ ] 4.2 Skeleton fade: `.leaflet-container` → `map-view[data-ready]` [design]
-- [ ] 4.3 Verify AudioBottomPlayer via `useAudioStore` wrapper [bottom-player]
+- [x] 4.1 `MapPage.astro`: replace `<MapCanvas client:only>` with `<map-view>` + `<script>` + `<AudioPool client:idle>` [map-page]
+- [x] 4.2 Skeleton fade: `.leaflet-container` → `map-view[data-ready]` [design]
+- [x] 4.3 Verify AudioBottomPlayer via `useAudioStore` wrapper [bottom-player]
 
 ## Phase 5: Legacy Cleanup + E2E — PR 4
 
