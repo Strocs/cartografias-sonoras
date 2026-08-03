@@ -3,6 +3,11 @@ import { expect } from '@playwright/test';
 
 import { BasePage } from '../base-page';
 
+export interface MapBounds {
+  viewport: { left: number; right: number; top: number; bottom: number };
+  image: { left: number; right: number; top: number; bottom: number };
+}
+
 export class MapPage extends BasePage {
   readonly heading: Locator;
   readonly viewport: Locator;
@@ -25,16 +30,16 @@ export class MapPage extends BasePage {
   constructor(page: Page) {
     super(page);
     this.heading = page.getByRole('heading');
-    this.viewport = page.getByTestId('map-viewport');
+    this.viewport = page.locator('map-view#main-map');
     this.markers = page.getByTestId('sound-marker');
-    this.hoverCards = page.getByTestId('hover-card');
+    this.hoverCards = page.locator('.sound-marker__tooltip');
     this.mapControls = page.getByTestId('map-controls');
     this.zoomInButton = page.getByTestId('zoom-in');
     this.zoomOutButton = page.getByTestId('zoom-out');
     this.centerMapButton = page.getByTestId('center-map');
     this.rightRail = page.getByTestId('right-rail');
     this.railLinks = page.getByTestId('right-rail').getByRole('link');
-    this.pathSvg = page.locator('.leaflet-path-pane path');
+    this.pathSvg = page.getByTestId('map-path');
     this.navTitle = page.getByText('Cartografías Sensoriales').first();
     this.bottomPlayer = page.getByTestId('audio-bottom-player');
     this.bottomPlayPause = page.getByTestId('bottom-play-pause');
@@ -52,7 +57,9 @@ export class MapPage extends BasePage {
   }
 
   getMarkerBySoundId(soundId: number): Locator {
-    return this.page.locator(`[data-testid="sound-marker"][data-sound-id="${soundId}"]`);
+    return this.page.locator(
+      `[data-testid="sound-marker"][data-sound-id="${soundId}"]`
+    );
   }
 
   getRailLink(slug: string): Locator {
@@ -60,7 +67,29 @@ export class MapPage extends BasePage {
   }
 
   async getZoom(): Promise<number> {
-    const zoom = await this.viewport.getAttribute('data-zoom');
-    return Number(zoom ?? 0);
+    return this.page.evaluate(() => {
+      const mapView = document.querySelector('map-view#main-map');
+      return (mapView as HTMLMapViewElement | null)?.getScale() ?? 1;
+    });
+  }
+
+  async getBounds(): Promise<MapBounds> {
+    return this.page.evaluate(() => {
+      const viewport = document.querySelector('.map-viewport')?.getBoundingClientRect();
+      const image = document.querySelector('.map-panzoom')?.getBoundingClientRect();
+      if (viewport === undefined || image === undefined) {
+        throw new Error('Map viewport is not ready');
+      }
+      return {
+        viewport: { left: viewport.left, right: viewport.right, top: viewport.top, bottom: viewport.bottom },
+        image: { left: image.left, right: image.right, top: image.top, bottom: image.bottom },
+      };
+    });
+  }
+}
+
+declare global {
+  interface HTMLMapViewElement extends HTMLElement {
+    getScale(): number;
   }
 }

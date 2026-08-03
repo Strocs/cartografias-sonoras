@@ -1,7 +1,7 @@
 import type { Path } from '../domain/types';
 
 // Waypoints are intermediate points between start and end sounds.
-// Endpoints are derived from the sound positions at runtime (see SoundTour).
+// Endpoints are derived from the sound positions at runtime.
 // All values are percentages relative to the map image:
 //   (0, 0) = top-left corner, (100, 100) = bottom-right corner.
 
@@ -11,32 +11,33 @@ export const mockPaths: Path[] = [
   {
     id: 1001,
     mapId: 1,
-    waypoints: [
-      { x: 70, y: 30 },
-    ],
+    waypoints: [],
     startSoundId: 101,
-    endSoundId: 102,
+    endSoundId: 102
   },
   // Start (51.2,50) → Waypoint desviado hacia la derecha → End (14.5,96)
   {
     id: 1002,
     mapId: 1,
-    waypoints: [
-      { x: 40, y: 75 },
-      { x: 25, y: 82 },
-    ],
-    startSoundId: 103,
-    endSoundId: 105,
+    waypoints: [],
+    startSoundId: 102,
+    endSoundId: 103
   },
   // Start (27,80) → Waypoint desviado hacia la izquierda → End (14.5,96)
   {
     id: 1003,
     mapId: 1,
-    waypoints: [
-      { x: 15, y: 85 },
-    ],
+    waypoints: [],
+    startSoundId: 103,
+    endSoundId: 104
+  },
+
+  {
+    id: 1004,
+    mapId: 1,
+    waypoints: [],
     startSoundId: 104,
-    endSoundId: 105,
+    endSoundId: 105
   },
 
   // Mapa 2 — Plaza de Armas — La Serena (864×1243, portrait)
@@ -44,32 +45,33 @@ export const mockPaths: Path[] = [
   {
     id: 2001,
     mapId: 2,
-    waypoints: [
-      { x: 42, y: 22 },
-    ],
+    waypoints: [],
     startSoundId: 201,
-    endSoundId: 202,
+    endSoundId: 202
   },
   // Start (41.67,74.82) → Waypoint desviado hacia abajo → End (75,68.62)
   {
     id: 2002,
     mapId: 2,
-    waypoints: [
-      { x: 58, y: 80 },
-    ],
+    waypoints: [],
     startSoundId: 203,
-    endSoundId: 204,
+    endSoundId: 204
   },
   // Start (12.5,87.29) → Waypoint desviado hacia la derecha → End (25,24.94)
   {
     id: 2003,
     mapId: 2,
-    waypoints: [
-      { x: 28, y: 55 },
-      { x: 36, y: 38 },
-    ],
+    waypoints: [],
     startSoundId: 205,
-    endSoundId: 201,
+    endSoundId: 201
+  },
+  // Completes the linear route 205 → 201 → 202 → 203 → 204
+  {
+    id: 2004,
+    mapId: 2,
+    waypoints: [],
+    startSoundId: 202,
+    endSoundId: 203
   },
 
   // Mapa 3 — Cruz del Tercer Milenio — Coquimbo (1160×912)
@@ -77,20 +79,24 @@ export const mockPaths: Path[] = [
   {
     id: 3001,
     mapId: 3,
-    waypoints: [
-      { x: 52, y: 55 },
-    ],
+    waypoints: [{ x: 52, y: 55 }],
     startSoundId: 301,
-    endSoundId: 302,
+    endSoundId: 302
   },
   // Start (79.22,50) → Waypoint desviado hacia abajo → End (62.5,25)
   {
     id: 3002,
     mapId: 3,
-    waypoints: [
-      { x: 70, y: 45 },
-    ],
+    waypoints: [{ x: 70, y: 45 }],
     startSoundId: 303,
-    endSoundId: 304,
+    endSoundId: 304
   },
+  // Completes the linear route 301 → 302 → 303 → 304
+  {
+    id: 3003,
+    mapId: 3,
+    waypoints: [],
+    startSoundId: 302,
+    endSoundId: 303
+  }
 ];

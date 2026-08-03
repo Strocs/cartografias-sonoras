@@ -17,9 +17,9 @@ export interface PathStyleConfig {
 /**
  * Discriminated union that describes how a perceptual path should be rendered.
  *
- * The type deliberately carries percentage-based `points` and the map
- * dimensions live in `MapContext`; that keeps `features/paths` decoupled from
- * the audio engine and from Leaflet-specific coordinate math.
+ * The type deliberately carries percentage-based `points`; the caller passes
+ * the decoded map image dimensions when converting to pixel coordinates. This
+ * keeps `features/paths` decoupled from the audio engine and viewport state.
  */
 export type PathVisualState =
   | {
