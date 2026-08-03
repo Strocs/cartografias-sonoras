@@ -65,6 +65,14 @@ export const mockPaths: Path[] = [
     startSoundId: 205,
     endSoundId: 201
   },
+  // Completes the linear route 205 → 201 → 202 → 203 → 204
+  {
+    id: 2004,
+    mapId: 2,
+    waypoints: [],
+    startSoundId: 202,
+    endSoundId: 203
+  },
 
   // Mapa 3 — Cruz del Tercer Milenio — Coquimbo (1160×912)
   // Start (50,81.25) → Waypoint desviado hacia la derecha → End (33.36,37.5)
@@ -82,5 +90,13 @@ export const mockPaths: Path[] = [
     waypoints: [{ x: 70, y: 45 }],
     startSoundId: 303,
     endSoundId: 304
+  },
+  // Completes the linear route 301 → 302 → 303 → 304
+  {
+    id: 3003,
+    mapId: 3,
+    waypoints: [],
+    startSoundId: 302,
+    endSoundId: 303
   }
 ];

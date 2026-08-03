@@ -69,11 +69,11 @@ describe('Mock data validation', () => {
     }
   });
 
-  it('has between 2 and 3 paths per map', () => {
+  it('has exactly N-1 paths per map (one per connected pair)', () => {
     for (const map of mockMaps) {
+      const sounds = mockSounds.filter((s) => s.mapId === map.id);
       const paths = mockPaths.filter((p) => p.mapId === map.id);
-      expect(paths.length).toBeGreaterThanOrEqual(2);
-      expect(paths.length).toBeLessThanOrEqual(3);
+      expect(paths.length).toBe(sounds.length - 1);
     }
   });
 
