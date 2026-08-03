@@ -36,11 +36,6 @@ export interface MapCanvasProps {
  * three features: maps (viewport + controls), sounds (markers), and paths.
  */
 export function MapCanvas({ map, sounds, paths, soundPiece }: MapCanvasProps) {
-  const bounds: L.LatLngBoundsExpression = [
-    [0, 0],
-    [map.image.height, map.image.width]
-  ];
-
   const audioPoolSounds = sounds.map((sound) => ({
     id: sound.id,
     audioUrl: sound.audioUrl
@@ -59,7 +54,7 @@ export function MapCanvas({ map, sounds, paths, soundPiece }: MapCanvasProps) {
         className="size-full"
       >
         <SoundTour sounds={sounds} paths={paths} />
-        <MapControls bounds={bounds} />
+        <MapControls />
       </MapViewport>
       <AudioPool sounds={audioPoolSounds} soundPiece={audioPoolPiece} />
     </div>
