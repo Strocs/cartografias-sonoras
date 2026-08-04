@@ -16,7 +16,11 @@ describe('Mock data validation', () => {
       expect(mapSchema.parse(map)).toEqual(map);
       expect(() => checkMapInvariants(map)).not.toThrow();
       expect(map.images[0]).toMatchObject({ id: 'base', optional: false });
-      expect(map.preview).toBe(map.image);
+      expect(map.preview).toMatchObject({
+        src: map.images[0].src,
+        width: map.images[0].width,
+        height: map.images[0].height
+      });
     }
   });
 

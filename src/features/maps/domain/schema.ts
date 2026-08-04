@@ -41,7 +41,6 @@ export const mapSchema = z.object(
     id: z.number().int().positive(),
     slug: z.string().min(1),
     title: z.string().min(1),
-    image: mapImageSchema,
     images: z.array(mapLayerSchema).min(1),
     preview: mapImageSchema,
     soundPieceId: z.number().int().positive()

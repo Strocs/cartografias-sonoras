@@ -1,0 +1,38 @@
+---
+import type { Map } from '../domain/types';
+
+interface Props {
+  map: Map;
+  loading?: 'eager' | 'lazy';
+  class?: string;
+  imageClass?: string;
+}
+
+const {
+  map,
+  loading = 'lazy',
+  class: className = '',
+  imageClass = ''
+} = Astro.props;
+
+const labelId = `map-composition-label-${map.slug}`;
+---
+
+<figure
+  class={className}
+  aria-labelledby={labelId}
+  transition:name={`map-composition-${map.slug}`}
+  data-map-composition-preview
+>
+  <img
+    src={map.preview.src}
+    alt=""
+    aria-hidden="true"
+    class={imageClass}
+    loading={loading}
+    width={map.preview.width}
+    height={map.preview.height}
+    {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
+  />
+  <figcaption id={labelId} class="sr-only">{map.title}</figcaption>
+</figure>

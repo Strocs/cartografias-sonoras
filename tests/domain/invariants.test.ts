@@ -23,7 +23,6 @@ const validMap: Map = {
   id: 1,
   slug: 'mapa-uno',
   title: 'Mapa Uno',
-  image: { src: '/mapa-uno.jpg', width: 800, height: 600 },
   images: [
     {
       id: 'base',

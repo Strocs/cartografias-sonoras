@@ -1,4 +1,6 @@
 ---
+import MapCompositionPreview from './MapCompositionPreview.astro';
+
 import type { Map } from '../../features/maps/domain/types';
 
 interface Props {
@@ -28,16 +30,11 @@ const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
               {map.title}
             </span>
           </div>
-          <img
-            src={map.image.src}
-            alt={map.title}
-            class="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-            transition:name={`map-thumb-${map.slug}`}
-            style={{ aspectRatio: `${map.image.width} / ${map.image.height}` }}
+          <MapCompositionPreview
+            map={map}
             loading="eager"
-            width={map.image.width}
-            height={map.image.height}
-            data-rail-image
+            class="size-full"
+            imageClass="size-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </a>
       ))
@@ -47,7 +44,7 @@ const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
 
 <script>
   document.querySelectorAll<HTMLElement>('[data-rail-card]').forEach((card) => {
-    const image = card.querySelector<HTMLElement>('[data-rail-image]');
+    const image = card.querySelector<HTMLElement>('[data-map-composition-preview] img');
     const title = card.querySelector<HTMLElement>('[data-rail-title]');
 
     card.addEventListener('mouseenter', () => {
