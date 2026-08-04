@@ -1,5 +1,5 @@
 import { DEFAULT_MAX_ZOOM } from '../config';
-import type { MapImage, MapLayer } from '../domain';
+import type { MapLayer } from '../domain';
 import { RENDER_CONTEXT, enablesEffect, type RenderContext } from '../lib/effect-policy';
 import { createImageLayer, createSvgLayer, createMarkerLayer } from '../lib/layers';
 import { ViewportEngine } from '../lib/viewport/engine';

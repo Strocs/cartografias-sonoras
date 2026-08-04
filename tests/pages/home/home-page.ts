@@ -10,6 +10,7 @@ export class HomePage extends BasePage {
   readonly datosLink: Locator;
   readonly equipoLink: Locator;
   readonly mapCards: Locator;
+  readonly compositionPreviews: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -19,6 +20,7 @@ export class HomePage extends BasePage {
     this.datosLink = page.getByRole('link', { name: 'Datos' });
     this.equipoLink = page.getByRole('link', { name: 'Equipo' });
     this.mapCards = page.getByTestId('map-card');
+    this.compositionPreviews = page.locator('[data-map-composition-preview]');
   }
 
   async goto(): Promise<void> {
