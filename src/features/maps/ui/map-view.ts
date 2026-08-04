@@ -1,5 +1,7 @@
 import { DEFAULT_MAX_ZOOM } from '../config';
-import { createSvgLayer, createMarkerLayer } from '../lib/layers';
+import type { MapImage, MapLayer } from '../domain';
+import { RENDER_CONTEXT, enablesEffect, type RenderContext } from '../lib/effect-policy';
+import { createImageLayer, createSvgLayer, createMarkerLayer } from '../lib/layers';
 import { ViewportEngine } from '../lib/viewport/engine';
 
 export interface MapViewElement extends HTMLElement {
@@ -15,6 +17,9 @@ export interface MapViewElement extends HTMLElement {
 }
 
 const MAP_SRC_ATTR = 'map-src';
+const MAP_LAYERS_ATTR = 'map-layers';
+const RENDER_CONTEXT_ATTR = 'render-context';
+const REDUCED_MOTION_ATTR = 'reduced-motion';
 const MIN_ZOOM_ATTR = 'min-zoom';
 const MAX_ZOOM_ATTR = 'max-zoom';
 const START_ZOOM_ATTR = 'start-zoom';
@@ -46,14 +51,11 @@ export class MapView extends HTMLElement implements MapViewElement {
   private _viewportChangeHandler: ((event: Event) => void) | null = null;
 
   connectedCallback() {
-    const src = this.getAttribute(MAP_SRC_ATTR);
-    if (!src) {
-      throw new Error(`<map-view> requires a "${MAP_SRC_ATTR}" attribute`);
-    }
+    const layers = this._readLayers();
 
     const zoomAttributes = this._parseZoomAttributes();
     this._buildDom();
-    void this._initialize(src, zoomAttributes, ++this._lifecycle);
+    void this._initialize(layers, zoomAttributes, ++this._lifecycle);
   }
 
   disconnectedCallback() {
@@ -135,18 +137,20 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._container = container;
   }
 
-  private async _initialize(src: string, zoomAttributes: ZoomAttributes, lifecycle: number) {
+  private async _initialize(layers: readonly MapLayer[], zoomAttributes: ZoomAttributes, lifecycle: number) {
     const hiddenImg = this._hiddenImg;
     if (hiddenImg === null || this._container === null) {
       return;
     }
 
-    hiddenImg.src = src;
+    const [base, ...optionalLayers] = layers;
+    if (!base) return;
+    hiddenImg.src = base.src;
     try {
       await hiddenImg.decode();
     } catch {
       if (this._isCurrentLifecycle(lifecycle, hiddenImg)) {
-        this.dispatchEvent(new CustomEvent('viewport-error', { detail: { message: 'Map image failed to decode' } }));
+        this._reportFailure(base, 'Map image failed to decode');
       }
       return;
     }
@@ -158,19 +162,47 @@ export class MapView extends HTMLElement implements MapViewElement {
       throw new Error(`Map image has invalid dimensions: ${naturalWidth}x${naturalHeight}`);
     }
 
+    const decodedBase = { ...base, width: naturalWidth, height: naturalHeight };
     this._container.style.width = `${naturalWidth}px`;
     this._container.style.height = `${naturalHeight}px`;
 
-    const visibleImg = document.createElement('img');
-    visibleImg.src = src;
-    visibleImg.alt = '';
-    visibleImg.decoding = 'async';
-    visibleImg.draggable = false;
-    visibleImg.style.display = 'block';
-    visibleImg.style.width = '100%';
-    visibleImg.style.height = '100%';
-    this._container.appendChild(visibleImg);
-    this._visibleImg = visibleImg;
+    this._visibleImg = createImageLayer(
+      this._container,
+      decodedBase,
+      decodedBase,
+      false
+    );
+
+    const settled = await Promise.all(
+      optionalLayers.map(async (layer) => {
+        const image = document.createElement('img');
+        image.src = layer.src;
+        try {
+          await image.decode();
+          return { layer, failed: false };
+        } catch {
+          return { layer, failed: true };
+        }
+      })
+    );
+    if (!this._isCurrentLifecycle(lifecycle, hiddenImg) || this._container === null) return;
+
+    const failedLayers = settled.filter((result) => result.failed);
+    for (const { layer } of failedLayers) {
+      this._reportFailure(layer, `Map layer "${layer.id}" failed to decode`);
+    }
+    const effectContext = this._renderContext();
+    const reducedMotion = this._prefersReducedMotion();
+    for (const { layer, failed } of settled) {
+      if (!failed) {
+        createImageLayer(
+          this._container,
+          layer,
+          decodedBase,
+          enablesEffect(layer, effectContext, reducedMotion)
+        );
+      }
+    }
 
     this._svgLayer = createSvgLayer(this._container);
     this._markerLayer = createMarkerLayer(this._container);
@@ -203,7 +235,58 @@ export class MapView extends HTMLElement implements MapViewElement {
 
     this._container.addEventListener('viewport-change', this._viewportChangeHandler);
 
+    const status = failedLayers.length === 0 ? 'ready' : 'degraded';
+    this.setAttribute('data-composition-status', status);
     this.setAttribute(READY_ATTR, 'true');
+    this.dispatchEvent(
+      new CustomEvent('map-composition-ready', {
+        bubbles: true,
+        detail: { status }
+      })
+    );
+  }
+
+  private _readLayers(): readonly MapLayer[] {
+    const rawLayers = this.getAttribute(MAP_LAYERS_ATTR);
+    if (rawLayers === null) {
+      const src = this.getAttribute(MAP_SRC_ATTR);
+      if (!src) throw new Error(`<map-view> requires a "${MAP_SRC_ATTR}" attribute when "${MAP_LAYERS_ATTR}" is absent`);
+      return [{
+        id: 'base', src, width: 1, height: 1,
+        frame: { x: 0, y: 0, width: 100, height: 100 }, optional: false, effect: 'none'
+      }];
+    }
+    const parsed: unknown = JSON.parse(rawLayers);
+    if (!Array.isArray(parsed) || !parsed.every(isMapLayer)) {
+      throw new Error(`<map-view> "${MAP_LAYERS_ATTR}" must contain valid layers`);
+    }
+    return parsed;
+  }
+
+  private _renderContext(): RenderContext {
+    const context = this.getAttribute(RENDER_CONTEXT_ATTR);
+    return Object.values(RENDER_CONTEXT).includes(context as RenderContext)
+      ? context as RenderContext
+      : RENDER_CONTEXT.ACTIVE;
+  }
+
+  private _prefersReducedMotion(): boolean {
+    if (this.getAttribute(REDUCED_MOTION_ATTR) === 'true') return true;
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  }
+
+  private _reportFailure(layer: MapLayer, message: string): void {
+    this.dispatchEvent(new CustomEvent('viewport-error', { bubbles: true, detail: { message } }));
+    this.dispatchEvent(new CustomEvent('map-composition-error', {
+      bubbles: true,
+      detail: { layerId: layer.id, optional: layer.optional, message }
+    }));
+    if (!layer.optional) {
+      const diagnostic = document.createElement('p');
+      diagnostic.setAttribute('role', 'alert');
+      diagnostic.textContent = message;
+      this.appendChild(diagnostic);
+    }
   }
 
   private _computeStartScale(): number {
@@ -287,10 +370,27 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._hiddenImg = null;
     this._container = null;
     this._viewport = null;
+    this.querySelectorAll('img').forEach((image) => image.removeAttribute('src'));
     this.replaceChildren();
 
     this.removeAttribute(READY_ATTR);
+    this.removeAttribute('data-composition-status');
   }
+}
+
+function isMapLayer(value: unknown): value is MapLayer {
+  if (typeof value !== 'object' || value === null) return false;
+  const layer = value as Record<string, unknown>;
+  return (
+    typeof layer.id === 'string' &&
+    typeof layer.src === 'string' &&
+    typeof layer.width === 'number' &&
+    typeof layer.height === 'number' &&
+    typeof layer.optional === 'boolean' &&
+    typeof layer.effect === 'string' &&
+    typeof layer.frame === 'object' &&
+    layer.frame !== null
+  );
 }
 
 if (!customElements.get('map-view')) {

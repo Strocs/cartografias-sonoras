@@ -1,3 +1,6 @@
+import type { MapImage, MapLayer } from '../domain';
+import { resolveLayerGeometry } from './composition-geometry';
+
 const LAYER_CLASS = 'map-layer';
 
 function applyLayerStyles(element: HTMLElement | SVGElement): void {
@@ -38,4 +41,37 @@ export function createMarkerLayer(container: HTMLElement): HTMLDivElement {
   markerLayer.style.pointerEvents = 'auto';
   container.appendChild(markerLayer);
   return markerLayer;
+}
+
+export function createImageLayer(
+  container: HTMLElement,
+  layer: MapLayer,
+  base: MapImage,
+  effectActive: boolean
+): HTMLImageElement {
+  const geometry = resolveLayerGeometry(layer, base);
+  const wrapper = document.createElement('div');
+  wrapper.dataset.mapLayer = layer.id;
+  wrapper.dataset.effectActive = String(effectActive);
+  wrapper.style.position = 'absolute';
+  wrapper.style.left = `${geometry.x}px`;
+  wrapper.style.top = `${geometry.y}px`;
+  wrapper.style.width = `${geometry.width}px`;
+  wrapper.style.height = `${geometry.height}px`;
+  wrapper.style.pointerEvents = 'none';
+
+  const image = document.createElement('img');
+  image.src = layer.src;
+  image.alt = '';
+  image.setAttribute('aria-hidden', 'true');
+  image.decoding = 'async';
+  image.draggable = false;
+  image.style.display = 'block';
+  image.style.width = '100%';
+  image.style.height = '100%';
+  image.style.objectFit = 'contain';
+  if (effectActive) image.style.animationName = `map-layer-${layer.effect}`;
+  wrapper.appendChild(image);
+  container.appendChild(wrapper);
+  return image;
 }
