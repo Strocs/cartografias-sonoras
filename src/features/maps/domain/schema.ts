@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { normalizeMapInput } from './normalize';
 import { LAYER_EFFECT } from './types';
 
 export const mapImageSchema = z.object(
@@ -36,14 +37,17 @@ export const mapLayerSchema = mapImageSchema.extend({
   effect: z.enum(LAYER_EFFECT)
 });
 
-export const mapSchema = z.object(
-  {
+export const mapSchema = z.preprocess(
+  normalizeMapInput,
+  z.object(
+    {
     id: z.number().int().positive(),
     slug: z.string().min(1),
     title: z.string().min(1),
     images: z.array(mapLayerSchema).min(1),
     preview: mapImageSchema,
     soundPieceId: z.number().int().positive()
-  },
-  { error: 'Invalid map' }
+    },
+    { error: 'Invalid map' }
+  )
 );

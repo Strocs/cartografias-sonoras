@@ -13,3 +13,4 @@ export {
   normalizedFrameSchema
 } from './schema';
 export { checkMapInvariants } from './invariants';
+export { normalizeMapInput } from './normalize';

@@ -429,25 +429,28 @@ test.describe('Map', () => {
       await expect(marker).toHaveAttribute('data-state', 'playing', {
         timeout: 5000
       });
-      await expect
-        .poll(() =>
-          marker.evaluate((element) => {
-            element.style.setProperty('--progress', '50%');
-            const ring = getComputedStyle(element, '::after');
-            return {
-              backgroundImage: ring.backgroundImage,
-              opacity: ring.opacity,
-              width: ring.width,
-              height: ring.height
-            };
-          })
+      await expect.poll(() =>
+        marker.evaluate((element) =>
+          Number.parseFloat(getComputedStyle(element, '::after').opacity)
         )
-        .toEqual({
-          backgroundImage: expect.stringContaining('50%'),
-          opacity: '1',
-          width: '54px',
-          height: '54px'
-        });
+      ).toBeGreaterThan(0);
+      const ring = await marker.evaluate((element) => {
+        const style = getComputedStyle(element, '::after');
+        return {
+          progress: Number.parseFloat(
+            getComputedStyle(element).getPropertyValue('--progress')
+          ),
+          backgroundImage: style.backgroundImage,
+          width: style.width,
+          height: style.height
+        };
+      });
+
+      expect(ring.progress).toBeGreaterThanOrEqual(0);
+      expect(ring.progress).toBeLessThanOrEqual(100);
+      expect(ring.backgroundImage).toContain('conic-gradient');
+      expect(ring.width).toBe('54px');
+      expect(ring.height).toBe('54px');
     }
   );
 

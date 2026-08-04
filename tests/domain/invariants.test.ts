@@ -89,6 +89,26 @@ describe('Map invariants', () => {
     expect(mapSchema.parse(validMap)).toEqual(validMap);
   });
 
+  it('normalizes a legacy image input into the canonical base layer', () => {
+    const legacyMap: Record<string, unknown> = { ...validMap };
+    delete legacyMap.images;
+    const normalized = mapSchema.parse({
+      ...legacyMap,
+      image: validMap.images[0]
+    });
+
+    expect(normalized).toMatchObject({
+      images: [{
+        id: 'base',
+        src: validMap.images[0].src,
+        frame: { x: 0, y: 0, width: 100, height: 100 },
+        optional: false,
+        effect: 'none'
+      }]
+    });
+    expect(normalized).not.toHaveProperty('image');
+  });
+
   it('rejects invalid layers and preview dimensions', () => {
     expect(() =>
       checkMapInvariants({
