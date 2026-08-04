@@ -5,17 +5,17 @@ import { checkMapInvariants, mapSchema } from '../../src/features/maps/domain';
 import type { Path } from '../../src/features/paths/domain';
 import {
   checkPathInvariants,
-  pathSchema,
+  pathSchema
 } from '../../src/features/paths/domain';
 import type { SoundPiece } from '../../src/features/sound-pieces/domain';
 import {
   checkSoundPieceInvariants,
-  soundPieceSchema,
+  soundPieceSchema
 } from '../../src/features/sound-pieces/domain';
 import type { Sound } from '../../src/features/sounds/domain';
 import {
   checkSoundInvariants,
-  soundSchema,
+  soundSchema
 } from '../../src/features/sounds/domain';
 import { validateDataset } from '../../src/shared/utils/validators';
 
@@ -24,7 +24,19 @@ const validMap: Map = {
   slug: 'mapa-uno',
   title: 'Mapa Uno',
   image: { src: '/mapa-uno.jpg', width: 800, height: 600 },
-  soundPieceId: 10,
+  images: [
+    {
+      id: 'base',
+      src: '/mapa-uno.jpg',
+      width: 800,
+      height: 600,
+      frame: { x: 0, y: 0, width: 100, height: 100 },
+      optional: false,
+      effect: 'none'
+    }
+  ],
+  preview: { src: '/mapa-uno-preview.jpg', width: 800, height: 600 },
+  soundPieceId: 10
 };
 
 const validSoundPiece: SoundPiece = {
@@ -33,7 +45,7 @@ const validSoundPiece: SoundPiece = {
   title: 'Obra Uno',
   author: 'Autor Uno',
   description: 'Descripción de la obra',
-  audioUrl: '/obra-uno.mp3',
+  audioUrl: '/obra-uno.mp3'
 };
 
 const validSound: Sound = {
@@ -43,17 +55,15 @@ const validSound: Sound = {
   location: 'Test Location',
   audioUrl: '/sonido-uno.mp3',
   position: { x: 50, y: 50 },
-  mapId: 1,
+  mapId: 1
 };
 
 const validPath: Path = {
   id: 1000,
   mapId: 1,
-  waypoints: [
-    { x: 50, y: 50 },
-  ],
+  waypoints: [{ x: 50, y: 50 }],
   startSoundId: 100,
-  endSoundId: 101,
+  endSoundId: 101
 };
 
 describe('Map invariants', () => {
@@ -64,7 +74,7 @@ describe('Map invariants', () => {
   it('fails when soundPieceId is null', () => {
     const invalid: Map = {
       ...validMap,
-      soundPieceId: null as unknown as number,
+      soundPieceId: null as unknown as number
     };
     expect(() => checkMapInvariants(invalid)).toThrow(
       'Map must have a sound piece'
@@ -79,6 +89,35 @@ describe('Map invariants', () => {
   it('validates schema against valid data', () => {
     expect(mapSchema.parse(validMap)).toEqual(validMap);
   });
+
+  it('rejects invalid layers and preview dimensions', () => {
+    expect(() =>
+      checkMapInvariants({
+        ...validMap,
+        preview: { ...validMap.preview, width: 1 }
+      })
+    ).toThrow('preview');
+    expect(() =>
+      checkMapInvariants({
+        ...validMap,
+        images: [
+          {
+            ...validMap.images[0],
+            frame: { x: 1, y: 0, width: 100, height: 100 }
+          }
+        ]
+      })
+    ).toThrow('full-frame');
+    expect(() =>
+      checkMapInvariants({
+        ...validMap,
+        images: [validMap.images[0], { ...validMap.images[0] }]
+      })
+    ).toThrow('unique');
+    expect(mapSchema.safeParse({ ...validMap, images: [] }).success).toBe(
+      false
+    );
+  });
 });
 
 describe('SoundPiece invariants', () => {
@@ -89,7 +128,7 @@ describe('SoundPiece invariants', () => {
   it('fails when mapId is null', () => {
     const invalid: SoundPiece = {
       ...validSoundPiece,
-      mapId: null as unknown as number,
+      mapId: null as unknown as number
     };
     expect(() => checkSoundPieceInvariants(invalid)).toThrow(
       'Sound piece must belong to a map'
@@ -157,7 +196,7 @@ describe('Path invariants', () => {
   it('fails when startSoundId equals endSoundId', () => {
     const invalid: Path = {
       ...validPath,
-      endSoundId: validPath.startSoundId,
+      endSoundId: validPath.startSoundId
     };
     expect(() => checkPathInvariants(invalid)).toThrow(
       'Path must connect two different sounds'
@@ -180,7 +219,7 @@ describe('Dataset cross-reference validator', () => {
       maps: [validMap],
       sounds: [validSound, { ...validSound, id: 101 }],
       soundPieces: [validSoundPiece],
-      paths: [validPath],
+      paths: [validPath]
     });
 
     expect(result.success).toBe(true);
@@ -192,7 +231,7 @@ describe('Dataset cross-reference validator', () => {
       maps: [{ ...validMap, soundPieceId: 99 }],
       sounds: [validSound],
       soundPieces: [validSoundPiece],
-      paths: [],
+      paths: []
     });
 
     expect(result.success).toBe(false);
@@ -204,7 +243,7 @@ describe('Dataset cross-reference validator', () => {
       maps: [],
       sounds: [validSound],
       soundPieces: [],
-      paths: [],
+      paths: []
     });
 
     expect(result.success).toBe(false);
@@ -216,7 +255,7 @@ describe('Dataset cross-reference validator', () => {
       maps: [validMap],
       sounds: [{ ...validSound, mapId: 2 }],
       soundPieces: [validSoundPiece],
-      paths: [validPath],
+      paths: [validPath]
     });
 
     expect(result.success).toBe(false);

@@ -1,3 +1,15 @@
-export type { Map, MapImage } from './types';
-export { mapSchema, mapImageSchema } from './schema';
+export type {
+  LayerEffectIntent,
+  Map,
+  MapImage,
+  MapLayer,
+  NormalizedFrame
+} from './types';
+export { LAYER_EFFECT } from './types';
+export {
+  mapLayerSchema,
+  mapSchema,
+  mapImageSchema,
+  normalizedFrameSchema
+} from './schema';
 export { checkMapInvariants } from './invariants';
