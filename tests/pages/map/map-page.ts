@@ -69,15 +69,25 @@ export class MapPage extends BasePage {
 
   async expectCompositionParity(fixture: MapCompositionFixture): Promise<void> {
     await expect(this.getCompositionPreview(fixture.slug)).toHaveCount(1);
-    await expect(this.getCompositionPreview(fixture.slug).locator('img')).toHaveAttribute('width', /[1-9]\d*/);
-    await expect(this.getCompositionPreview(fixture.slug).locator('img')).toHaveAttribute('height', /[1-9]\d*/);
-    const layerIds = await this.viewport.locator('[data-map-layer]').evaluateAll(
-      (layers) => layers.map((layer) => layer.getAttribute('data-map-layer'))
-    );
+    await expect(
+      this.getCompositionPreview(fixture.slug).locator('img')
+    ).toHaveAttribute('width', /[1-9]\d*/);
+    await expect(
+      this.getCompositionPreview(fixture.slug).locator('img')
+    ).toHaveAttribute('height', /[1-9]\d*/);
+    const layerIds = await this.viewport
+      .locator('[data-map-layer]')
+      .evaluateAll((layers) =>
+        layers.map((layer) => layer.getAttribute('data-map-layer'))
+      );
     expect(layerIds).toEqual(fixture.layerIds);
-    await expect(this.viewport.locator('[data-map-layer="base"]')).toHaveAttribute(
+    await expect(
+      this.viewport.locator('[data-map-layer="base"]')
+    ).toHaveAttribute(
       'style',
-      new RegExp(`left: ${fixture.baseFrame.x}px; top: ${fixture.baseFrame.y}px;`)
+      new RegExp(
+        `left: ${fixture.baseFrame.x}px; top: ${fixture.baseFrame.y}px;`
+      )
     );
   }
 
@@ -100,14 +110,28 @@ export class MapPage extends BasePage {
 
   async getBounds(): Promise<MapBounds> {
     return this.page.evaluate(() => {
-      const viewport = document.querySelector('.map-viewport')?.getBoundingClientRect();
-      const image = document.querySelector('.map-panzoom')?.getBoundingClientRect();
+      const viewport = document
+        .querySelector('.map-viewport')
+        ?.getBoundingClientRect();
+      const image = document
+        .querySelector('.map-panzoom')
+        ?.getBoundingClientRect();
       if (viewport === undefined || image === undefined) {
         throw new Error('Map viewport is not ready');
       }
       return {
-        viewport: { left: viewport.left, right: viewport.right, top: viewport.top, bottom: viewport.bottom },
-        image: { left: image.left, right: image.right, top: image.top, bottom: image.bottom },
+        viewport: {
+          left: viewport.left,
+          right: viewport.right,
+          top: viewport.top,
+          bottom: viewport.bottom
+        },
+        image: {
+          left: image.left,
+          right: image.right,
+          top: image.top,
+          bottom: image.bottom
+        }
       };
     });
   }

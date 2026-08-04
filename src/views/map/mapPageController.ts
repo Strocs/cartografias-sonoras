@@ -11,43 +11,67 @@ interface MapPageData {
   imgHeight: number;
 }
 
-let disposeCurrentBinding: (() => void) | undefined;
-let readyObserver: MutationObserver | undefined;
+const MAP_VIEW_SELECTOR = 'map-view#main-map';
+const MAP_DATA_ELEMENT_ID = 'map-data';
 
-export function bindMapPage(): void {
-  disposeMapPage();
+/**
+ * Tracks the active page controller across Astro ClientRouter navigations.
+ *
+ * The bundled page script registers `astro:page-load` once; bundled modules
+ * execute only once, so this module-level reference is the single source of
+ * truth for disposing the previous element binding on every navigation.
+ */
+let disposeActiveController: (() => void) | undefined;
 
-  const mapView = document.querySelector('map-view#main-map');
+/**
+ * Binds the current `<map-view id="main-map">` to the audio store.
+ *
+ * Binding is event-driven: it waits for the element's `map-composition-ready`
+ * event, and handles the already-ready case synchronously. Cleanup is
+ * element-scoped and idempotent, so repeated calls (one per `astro:page-load`)
+ * never stack listeners or duplicate markers.
+ *
+ * Returns the element-scoped dispose function for explicit teardown.
+ */
+export function bindMapPage(): () => void {
+  disposeActiveController?.();
+  disposeActiveController = undefined;
+
+  const mapView = document.querySelector<HTMLElement>(MAP_VIEW_SELECTOR);
   const data = readMapPageData();
-  if (!(mapView instanceof HTMLElement) || data === null) return;
+  if (mapView === null || data === null) {
+    return () => undefined;
+  }
+
+  let disposeBinding: (() => void) | undefined;
+  let bound = false;
 
   const bindWhenReady = (): void => {
-    if (!mapView.hasAttribute('data-ready')) return;
-    readyObserver?.disconnect();
-    readyObserver = undefined;
-    disposeCurrentBinding = bindMapView({
+    if (bound) return;
+    bound = true;
+    disposeBinding = bindMapView({
       mapView: mapView as MapViewElement,
       ...data
     });
   };
 
-  readyObserver = new MutationObserver(bindWhenReady);
-  readyObserver.observe(mapView, {
-    attributes: true,
-    attributeFilter: ['data-ready']
-  });
-  bindWhenReady();
-}
+  if (mapView.hasAttribute('data-ready')) {
+    bindWhenReady();
+  }
+  mapView.addEventListener('map-composition-ready', bindWhenReady);
 
-function disposeMapPage(): void {
-  readyObserver?.disconnect();
-  readyObserver = undefined;
-  disposeCurrentBinding?.();
-  disposeCurrentBinding = undefined;
+  disposeActiveController = (): void => {
+    mapView.removeEventListener('map-composition-ready', bindWhenReady);
+    disposeBinding?.();
+    disposeBinding = undefined;
+    bound = false;
+  };
+
+  return disposeActiveController;
 }
 
 function readMapPageData(): MapPageData | null {
-  const dataScript = document.getElementById('map-data');
+  const dataScript = document.getElementById(MAP_DATA_ELEMENT_ID);
   if (dataScript?.textContent === undefined) return null;
 
   try {

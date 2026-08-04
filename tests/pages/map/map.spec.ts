@@ -38,8 +38,12 @@ test.describe('Map', () => {
       await expect(preview).toHaveCount(fixture.previewCount);
       await mapPage.waitForViewportReady();
       await mapPage.expectCompositionParity(fixture);
-      await expect(mapPage.viewport.locator('[data-map-layer] img')).toHaveAttribute('alt', '');
-      await expect(mapPage.viewport.locator('[data-map-layer] img')).toHaveAttribute('aria-hidden', 'true');
+      await expect(
+        mapPage.viewport.locator('[data-map-layer] img')
+      ).toHaveAttribute('alt', '');
+      await expect(
+        mapPage.viewport.locator('[data-map-layer] img')
+      ).toHaveAttribute('aria-hidden', 'true');
     }
   );
 
@@ -53,7 +57,9 @@ test.describe('Map', () => {
       const nextMap = mapFixtures[1];
 
       await homePage.goto();
-      await expect(homePage.compositionPreviews).toHaveCount(mapFixtures.length);
+      await expect(homePage.compositionPreviews).toHaveCount(
+        mapFixtures.length
+      );
       await homePage.getMapCard(firstMap.title).click();
       await expect(page).toHaveURL(`/${firstMap.slug}`);
       await mapPage.waitForViewportReady();
@@ -83,26 +89,48 @@ test.describe('Map', () => {
       const outcome = await page.evaluate(async () => {
         const current = document.querySelector('map-view#main-map');
         const wrapper = current?.parentElement;
-        if (!(current instanceof HTMLElement) || !(wrapper instanceof HTMLElement)) {
+        if (
+          !(current instanceof HTMLElement) ||
+          !(wrapper instanceof HTMLElement)
+        ) {
           throw new Error('Missing active map view');
         }
         current.remove();
 
         const failingView = document.createElement('map-view');
         failingView.id = 'main-map';
-        failingView.setAttribute('map-layers', JSON.stringify([{
-          id: 'base', src: 'data:image/png;base64,not-an-image', width: 2, height: 2,
-          frame: { x: 0, y: 0, width: 100, height: 100 }, optional: false, effect: 'none'
-        }]));
+        failingView.setAttribute(
+          'map-layers',
+          JSON.stringify([
+            {
+              id: 'base',
+              src: 'data:image/png;base64,not-an-image',
+              width: 2,
+              height: 2,
+              frame: { x: 0, y: 0, width: 100, height: 100 },
+              optional: false,
+              effect: 'none'
+            }
+          ])
+        );
         wrapper.appendChild(failingView);
-        await new Promise<void>((resolve) => failingView.addEventListener('map-composition-error', () => resolve(), { once: true }));
+        await new Promise<void>((resolve) =>
+          failingView.addEventListener(
+            'map-composition-error',
+            () => resolve(),
+            { once: true }
+          )
+        );
 
         return {
+          status: failingView.getAttribute('data-composition-status'),
           alert: failingView.querySelector('[role="alert"]')?.textContent,
-          previewVisible: document.querySelector('[data-map-composition-preview]') !== null
+          previewVisible:
+            document.querySelector('[data-map-composition-preview]') !== null
         };
       });
 
+      expect(outcome.status).toBe('error');
       expect(outcome.alert).toContain('Map image failed to decode');
       expect(outcome.previewVisible).toBe(true);
     }
@@ -122,19 +150,50 @@ test.describe('Map', () => {
       await expect(marker).toBeFocused();
       await expect(marker).toHaveAttribute('aria-label', mockSounds[0].title);
       await marker.press('Space');
-      await expect(marker).toHaveAttribute('data-state', /playing|paused/, { timeout: 5000 });
+      await expect(marker).toHaveAttribute('data-state', /playing|paused/, {
+        timeout: 5000
+      });
 
       const effectActive = await page.evaluate(async () => {
-        const base = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"/>');
+        const base =
+          'data:image/svg+xml,' +
+          encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"/>'
+          );
         const view = document.createElement('map-view');
         view.setAttribute('reduced-motion', 'true');
-        view.setAttribute('map-layers', JSON.stringify([
-          { id: 'base', src: base, width: 2, height: 2, frame: { x: 0, y: 0, width: 100, height: 100 }, optional: false, effect: 'none' },
-          { id: 'effect', src: base, width: 2, height: 2, frame: { x: 0, y: 0, width: 100, height: 100 }, optional: true, effect: 'float' }
-        ]));
+        view.setAttribute(
+          'map-layers',
+          JSON.stringify([
+            {
+              id: 'base',
+              src: base,
+              width: 2,
+              height: 2,
+              frame: { x: 0, y: 0, width: 100, height: 100 },
+              optional: false,
+              effect: 'none'
+            },
+            {
+              id: 'effect',
+              src: base,
+              width: 2,
+              height: 2,
+              frame: { x: 0, y: 0, width: 100, height: 100 },
+              optional: true,
+              effect: 'float'
+            }
+          ])
+        );
         document.body.appendChild(view);
-        await new Promise<void>((resolve) => view.addEventListener('map-composition-ready', () => resolve(), { once: true }));
-        return view.querySelector('[data-map-layer="effect"]')?.getAttribute('data-effect-active');
+        await new Promise<void>((resolve) =>
+          view.addEventListener('map-composition-ready', () => resolve(), {
+            once: true
+          })
+        );
+        return view
+          .querySelector('[data-map-layer="effect"]')
+          ?.getAttribute('data-effect-active');
       });
       expect(effectActive).toBe('false');
     }
@@ -261,10 +320,14 @@ test.describe('Map', () => {
 
       await expect.poll(() => mapPage.getZoom()).toBeCloseTo(0.2, 5);
       const bounds = await mapPage.getBounds();
-      expect(bounds.image.left).toBeGreaterThanOrEqual(bounds.viewport.left - 1);
+      expect(bounds.image.left).toBeGreaterThanOrEqual(
+        bounds.viewport.left - 1
+      );
       expect(bounds.image.right).toBeLessThanOrEqual(bounds.viewport.right + 1);
       expect(bounds.image.top).toBeGreaterThanOrEqual(bounds.viewport.top - 1);
-      expect(bounds.image.bottom).toBeLessThanOrEqual(bounds.viewport.bottom + 1);
+      expect(bounds.image.bottom).toBeLessThanOrEqual(
+        bounds.viewport.bottom + 1
+      );
     }
   );
 
@@ -281,7 +344,7 @@ test.describe('Map', () => {
       expect(viewportBox).not.toBeNull();
       const cursor = {
         x: viewportBox!.x + viewportBox!.width * 0.75,
-        y: viewportBox!.y + viewportBox!.height * 0.3,
+        y: viewportBox!.y + viewportBox!.height * 0.3
       };
       await page.mouse.move(cursor.x, cursor.y);
       await page.mouse.wheel(0, -400);
@@ -295,8 +358,18 @@ test.describe('Map', () => {
         const svg = path?.closest('svg');
         return {
           sceneTransform: scene?.getAttribute('style') ?? '',
-          sharedSceneContainment: [image, marker?.parentElement, marker, svg, path]
-            .every((element) => element !== null && element !== undefined && scene?.contains(element) === true),
+          sharedSceneContainment: [
+            image,
+            marker?.parentElement,
+            marker,
+            svg,
+            path
+          ].every(
+            (element) =>
+              element !== null &&
+              element !== undefined &&
+              scene?.contains(element) === true
+          )
         };
       });
       expect(alignment.sceneTransform).toContain('translate3d');
@@ -316,7 +389,7 @@ test.describe('Map', () => {
       expect(viewportBox).not.toBeNull();
       const center = {
         x: viewportBox!.x + viewportBox!.width / 2,
-        y: viewportBox!.y + viewportBox!.height / 2,
+        y: viewportBox!.y + viewportBox!.height / 2
       };
       await page.mouse.move(center.x, center.y);
       for (let wheel = 0; wheel < 12; wheel += 1) {
@@ -329,13 +402,15 @@ test.describe('Map', () => {
       await page.mouse.move(center.x + 2000, center.y + 2000, { steps: 5 });
       await page.mouse.up();
 
-      await expect.poll(async () => {
-        const bounds = await mapPage.getBounds();
-        return {
-          coversLeft: bounds.image.left <= bounds.viewport.left + 1,
-          coversTop: bounds.image.top <= bounds.viewport.top + 1,
-        };
-      }).toEqual({ coversLeft: true, coversTop: true });
+      await expect
+        .poll(async () => {
+          const bounds = await mapPage.getBounds();
+          return {
+            coversLeft: bounds.image.left <= bounds.viewport.left + 1,
+            coversTop: bounds.image.top <= bounds.viewport.top + 1
+          };
+        })
+        .toEqual({ coversLeft: true, coversTop: true });
     }
   );
 
@@ -429,11 +504,13 @@ test.describe('Map', () => {
       await expect(marker).toHaveAttribute('data-state', 'playing', {
         timeout: 5000
       });
-      await expect.poll(() =>
-        marker.evaluate((element) =>
-          Number.parseFloat(getComputedStyle(element, '::after').opacity)
+      await expect
+        .poll(() =>
+          marker.evaluate((element) =>
+            Number.parseFloat(getComputedStyle(element, '::after').opacity)
+          )
         )
-      ).toBeGreaterThan(0);
+        .toBeGreaterThan(0);
       const ring = await marker.evaluate((element) => {
         const style = getComputedStyle(element, '::after');
         return {
