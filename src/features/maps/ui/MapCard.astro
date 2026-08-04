@@ -1,5 +1,5 @@
 ---
-import { Picture } from 'astro:assets';
+import MapCompositionPreview from './MapCompositionPreview.astro';
 
 import type { Map } from '../domain/types';
 
@@ -10,8 +10,6 @@ interface Props {
 
 const { map, loading = 'lazy' } = Astro.props;
 
-const widths = [400, 800, 1200];
-const sizes = '(max-width: 767px) 50vw, 33vw';
 ---
 
 <a
@@ -25,33 +23,10 @@ const sizes = '(max-width: 767px) 50vw, 33vw';
   >
     {map.title}
   </h2>
-  {
-    map.image.asset ? (
-      <Picture
-        src={map.image.asset}
-        formats={['avif', 'webp']}
-        fallbackFormat="png"
-        widths={widths}
-        sizes={sizes}
-        alt={map.title}
-        loading={loading}
-        width={map.image.width}
-        height={map.image.height}
-        class="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
-        transition:name={`map-thumb-${map.slug}`}
-        {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
-      />
-    ) : (
-      <img
-        src={map.image.src}
-        alt={map.title}
-        class="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
-        transition:name={`map-thumb-${map.slug}`}
-        loading={loading}
-        width={map.image.width}
-        height={map.image.height}
-        {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
-      />
-    )
-  }
+  <MapCompositionPreview
+    map={map}
+    loading={loading}
+    class="h-full w-full"
+    imageClass="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
+  />
 </a>

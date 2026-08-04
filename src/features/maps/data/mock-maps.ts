@@ -12,7 +12,6 @@ const composition = <T extends import('astro').ImageMetadata>(asset: T) => {
     asset
   };
   return {
-    image,
     images: [
       {
         ...image,

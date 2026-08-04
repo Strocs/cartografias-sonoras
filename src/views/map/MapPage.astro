@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Navigation from '../../shared/ui/Navigation.astro';
 import RightRail from '../../features/maps/ui/RightRail.astro';
-import MapSkeleton from './MapSkeleton.astro';
+import MapCompositionPreview from '../../features/maps/ui/MapCompositionPreview.astro';
 import { AudioPool } from '../../shared/lib/audio-engine';
 import { AudioBottomPlayer } from '../../features/sound-pieces/ui/AudioBottomPlayer.tsx';
 import { MapControls } from '../../features/maps/ui/MapControls.tsx';
@@ -37,8 +37,8 @@ const audioPoolPiece = soundPiece
 const mapData = {
   sounds,
   paths,
-  imgWidth: map.image.width,
-  imgHeight: map.image.height
+  imgWidth: map.images[0].width,
+  imgHeight: map.images[0].height
 };
 ---
 
@@ -50,13 +50,16 @@ const mapData = {
       transition:animate="fade"
     >
       <div class="relative flex size-full">
-        <!-- Map area wrapper: flex-1 keeps the RightRail in place during
-             SSR loading. The <map-view> custom element fills this wrapper
-             once it hydrates. -->
         <div class="map-wrapper relative flex min-h-0 min-w-0 flex-1 flex-col">
-          <MapSkeleton />
+          <MapCompositionPreview
+            map={map}
+            loading="eager"
+            class="absolute inset-0 z-10 size-full pt-4 pr-4 pb-20"
+            imageClass="size-full rounded-xl object-contain"
+          />
           <map-view
-            map-src={map.image.src}
+            map-layers={JSON.stringify(map.images)}
+            render-context="active"
             id="main-map"
             class="min-h-0 min-w-0 flex-1"
             start-zoom={0.3}
@@ -96,55 +99,14 @@ const mapData = {
 
 <script>
   import '@features/maps/ui/map-view';
-  import { bindMapView } from '@views/map/mapViewBindings';
-  import type { MapViewElement } from '@features/maps/ui/map-view';
+  import { bindMapPage } from '@views/map/mapPageController';
 
-  const mapDataScript = document.getElementById('map-data');
-  const data = mapDataScript
-    ? JSON.parse(mapDataScript.textContent || '{}')
-    : { sounds: [], paths: [], imgWidth: 0, imgHeight: 0 };
-
-  const mapView = document.querySelector('map-view#main-map');
-  if (!(mapView instanceof HTMLElement)) {
-    console.error('<map-view id="main-map"> not found');
-    throw new Error('<map-view id="main-map"> not found');
-  }
-
-  function bindWhenReady(): void {
-    if (mapView.hasAttribute('data-ready')) {
-      bindMapViewToElement();
-      return;
-    }
-
-    const observer = new MutationObserver((mutations, obs) => {
-      if (mapView.hasAttribute('data-ready')) {
-        obs.disconnect();
-        bindMapViewToElement();
-      }
-    });
-
-    observer.observe(mapView, {
-      attributes: true,
-      attributeFilter: ['data-ready']
-    });
-  }
-
-  function bindMapViewToElement(): void {
-    bindMapView({
-      mapView: mapView as MapViewElement,
-      sounds: data.sounds,
-      paths: data.paths,
-      imgWidth: data.imgWidth,
-      imgHeight: data.imgHeight
-    });
-  }
-
-  bindWhenReady();
+  document.addEventListener('astro:page-load', bindMapPage);
 </script>
 
 <style is:inline>
-  /* Fade out the skeleton loader once <map-view> signals it is ready. */
-  .map-wrapper:has(map-view[data-ready]) .map-skeleton {
+  .map-wrapper:has(map-view[data-ready]) [data-map-composition-preview] {
     opacity: 0;
+    pointer-events: none;
   }
 </style>

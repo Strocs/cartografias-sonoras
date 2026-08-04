@@ -36,8 +36,6 @@ export interface Map {
   id: number;
   slug: string;
   title: string;
-  /** @deprecated Remove after Astro consumers migrate in PR 3. */
-  image: MapImage;
   images: readonly [MapLayer, ...MapLayer[]];
   preview: MapImage;
   soundPieceId: number;
