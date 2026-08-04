@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
+import type { MapCompositionFixture } from '../../fixtures/map-composition';
 import { BasePage } from '../base-page';
 
 export interface MapBounds {
@@ -26,6 +27,8 @@ export class MapPage extends BasePage {
   readonly bottomScrubber: Locator;
   readonly bottomTime: Locator;
   readonly bottomWave: Locator;
+  readonly compositionPreviews: Locator;
+  readonly compositionErrors: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -46,6 +49,8 @@ export class MapPage extends BasePage {
     this.bottomScrubber = page.getByTestId('bottom-scrubber');
     this.bottomTime = page.getByTestId('bottom-time');
     this.bottomWave = page.getByTestId('bottom-wave');
+    this.compositionPreviews = page.locator('[data-map-composition-preview]');
+    this.compositionErrors = this.viewport.getByRole('alert');
   }
 
   async goto(slug: string): Promise<void> {
@@ -54,6 +59,26 @@ export class MapPage extends BasePage {
 
   async waitForViewportReady(): Promise<void> {
     await expect(this.viewport).toHaveAttribute('data-ready', 'true');
+  }
+
+  getCompositionPreview(slug: string): Locator {
+    return this.page.locator(
+      `[data-map-composition-preview][aria-labelledby="map-composition-label-${slug}"]`
+    );
+  }
+
+  async expectCompositionParity(fixture: MapCompositionFixture): Promise<void> {
+    await expect(this.getCompositionPreview(fixture.slug)).toHaveCount(1);
+    await expect(this.getCompositionPreview(fixture.slug).locator('img')).toHaveAttribute('width', /[1-9]\d*/);
+    await expect(this.getCompositionPreview(fixture.slug).locator('img')).toHaveAttribute('height', /[1-9]\d*/);
+    const layerIds = await this.viewport.locator('[data-map-layer]').evaluateAll(
+      (layers) => layers.map((layer) => layer.getAttribute('data-map-layer'))
+    );
+    expect(layerIds).toEqual(fixture.layerIds);
+    await expect(this.viewport.locator('[data-map-layer="base"]')).toHaveAttribute(
+      'style',
+      new RegExp(`left: ${fixture.baseFrame.x}px; top: ${fixture.baseFrame.y}px;`)
+    );
   }
 
   getMarkerBySoundId(soundId: number): Locator {

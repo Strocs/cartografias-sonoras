@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { mapCompositionFixtures } from '../../fixtures/map-composition';
 import { mapFixtures } from '../../fixtures/maps';
 import { mockPaths } from '../../../src/features/paths/data/mock-paths';
 import { mockSounds } from '../../../src/features/sounds/data/mock-sounds';
@@ -19,6 +20,123 @@ test.describe('Map', () => {
       await expect(mapPage.viewport).toBeVisible();
       await mapPage.waitForViewportReady();
       await expect(mapPage.navTitle).toBeVisible();
+    }
+  );
+
+  test(
+    'keeps one labelled static preview through the live composition handoff',
+    { tag: ['@critical', '@e2e', '@MAP-E2E-001'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const fixture = mapCompositionFixtures[0];
+
+      await mapPage.goto(fixture.slug);
+
+      const preview = mapPage.getCompositionPreview(fixture.slug);
+      await expect(preview).toBeVisible();
+      await expect(preview).toHaveAccessibleName(fixture.title);
+      await expect(preview).toHaveCount(fixture.previewCount);
+      await mapPage.waitForViewportReady();
+      await mapPage.expectCompositionParity(fixture);
+      await expect(mapPage.viewport.locator('[data-map-layer] img')).toHaveAttribute('alt', '');
+      await expect(mapPage.viewport.locator('[data-map-layer] img')).toHaveAttribute('aria-hidden', 'true');
+    }
+  );
+
+  test(
+    'rebinds the composition after client-side navigation without duplicating markers',
+    { tag: ['@critical', '@e2e', '@MAP-E2E-002'] },
+    async ({ page }) => {
+      const homePage = new HomePage(page);
+      const mapPage = new MapPage(page);
+      const firstMap = mapFixtures[0];
+      const nextMap = mapFixtures[1];
+
+      await homePage.goto();
+      await expect(homePage.compositionPreviews).toHaveCount(mapFixtures.length);
+      await homePage.getMapCard(firstMap.title).click();
+      await expect(page).toHaveURL(`/${firstMap.slug}`);
+      await mapPage.waitForViewportReady();
+      await expect(mapPage.markers).toHaveCount(
+        mockSounds.filter((sound) => sound.mapId === firstMap.id).length
+      );
+
+      await mapPage.getRailLink(nextMap.slug).click();
+      await expect(page).toHaveURL(`/${nextMap.slug}`);
+      await mapPage.waitForViewportReady();
+      await expect(mapPage.markers).toHaveCount(
+        mockSounds.filter((sound) => sound.mapId === nextMap.id).length
+      );
+    }
+  );
+
+  test(
+    'preserves preview fallback for base failure and completes degraded optional layers',
+    { tag: ['@high', '@e2e', '@MAP-E2E-003'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const fixture = mapCompositionFixtures[0];
+
+      await mapPage.goto(fixture.slug);
+      await mapPage.waitForViewportReady();
+
+      const outcome = await page.evaluate(async () => {
+        const current = document.querySelector('map-view#main-map');
+        const wrapper = current?.parentElement;
+        if (!(current instanceof HTMLElement) || !(wrapper instanceof HTMLElement)) {
+          throw new Error('Missing active map view');
+        }
+        current.remove();
+
+        const failingView = document.createElement('map-view');
+        failingView.id = 'main-map';
+        failingView.setAttribute('map-layers', JSON.stringify([{
+          id: 'base', src: 'data:image/png;base64,not-an-image', width: 2, height: 2,
+          frame: { x: 0, y: 0, width: 100, height: 100 }, optional: false, effect: 'none'
+        }]));
+        wrapper.appendChild(failingView);
+        await new Promise<void>((resolve) => failingView.addEventListener('map-composition-error', () => resolve(), { once: true }));
+
+        return {
+          alert: failingView.querySelector('[role="alert"]')?.textContent,
+          previewVisible: document.querySelector('[data-map-composition-preview]') !== null
+        };
+      });
+
+      expect(outcome.alert).toContain('Map image failed to decode');
+      expect(outcome.previewVisible).toBe(true);
+    }
+  );
+
+  test(
+    'keeps markers keyboard-accessible and disables declared effects for reduced motion',
+    { tag: ['@high', '@e2e', '@MAP-E2E-004'] },
+    async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      const mapPage = new MapPage(page);
+      await mapPage.goto(mapFixtures[0].slug);
+      await mapPage.waitForViewportReady();
+
+      const marker = mapPage.markers.first();
+      await marker.focus();
+      await expect(marker).toBeFocused();
+      await expect(marker).toHaveAttribute('aria-label', mockSounds[0].title);
+      await marker.press('Space');
+      await expect(marker).toHaveAttribute('data-state', /playing|paused/, { timeout: 5000 });
+
+      const effectActive = await page.evaluate(async () => {
+        const base = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"/>');
+        const view = document.createElement('map-view');
+        view.setAttribute('reduced-motion', 'true');
+        view.setAttribute('map-layers', JSON.stringify([
+          { id: 'base', src: base, width: 2, height: 2, frame: { x: 0, y: 0, width: 100, height: 100 }, optional: false, effect: 'none' },
+          { id: 'effect', src: base, width: 2, height: 2, frame: { x: 0, y: 0, width: 100, height: 100 }, optional: true, effect: 'float' }
+        ]));
+        document.body.appendChild(view);
+        await new Promise<void>((resolve) => view.addEventListener('map-composition-ready', () => resolve(), { once: true }));
+        return view.querySelector('[data-map-layer="effect"]')?.getAttribute('data-effect-active');
+      });
+      expect(effectActive).toBe('false');
     }
   );
 

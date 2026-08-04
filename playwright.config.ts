@@ -25,7 +25,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
+    command: 'ASTRO_DEV_BACKGROUND=0 pnpm dev',
     port: 4321,
     reuseExistingServer: !process.env.CI,
   },
