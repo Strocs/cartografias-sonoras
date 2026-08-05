@@ -1,1 +1,1 @@
-export { MARKS, SOUNDS } from './sounds';
+export { MARKS } from './sounds';
