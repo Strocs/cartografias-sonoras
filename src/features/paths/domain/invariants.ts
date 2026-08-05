@@ -5,8 +5,8 @@ export function checkPathInvariants(path: Path): void {
     throw new Error('Path must belong to a map');
   }
 
-  if (path.startSoundId === path.endSoundId) {
-    throw new Error('Path must connect two different sounds');
+  if (path.startMarkId === path.endMarkId) {
+    throw new Error('Path must connect to two different marks');
   }
 
   checkWaypointInvariants(path);

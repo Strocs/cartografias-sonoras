@@ -2,22 +2,52 @@ import { z } from 'zod';
 
 export const positionSchema = z.object(
   {
-    x: z.number().min(0).max(100),
-    y: z.number().min(0).max(100)
+    x: z.number().finite().min(0).max(100),
+    y: z.number().finite().min(0).max(100)
   },
   { error: 'Invalid position' }
 );
 
 export const soundSchema = z.object(
   {
-    id: z.number().int().positive(),
+    id: z.number().int().positive().finite(),
     title: z.string().min(1),
     description: z.string().min(1),
     location: z.string(),
-    audioUrl: z.url(),
-    geoReferenceUrl: z.string().optional(),
-    position: positionSchema,
-    mapId: z.number().int().positive()
+    audioUrl: z.string().min(1).refine((value) => /^https?:\/\//.test(value), {
+      message: 'audioUrl must be a non-empty URL'
+    }),
+    geoReferenceUrl: z
+      .string()
+      .min(1)
+      .refine((value) => /^https?:\/\//.test(value), {
+        message: 'geoReferenceUrl must be a non-empty URL'
+      })
+      .optional()
   },
   { error: 'Invalid sound' }
 );
+
+export const markSchema = z.object(
+  {
+    id: z.number().int().positive().finite(),
+    mapId: z.number().int().positive().finite(),
+    title: z.string().min(1),
+    description: z.string().min(1),
+    position: positionSchema,
+    location: z.string(),
+    sounds: z.array(soundSchema).min(1, {
+      error: 'Mark must contain at least one sound'
+    })
+  },
+  { error: 'Invalid mark' }
+).superRefine((mark, ctx) => {
+  const ids = mark.sounds.map((s) => s.id);
+  if (new Set(ids).size !== ids.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Mark sounds must have unique ids',
+      path: ['sounds']
+    });
+  }
+});

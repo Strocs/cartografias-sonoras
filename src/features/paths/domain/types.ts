@@ -6,9 +6,9 @@ export interface Point {
 export interface Path {
   id: number;
   mapId: number;
-  /** Intermediate waypoints between the two connected sounds.
-   *  Endpoints are derived from the start/end sound positions at runtime. */
+  /** Intermediate waypoints between the two connected marks.
+   *  Endpoints are derived from the start/end mark positions at runtime. */
   waypoints: Array<Point>;
-  startSoundId: number;
-  endSoundId: number;
+  startMarkId: number;
+  endMarkId: number;
 }

@@ -8,9 +8,9 @@ export interface RouteTopologyResult {
 /**
  * Validates that the paths of a single map form a connected linear route.
  *
- * A linear route over N sound markers must satisfy:
- *  - exactly N-1 paths (one semantic edge between two markers each)
- *  - every sound marker participates in at least one path
+ * A linear route over N marks must satisfy:
+ *  - exactly N-1 paths (one semantic edge between two marks each)
+ *  - every mark participates in at least one path
  *  - path endpoints belong to the same map
  *  - no self-connections
  *  - no duplicate undirected edges
@@ -20,17 +20,17 @@ export interface RouteTopologyResult {
  */
 export function checkRouteTopology(
   mapId: number,
-  soundIds: readonly number[],
+  markIds: readonly number[],
   paths: readonly Path[]
 ): RouteTopologyResult {
   const errors: string[] = [];
-  const soundSet = new Set(soundIds);
+  const markSet = new Set(markIds);
 
   const count = paths.length;
-  const expected = soundIds.length - 1;
+  const expected = markIds.length - 1;
   if (count !== expected) {
     errors.push(
-      `Map ${mapId} has ${count} paths but ${soundIds.length} sounds; expected exactly ${expected} (N-1)`
+      `Map ${mapId} has ${count} paths but ${markIds.length} marks; expected exactly ${expected} (N-1)`
     );
   }
 
@@ -41,50 +41,52 @@ export function checkRouteTopology(
     if (path.mapId !== mapId) {
       errors.push(`Path ${path.id} belongs to map ${path.mapId}, not ${mapId}`);
     }
-    if (path.startSoundId === path.endSoundId) {
-      errors.push(`Path ${path.id} is a self-connection`);
+    if (path.startMarkId === path.endMarkId) {
+      errors.push(
+        `Path ${path.id} must connect to two different marks (self-connection)`
+      );
     }
-    for (const soundId of [path.startSoundId, path.endSoundId]) {
-      if (!soundSet.has(soundId)) {
+    for (const markId of [path.startMarkId, path.endMarkId]) {
+      if (!markSet.has(markId)) {
         errors.push(
-          `Path ${path.id} references sound ${soundId} outside map ${mapId}`
+          `Path ${path.id} references mark ${markId} outside map ${mapId}`
         );
       }
     }
 
-    const edgeKey = [path.startSoundId, path.endSoundId].sort(
+    const edgeKey = [path.startMarkId, path.endMarkId].sort(
       (a, b) => a - b
     ).join(':');
     if (undirectedEdges.has(edgeKey)) {
       errors.push(
-        `Duplicate undirected edge ${path.startSoundId}-${path.endSoundId}`
+        `Duplicate undirected edge ${path.startMarkId}-${path.endMarkId}`
       );
     }
     undirectedEdges.add(edgeKey);
 
-    if (!adjacency.has(path.startSoundId)) {
-      adjacency.set(path.startSoundId, new Set());
+    if (!adjacency.has(path.startMarkId)) {
+      adjacency.set(path.startMarkId, new Set());
     }
-    if (!adjacency.has(path.endSoundId)) {
-      adjacency.set(path.endSoundId, new Set());
+    if (!adjacency.has(path.endMarkId)) {
+      adjacency.set(path.endMarkId, new Set());
     }
-    adjacency.get(path.startSoundId)!.add(path.endSoundId);
-    adjacency.get(path.endSoundId)!.add(path.startSoundId);
+    adjacency.get(path.startMarkId)!.add(path.endMarkId);
+    adjacency.get(path.endMarkId)!.add(path.startMarkId);
   }
 
-  for (const soundId of soundIds) {
-    if (!adjacency.has(soundId)) {
-      errors.push(`Sound ${soundId} has no path in map ${mapId}`);
+  for (const markId of markIds) {
+    if (!adjacency.has(markId)) {
+      errors.push(`Mark ${markId} has no path in map ${mapId}`);
     }
   }
 
-  const degree1 = soundIds.filter(
+  const degree1 = markIds.filter(
     (id) => (adjacency.get(id)?.size ?? 0) === 1
   );
-  const degree2 = soundIds.filter(
+  const degree2 = markIds.filter(
     (id) => (adjacency.get(id)?.size ?? 0) === 2
   );
-  const invalidDegree = soundIds.filter((id) => {
+  const invalidDegree = markIds.filter((id) => {
     const degree = adjacency.get(id)?.size ?? 0;
     return degree !== 1 && degree !== 2;
   });
@@ -94,18 +96,18 @@ export function checkRouteTopology(
       `Map ${mapId} route must have exactly 2 endpoints (degree 1); found ${degree1.length}`
     );
   }
-  if (degree2.length !== soundIds.length - 2) {
+  if (degree2.length !== markIds.length - 2) {
     errors.push(
-      `Map ${mapId} route must have ${soundIds.length - 2} internal nodes (degree 2); found ${degree2.length}`
+      `Map ${mapId} route must have ${markIds.length - 2} internal nodes (degree 2); found ${degree2.length}`
     );
   }
-  for (const soundId of invalidDegree) {
-    errors.push(`Sound ${soundId} has invalid degree ${adjacency.get(soundId)?.size}`);
+  for (const markId of invalidDegree) {
+    errors.push(`Mark ${markId} has invalid degree ${adjacency.get(markId)?.size}`);
   }
 
-  if (soundIds.length > 0) {
+  if (markIds.length > 0) {
     const visited = new Set<number>();
-    const stack = [soundIds[0]];
+    const stack = [markIds[0]];
     while (stack.length > 0) {
       const current = stack.pop()!;
       if (visited.has(current)) continue;
@@ -114,7 +116,7 @@ export function checkRouteTopology(
         stack.push(neighbor);
       }
     }
-    if (visited.size !== soundIds.length) {
+    if (visited.size !== markIds.length) {
       errors.push(`Map ${mapId} route is not connected`);
     }
   }

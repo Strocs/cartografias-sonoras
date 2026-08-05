@@ -12,9 +12,11 @@ import {
   checkSoundPieceInvariants,
   soundPieceSchema
 } from '../../src/features/sound-pieces/domain';
-import type { Sound } from '../../src/features/sounds/domain';
+import type { Mark, Sound } from '../../src/features/sounds/domain';
 import {
+  checkMarkInvariants,
   checkSoundInvariants,
+  markSchema,
   soundSchema
 } from '../../src/features/sounds/domain';
 import { validateDataset } from '../../src/shared/utils/validators';
@@ -47,22 +49,39 @@ const validSoundPiece: SoundPiece = {
   audioUrl: 'https://cdn.com/obra-uno.wav'
 };
 
-const validSound: Sound = {
+const validSounds: Sound[] = [
+  {
+    id: 1001,
+    title: 'Sonido Uno',
+    description: 'Descripción del sonido',
+    location: 'Test Location',
+    audioUrl: 'https://cdn.com/sonido-uno.mp3'
+  },
+  {
+    id: 1002,
+    title: 'Sonido Dos',
+    description: 'Descripción del sonido',
+    location: 'Test Location',
+    audioUrl: 'https://cdn.com/sonido-dos.mp3'
+  }
+];
+
+const validMark: Mark = {
   id: 100,
-  title: 'Sonido Uno',
-  description: 'Descripción del sonido',
-  location: 'Test Location',
-  audioUrl: 'https://cdn.com/sonido-uno.mp3',
+  mapId: 1,
+  title: 'Punto Uno',
+  description: 'Descripción del punto',
   position: { x: 50, y: 50 },
-  mapId: 1
+  location: 'Test Location',
+  sounds: validSounds
 };
 
 const validPath: Path = {
   id: 1000,
   mapId: 1,
   waypoints: [{ x: 50, y: 50 }],
-  startSoundId: 100,
-  endSoundId: 101
+  startMarkId: 100,
+  endMarkId: 101
 };
 
 describe('Map invariants', () => {
@@ -166,39 +185,105 @@ describe('SoundPiece invariants', () => {
   });
 });
 
-describe('Sound invariants', () => {
-  it('passes for a valid sound', () => {
-    expect(() => checkSoundInvariants(validSound)).not.toThrow();
+describe('Mark invariants', () => {
+  it('passes for a valid mark', () => {
+    expect(() => checkMarkInvariants(validMark)).not.toThrow();
   });
 
   it('fails when mapId is null', () => {
-    const invalid: Sound = { ...validSound, mapId: null as unknown as number };
-    expect(() => checkSoundInvariants(invalid)).toThrow(
-      'Sound must belong to a map'
+    const invalid: Mark = {
+      ...validMark,
+      mapId: null as unknown as number
+    };
+    expect(() => checkMarkInvariants(invalid)).toThrow(
+      'Mark must belong to a map'
     );
   });
 
   it('fails when position is not finite', () => {
-    const invalid: Sound = { ...validSound, position: { x: Infinity, y: 200 } };
-    expect(() => checkSoundInvariants(invalid)).toThrow(
-      'Sound position must be finite'
+    const invalid: Mark = {
+      ...validMark,
+      position: { x: Infinity, y: 200 }
+    };
+    expect(() => checkMarkInvariants(invalid)).toThrow(
+      'Mark position must be finite'
     );
   });
 
   it('fails when position is outside the 0–100 percentage range', () => {
-    const invalid: Sound = { ...validSound, position: { x: 50, y: 150 } };
-    expect(() => checkSoundInvariants(invalid)).toThrow(
-      'Sound position must be within 0–100'
+    const invalid: Mark = { ...validMark, position: { x: 50, y: 150 } };
+    expect(() => checkMarkInvariants(invalid)).toThrow(
+      'Mark position must be within 0–100'
+    );
+  });
+
+  it('fails when sounds is empty', () => {
+    const invalid: Mark = { ...validMark, sounds: [] };
+    expect(() => checkMarkInvariants(invalid)).toThrow(
+      'Mark must contain at least one sound'
+    );
+  });
+
+  it('fails when sound ids are duplicated', () => {
+    const invalid: Mark = {
+      ...validMark,
+      sounds: [validSounds[0], { ...validSounds[1], id: validSounds[0].id }]
+    };
+    expect(() => checkMarkInvariants(invalid)).toThrow(
+      'Mark sounds must have unique ids'
     );
   });
 
   it('validates schema against invalid data', () => {
-    const invalid = { ...validSound, mapId: null };
+    const invalid = { ...validMark, mapId: null };
+    expect(() => markSchema.parse(invalid)).toThrow();
+  });
+
+  it('validates schema against valid data', () => {
+    expect(markSchema.parse(validMark)).toEqual(validMark);
+  });
+});
+
+describe('Sound invariants', () => {
+  it('passes for a valid sound', () => {
+    expect(() => checkSoundInvariants(validSounds[0])).not.toThrow();
+  });
+
+  it('fails when id is not finite', () => {
+    const invalid: Sound = { ...validSounds[0], id: Infinity };
+    expect(() => checkSoundInvariants(invalid)).toThrow(
+      'Sound id must be a finite positive number'
+    );
+  });
+
+  it('fails when id is not positive', () => {
+    const invalid: Sound = { ...validSounds[0], id: -5 };
+    expect(() => checkSoundInvariants(invalid)).toThrow(
+      'Sound id must be a finite positive number'
+    );
+  });
+
+  it('fails when audioUrl is empty', () => {
+    const invalid: Sound = { ...validSounds[0], audioUrl: '' };
+    expect(() => checkSoundInvariants(invalid)).toThrow(
+      'Sound audioUrl must be a non-empty URL'
+    );
+  });
+
+  it('fails when audioUrl is not a valid URL', () => {
+    const invalid: Sound = { ...validSounds[0], audioUrl: 'not-a-url' };
+    expect(() => checkSoundInvariants(invalid)).toThrow(
+      'Sound audioUrl must be a non-empty URL'
+    );
+  });
+
+  it('validates schema against invalid data', () => {
+    const invalid = { ...validSounds[0], audioUrl: '' };
     expect(() => soundSchema.parse(invalid)).toThrow();
   });
 
   it('validates schema against valid data', () => {
-    expect(soundSchema.parse(validSound)).toEqual(validSound);
+    expect(soundSchema.parse(validSounds[0])).toEqual(validSounds[0]);
   });
 });
 
@@ -214,18 +299,18 @@ describe('Path invariants', () => {
     );
   });
 
-  it('fails when startSoundId equals endSoundId', () => {
+  it('fails when startMarkId equals endMarkId', () => {
     const invalid: Path = {
       ...validPath,
-      endSoundId: validPath.startSoundId
+      endMarkId: validPath.startMarkId
     };
     expect(() => checkPathInvariants(invalid)).toThrow(
-      'Path must connect two different sounds'
+      'Path must connect to two different marks'
     );
   });
 
   it('validates schema against invalid data', () => {
-    const invalid = { ...validPath, startSoundId: 'not-a-number' };
+    const invalid = { ...validPath, startMarkId: 'not-a-number' };
     expect(() => pathSchema.parse(invalid)).toThrow();
   });
 
@@ -238,7 +323,10 @@ describe('Dataset cross-reference validator', () => {
   it('passes for a consistent dataset', () => {
     const result = validateDataset({
       maps: [validMap],
-      sounds: [validSound, { ...validSound, id: 101 }],
+      marks: [
+        { id: validMark.id, mapId: validMark.mapId },
+        { id: 101, mapId: 1 }
+      ],
       soundPieces: [validSoundPiece],
       paths: [validPath]
     });
@@ -250,38 +338,40 @@ describe('Dataset cross-reference validator', () => {
   it('fails when a map references a missing sound piece', () => {
     const result = validateDataset({
       maps: [{ ...validMap, soundPieceId: 99 }],
-      sounds: [validSound],
+      marks: [],
       soundPieces: [validSoundPiece],
       paths: []
     });
 
     expect(result.success).toBe(false);
-    expect(result.errors).toContain('Map 1 references missing sound piece 99');
+    expect(result.errors).toContain(
+      'Map 1 references missing sound piece 99'
+    );
   });
 
-  it('fails when a sound references a missing map', () => {
-    const result = validateDataset({
-      maps: [],
-      sounds: [validSound],
-      soundPieces: [],
-      paths: []
-    });
-
-    expect(result.success).toBe(false);
-    expect(result.errors).toContain('Sound 100 references missing map 1');
-  });
-
-  it('fails when a path references a sound from another map', () => {
+  it('fails when a path references a mark from another map', () => {
     const result = validateDataset({
       maps: [validMap],
-      sounds: [{ ...validSound, mapId: 2 }],
+      marks: [{ id: validMark.id, mapId: 2 }],
       soundPieces: [validSoundPiece],
       paths: [validPath]
     });
 
     expect(result.success).toBe(false);
     expect(result.errors).toContain(
-      'Sound 100 in path 1000 does not belong to map 1'
+      'Mark 100 in path 1000 does not belong to map 1'
     );
+  });
+
+  it('fails when a path references a missing mark', () => {
+    const result = validateDataset({
+      maps: [validMap],
+      marks: [],
+      soundPieces: [validSoundPiece],
+      paths: [validPath]
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain('Path 1000 references missing mark 100');
   });
 });

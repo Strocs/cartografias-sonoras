@@ -1,102 +1,94 @@
 import type { Path } from '../domain/types';
 
-// Waypoints are intermediate points between start and end sounds.
-// Endpoints are derived from the sound positions at runtime.
+// Waypoints are intermediate points between start and end marks.
+// Endpoints are derived from the mark positions at runtime.
 // All values are percentages relative to the map image:
 //   (0, 0) = top-left corner, (100, 100) = bottom-right corner.
 
 export const PATHS: Path[] = [
   // Mapa 1 — Avenida de Aguirre — La Serena (2289×1636)
-  // Start (77,20) → Waypoint desviado hacia abajo → End (68.4,30)
   {
     id: 1001,
     mapId: 1,
     waypoints: [],
-    startSoundId: 101,
-    endSoundId: 102
+    startMarkId: 101,
+    endMarkId: 102
   },
-  // Start (51.2,50) → Waypoint desviado hacia la derecha → End (14.5,96)
   {
     id: 1002,
     mapId: 1,
     waypoints: [],
-    startSoundId: 102,
-    endSoundId: 103
+    startMarkId: 102,
+    endMarkId: 103
   },
-  // Start (27,80) → Waypoint desviado hacia la izquierda → End (14.5,96)
   {
     id: 1003,
     mapId: 1,
     waypoints: [],
-    startSoundId: 103,
-    endSoundId: 104
+    startMarkId: 103,
+    endMarkId: 104
   },
 
   {
     id: 1004,
     mapId: 1,
     waypoints: [],
-    startSoundId: 104,
-    endSoundId: 105
+    startMarkId: 104,
+    endMarkId: 105
   },
 
   // Mapa 2 — Plaza de Armas — La Serena (864×1243, portrait)
-  // Start (25,24.94) → Waypoint desviado hacia arriba → End (58.33,43.68)
   {
     id: 2001,
     mapId: 2,
     waypoints: [],
-    startSoundId: 201,
-    endSoundId: 202
+    startMarkId: 201,
+    endMarkId: 202
   },
-  // Start (41.67,74.82) → Waypoint desviado hacia abajo → End (75,68.62)
   {
     id: 2002,
     mapId: 2,
     waypoints: [],
-    startSoundId: 203,
-    endSoundId: 204
+    startMarkId: 203,
+    endMarkId: 204
   },
-  // Start (12.5,87.29) → Waypoint desviado hacia la derecha → End (25,24.94)
   {
     id: 2003,
     mapId: 2,
     waypoints: [],
-    startSoundId: 205,
-    endSoundId: 201
+    startMarkId: 205,
+    endMarkId: 201
   },
   // Completes the linear route 205 → 201 → 202 → 203 → 204
   {
     id: 2004,
     mapId: 2,
     waypoints: [],
-    startSoundId: 202,
-    endSoundId: 203
+    startMarkId: 202,
+    endMarkId: 203
   },
 
   // Mapa 3 — Cruz del Tercer Milenio — Coquimbo (1160×912)
-  // Start (50,81.25) → Waypoint desviado hacia la derecha → End (33.36,37.5)
   {
     id: 3001,
     mapId: 3,
     waypoints: [{ x: 52, y: 55 }],
-    startSoundId: 301,
-    endSoundId: 302
+    startMarkId: 301,
+    endMarkId: 302
   },
-  // Start (79.22,50) → Waypoint desviado hacia abajo → End (62.5,25)
   {
     id: 3002,
     mapId: 3,
     waypoints: [{ x: 70, y: 45 }],
-    startSoundId: 303,
-    endSoundId: 304
+    startMarkId: 303,
+    endMarkId: 304
   },
   // Completes the linear route 301 → 302 → 303 → 304
   {
     id: 3003,
     mapId: 3,
     waypoints: [],
-    startSoundId: 302,
-    endSoundId: 303
+    startMarkId: 302,
+    endMarkId: 303
   }
 ];

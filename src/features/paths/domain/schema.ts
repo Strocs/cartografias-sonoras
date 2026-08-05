@@ -13,8 +13,8 @@ export const pathSchema = z.object(
     id: z.number().int().positive(),
     mapId: z.number().int().positive(),
     waypoints: z.array(pointSchema),
-    startSoundId: z.number().int().positive(),
-    endSoundId: z.number().int().positive(),
+    startMarkId: z.number().int().positive(),
+    endMarkId: z.number().int().positive(),
   },
   { error: 'Invalid path' }
 );

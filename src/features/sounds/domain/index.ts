@@ -1,3 +1,3 @@
-export type { Sound, Position } from './types';
-export { soundSchema, positionSchema } from './schema';
-export { checkSoundInvariants } from './invariants';
+export type { Sound, Mark, LegacySound, Position } from './types';
+export { soundSchema, markSchema, positionSchema } from './schema';
+export { checkSoundInvariants, checkMarkInvariants } from './invariants';
