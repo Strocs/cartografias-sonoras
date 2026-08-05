@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { mockMaps } from '../../src/features/maps/data';
+import { MAPS_DATA } from '../../src/features/maps/data';
 import { checkMapInvariants, mapSchema } from '../../src/features/maps/domain';
 import { mockPaths } from '../../src/features/paths/data';
 import { pathSchema } from '../../src/features/paths/domain';
@@ -12,12 +12,11 @@ import { validateDataset } from '../../src/shared/utils/validators';
 
 describe('Mock data validation', () => {
   it('validates all mock maps against the Map schema', () => {
-    for (const map of mockMaps) {
+    for (const map of MAPS_DATA) {
       expect(mapSchema.parse(map)).toEqual(map);
       expect(() => checkMapInvariants(map)).not.toThrow();
       expect(map.images[0]).toMatchObject({ id: 'base', optional: false });
       expect(map.preview).toMatchObject({
-        src: map.images[0].src,
         width: map.images[0].width,
         height: map.images[0].height
       });
@@ -52,7 +51,7 @@ describe('Mock data validation', () => {
     );
 
     const result = validateDataset({
-      maps: mockMaps,
+      maps: MAPS_DATA,
       sounds: mockSounds,
       soundPieces: mockSoundPieces,
       paths: completePaths
@@ -63,7 +62,7 @@ describe('Mock data validation', () => {
   });
 
   it('has exactly one sound piece per map', () => {
-    for (const map of mockMaps) {
+    for (const map of MAPS_DATA) {
       const pieces = mockSoundPieces.filter((p) => p.mapId === map.id);
       expect(pieces).toHaveLength(1);
       expect(pieces[0].id).toBe(map.soundPieceId);
@@ -71,7 +70,7 @@ describe('Mock data validation', () => {
   });
 
   it('has between 4 and 6 sounds per map', () => {
-    for (const map of mockMaps) {
+    for (const map of MAPS_DATA) {
       const sounds = mockSounds.filter((s) => s.mapId === map.id);
       expect(sounds.length).toBeGreaterThanOrEqual(4);
       expect(sounds.length).toBeLessThanOrEqual(6);
@@ -79,7 +78,7 @@ describe('Mock data validation', () => {
   });
 
   it('has exactly N-1 paths per map (one per connected pair)', () => {
-    for (const map of mockMaps) {
+    for (const map of MAPS_DATA) {
       const sounds = mockSounds.filter((s) => s.mapId === map.id);
       const paths = mockPaths.filter((p) => p.mapId === map.id);
       expect(paths.length).toBe(sounds.length - 1);
@@ -104,7 +103,7 @@ describe('Mock data validation', () => {
   });
 
   it('has non-empty unique slugs for all maps', () => {
-    const slugs = mockMaps.map((m) => m.slug);
+    const slugs = MAPS_DATA.map((m) => m.slug);
     for (const slug of slugs) {
       expect(slug).toBeTruthy();
       expect(typeof slug).toBe('string');

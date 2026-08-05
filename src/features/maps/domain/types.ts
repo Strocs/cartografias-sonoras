@@ -1,6 +1,7 @@
 export interface MapImage {
   src: string;
   width: number;
+  format?: string;
   height: number;
   /**
    * Imported image metadata for Astro's asset pipeline.
@@ -21,15 +22,25 @@ export type LayerEffectIntent =
 export interface NormalizedFrame {
   x: number;
   y: number;
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
 }
 
-export interface MapLayer extends MapImage {
-  id: string;
-  frame: NormalizedFrame;
+export interface MapLayerOptions extends MapImage {
+  frame?: NormalizedFrame;
   optional: boolean;
   effect: LayerEffectIntent;
+  className?: string;
+  pointerEvents?: boolean;
+}
+
+export interface MapLayer extends Omit<MapLayerOptions, 'frame'> {
+  id: string;
+  /**
+   * Bound layers always carry a concrete normalized frame; only the
+   * pre-binding declaration (`MapLayerOptions`) may omit it.
+   */
+  frame: Required<NormalizedFrame>;
 }
 
 export interface Map {

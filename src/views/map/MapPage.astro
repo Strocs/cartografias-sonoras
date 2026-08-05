@@ -1,6 +1,4 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import Navigation from '../../shared/ui/Navigation.astro';
 import RightRail from '../../features/maps/ui/RightRail.astro';
 import MapCompositionPreview from '../../features/maps/ui/MapCompositionPreview.astro';
 import { AudioPool } from '../../shared/lib/audio-engine';
@@ -42,54 +40,45 @@ const mapData = {
 };
 ---
 
-<Layout title={map.title}>
-  <div class="flex h-screen">
-    <Navigation />
-    <main
-      class="relative min-w-0 flex-1 overflow-hidden"
-      transition:animate="fade"
-    >
-      <div class="relative flex size-full">
-        <div class="map-wrapper relative flex min-h-0 min-w-0 flex-1 flex-col">
-          <MapCompositionPreview
-            map={map}
-            loading="eager"
-            class="absolute inset-0 z-10 size-full pt-4 pr-4 pb-20"
-            imageClass="size-full rounded-xl object-contain"
-          />
-          <map-view
-            map-layers={JSON.stringify(map.images)}
-            render-context="active"
-            id="main-map"
-            class="min-h-0 min-w-0 flex-1"
-            start-zoom={0.3}
-            min-zoom={0.2}
-            max-zoom={2.0}
-          >
-          </map-view>
-          <MapControls client:visible mapViewId="main-map" />
-        </div>
-        <RightRail maps={maps} activeSlug={map.slug} class="shrink-0" />
-        <h2
-          class="text-charcoal/60 absolute bottom-4 left-8 z-[1001] block text-3xl font-black uppercase"
-          transition:name={`map-title-${map.slug}`}
-        >
-          {map.title}
-        </h2>
-      </div>
-
-      <div class="absolute right-8 bottom-4 z-[1001]">
-        <AudioBottomPlayer client:idle soundPiece={soundPiece} />
-      </div>
-
-      <AudioPool
-        client:idle
-        sounds={audioPoolSounds}
-        soundPiece={audioPoolPiece}
+<main
+  class="relative max-h-screen min-w-0 flex-1 overflow-hidden"
+  transition:animate="fade"
+>
+  <div class="relative flex size-full">
+    <div class="map-wrapper relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <MapCompositionPreview
+        map={map}
+        loading="eager"
+        class="absolute inset-0 z-10 size-full pt-4 pr-4 pb-20"
+        imageClass="size-full rounded-xl object-contain"
       />
-    </main>
+      <map-view
+        map-layers={JSON.stringify(map.images)}
+        render-context="active"
+        id="main-map"
+        class="min-h-0 min-w-0 flex-1"
+        start-zoom={0.3}
+        min-zoom={0.2}
+        max-zoom={2.0}
+      >
+      </map-view>
+      <MapControls client:visible mapViewId="main-map" />
+    </div>
+    <RightRail maps={maps} activeSlug={map.slug} class="shrink-0" />
+    <h2
+      class="text-charcoal/60 absolute bottom-4 left-8 z-[1001] block text-3xl font-black uppercase"
+      transition:name={`map-title-${map.slug}`}
+    >
+      {map.title}
+    </h2>
   </div>
-</Layout>
+
+  <div class="absolute right-8 bottom-4 z-[1001]">
+    <AudioBottomPlayer client:idle soundPiece={soundPiece} />
+  </div>
+
+  <AudioPool client:idle sounds={audioPoolSounds} soundPiece={audioPoolPiece} />
+</main>
 
 <script
   type="application/json"

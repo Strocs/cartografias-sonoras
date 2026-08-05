@@ -38,12 +38,18 @@ test.describe('Map', () => {
       await expect(preview).toHaveCount(fixture.previewCount);
       await mapPage.waitForViewportReady();
       await mapPage.expectCompositionParity(fixture);
-      await expect(
-        mapPage.viewport.locator('[data-map-layer] img')
-      ).toHaveAttribute('alt', '');
-      await expect(
-        mapPage.viewport.locator('[data-map-layer] img')
-      ).toHaveAttribute('aria-hidden', 'true');
+
+      // Every composed layer image is decorative: alt="" + aria-hidden.
+      const layerImages = mapPage.viewport.locator('[data-map-layer] img');
+      const layerImageCount = await layerImages.count();
+      expect(layerImageCount).toBeGreaterThan(0);
+      for (let index = 0; index < layerImageCount; index += 1) {
+        await expect(layerImages.nth(index)).toHaveAttribute('alt', '');
+        await expect(layerImages.nth(index)).toHaveAttribute(
+          'aria-hidden',
+          'true'
+        );
+      }
     }
   );
 

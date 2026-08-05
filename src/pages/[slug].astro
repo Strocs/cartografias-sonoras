@@ -1,16 +1,17 @@
 ---
+import Layout from '../layouts/Layout.astro';
 import MapPage from '../views/map/MapPage.astro';
-import { mockMaps } from '../features/maps/data/mock-maps';
+import { MAPS_DATA } from '../features/maps/data/maps';
 import { mockSounds } from '../features/sounds/data/mock-sounds';
 import { mockPaths } from '../features/paths/data/mock-paths';
 import { mockSoundPieces } from '../features/sound-pieces/data/mock-sound-pieces';
 
 export function getStaticPaths() {
-  return mockMaps.map((map) => ({ params: { slug: map.slug } }));
+  return MAPS_DATA.map((map) => ({ params: { slug: map.slug } }));
 }
 
 const { slug } = Astro.params;
-const map = mockMaps.find((m) => m.slug === slug);
+const map = MAPS_DATA.find((m) => m.slug === slug);
 
 if (!map) {
   return new Response('Not found', { status: 404 });
@@ -22,10 +23,12 @@ const soundPiece =
   mockSoundPieces.find((piece) => piece.mapId === map.id) ?? null;
 ---
 
-<MapPage
-  map={map}
-  maps={mockMaps}
-  sounds={sounds}
-  paths={paths}
-  soundPiece={soundPiece}
-/>
+<Layout title={map.title}>
+  <MapPage
+    map={map}
+    maps={MAPS_DATA}
+    sounds={sounds}
+    paths={paths}
+    soundPiece={soundPiece}
+  />
+</Layout>

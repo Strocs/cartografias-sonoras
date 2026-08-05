@@ -9,12 +9,11 @@ interface Props {
 }
 
 const { map, loading = 'lazy' } = Astro.props;
-
 ---
 
 <a
   href={`/${map.slug}`}
-  class="group border-secondary-sand/60 bg-canvas relative h-full overflow-hidden rounded-xl border shadow-lg"
+  class="group border-secondary-sand/60 bg-canvas relative block h-full overflow-hidden rounded-xl border shadow-lg"
   data-testid="map-card"
 >
   <h2

@@ -1,20 +1,16 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Navigation from '../shared/ui/Navigation.astro';
 import { siteContent } from '../shared/data/site-content';
 
 const { project } = siteContent;
 ---
 
 <Layout title={project.title} description={project.description}>
-  <div class="flex min-h-screen">
-    <Navigation />
-    <main class="flex-1 p-6 md:p-8">
-      <h1 class="text-3xl font-bold text-primary-navy">{project.heading}</h1>
-      <p class="mt-2 max-w-2xl text-primary-brown">{project.description}</p>
-      <div class="mt-6 max-w-3xl space-y-4 text-primary-brown">
-        {project.body.map((paragraph) => <p>{paragraph}</p>)}
-      </div>
-    </main>
-  </div>
+  <main class="flex-1 p-6 md:p-8">
+    <h1 class="text-primary-navy text-3xl font-bold">{project.heading}</h1>
+    <p class="text-primary-brown mt-2 max-w-2xl">{project.description}</p>
+    <div class="text-primary-brown mt-6 max-w-3xl space-y-4">
+      {project.body.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+  </main>
 </Layout>

@@ -53,12 +53,15 @@ export function createImageLayer(
   const wrapper = document.createElement('div');
   wrapper.dataset.mapLayer = layer.id;
   wrapper.dataset.effectActive = String(effectActive);
+  if (layer.className) {
+    wrapper.classList.add(...layer.className.trim().split(/\s+/));
+  }
   wrapper.style.position = 'absolute';
   wrapper.style.left = `${geometry.x}px`;
   wrapper.style.top = `${geometry.y}px`;
   wrapper.style.width = `${geometry.width}px`;
   wrapper.style.height = `${geometry.height}px`;
-  wrapper.style.pointerEvents = 'none';
+  wrapper.style.pointerEvents = layer.pointerEvents ? 'auto' : 'none';
 
   const image = document.createElement('img');
   image.src = layer.src;

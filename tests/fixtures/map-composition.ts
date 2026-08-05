@@ -1,4 +1,12 @@
-import { mapFixtures } from './maps';
+/**
+ * E2E composition fixture.
+ *
+ * Derived from the production layout declarations (`map-layouts.ts`) instead
+ * of a hand-mirrored copy: layer ids and the base frame follow the data the
+ * app actually renders, so adding a layer never requires touching this file.
+ * The base layer is guaranteed to exist by the layout's tuple type.
+ */
+import { mapLayouts } from '../../src/features/maps/data/map-layouts';
 
 export interface MapCompositionFixture {
   slug: string;
@@ -13,12 +21,20 @@ export interface MapCompositionFixture {
   };
 }
 
-export const mapCompositionFixtures: MapCompositionFixture[] = mapFixtures.map(
-  ({ slug, title }) => ({
-    slug,
-    title,
-    previewCount: 1,
-    layerIds: ['base'],
-    baseFrame: { x: 0, y: 0, width: 100, height: 100 }
-  })
+export const mapCompositionFixtures: MapCompositionFixture[] = mapLayouts.map(
+  ({ slug, title, layers }) => {
+    const [base] = layers;
+    return {
+      slug,
+      title,
+      previewCount: 1,
+      layerIds: layers.map((layer) => layer.id),
+      baseFrame: {
+        x: base.frame.x,
+        y: base.frame.y,
+        width: base.frame.width,
+        height: base.frame.height
+      }
+    };
+  }
 );
