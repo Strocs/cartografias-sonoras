@@ -2,47 +2,64 @@ import { AUDIO_STATUS, type AudioStatus } from '@shared/lib/audio-engine';
 
 import type { Path, Point } from '@features/paths/domain/types';
 import type { PathVisualState } from '@features/paths/domain/PathVisualState';
-import type { Sound } from '@features/sounds/domain/types';
+import type { Mark } from '@features/sounds/domain/types';
 
 export interface ActiveSoundLike {
   status: AudioStatus;
 }
 
 /**
- * Builds the full point list for a path by combining the start and end sound
- * positions with the intermediate waypoints. Endpoints are derived from the
- * sound data at runtime so markers and paths stay aligned.
+ * Builds the full point list for a path by combining the start and end mark
+ * positions with the intermediate waypoints. Endpoints are derived from
+ * `mark.position` at runtime so markers and paths stay aligned.
  */
-function buildFullPoints(path: Path, soundsById: Map<number, Sound>): Point[] {
-  const startSound = soundsById.get(path.startSoundId);
-  const endSound = soundsById.get(path.endSoundId);
-  if (!startSound || !endSound) {
+function buildFullPoints(path: Path, marksById: Map<number, Mark>): Point[] {
+  const startMark = marksById.get(path.startMarkId);
+  const endMark = marksById.get(path.endMarkId);
+  if (!startMark || !endMark) {
     return [];
   }
-  return [startSound.position, ...path.waypoints, endSound.position];
+  return [startMark.position, ...path.waypoints, endMark.position];
+}
+
+/**
+ * A mark endpoint counts as playing when ANY of its sounds is playing.
+ */
+function endpointPlaying(
+  markId: number,
+  marksById: Map<number, Mark>,
+  activeSounds: Map<number, ActiveSoundLike>
+): boolean {
+  const mark = marksById.get(markId);
+  if (mark === undefined) return false;
+  return mark.sounds.some(
+    (sound) => activeSounds.get(sound.id)?.status === AUDIO_STATUS.PLAYING
+  );
 }
 
 /**
  * Computes the visual state for every perceptual path based on which connected
- * sounds are currently playing.
+ * marks currently have a sound playing.
  *
  * Returns a Map so callers can perform O(1) lookups by `pathId` when diffing
  * against existing SVG elements.
  */
 export function computePathVisualStates(
   paths: Path[],
-  soundsById: Map<number, Sound>,
+  marksById: Map<number, Mark>,
   activeSounds: Map<number, ActiveSoundLike>
 ): Map<number, PathVisualState> {
   const result = new Map<number, PathVisualState>();
 
   for (const path of paths) {
-    const aPlaying =
-      activeSounds.get(path.startSoundId)?.status === AUDIO_STATUS.PLAYING;
-    const bPlaying =
-      activeSounds.get(path.endSoundId)?.status === AUDIO_STATUS.PLAYING;
+    const aPlaying = endpointPlaying(
+      path.startMarkId,
+      marksById,
+      activeSounds
+    );
+    const bPlaying = endpointPlaying(path.endMarkId, marksById, activeSounds);
 
-    const points = buildFullPoints(path, soundsById);
+    const points = buildFullPoints(path, marksById);
     if (points.length < 2) continue;
 
     if (aPlaying && bPlaying) {
