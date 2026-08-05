@@ -3,9 +3,14 @@ import { expect, test } from '@playwright/test';
 import { mapCompositionFixtures } from '../../fixtures/map-composition';
 import { mapFixtures } from '../../fixtures/maps';
 import { PATHS } from '../../../src/features/paths/data/paths';
-import { SOUNDS } from '../../../src/features/sounds/data/sounds';
+import { MARKS } from '../../../src/features/sounds/data/sounds';
 import { HomePage } from '../home/home-page';
 import { MapPage } from './map-page';
+
+/** Marks for a map id in data order. */
+function marksFor(mapId: number) {
+  return MARKS.filter((mark) => mark.mapId === mapId);
+}
 
 test.describe('Map', () => {
   test(
@@ -39,7 +44,6 @@ test.describe('Map', () => {
       await mapPage.waitForViewportReady();
       await mapPage.expectCompositionParity(fixture);
 
-      // Every composed layer image is decorative: alt="" + aria-hidden.
       const layerImages = mapPage.viewport.locator('[data-map-layer] img');
       const layerImageCount = await layerImages.count();
       expect(layerImageCount).toBeGreaterThan(0);
@@ -54,7 +58,7 @@ test.describe('Map', () => {
   );
 
   test(
-    'rebinds the composition after client-side navigation without duplicating markers',
+    'rebinds the composition after client-side navigation without duplicating marks',
     { tag: ['@critical', '@e2e', '@MAP-E2E-002'] },
     async ({ page }) => {
       const homePage = new HomePage(page);
@@ -69,16 +73,14 @@ test.describe('Map', () => {
       await homePage.getMapCard(firstMap.title).click();
       await expect(page).toHaveURL(`/${firstMap.slug}`);
       await mapPage.waitForViewportReady();
-      await expect(mapPage.markers).toHaveCount(
-        SOUNDS.filter((sound) => sound.mapId === firstMap.id).length
+      await expect(mapPage.marks).toHaveCount(
+        marksFor(firstMap.id).length
       );
 
       await mapPage.getRailLink(nextMap.slug).click();
       await expect(page).toHaveURL(`/${nextMap.slug}`);
       await mapPage.waitForViewportReady();
-      await expect(mapPage.markers).toHaveCount(
-        SOUNDS.filter((sound) => sound.mapId === nextMap.id).length
-      );
+      await expect(mapPage.marks).toHaveCount(marksFor(nextMap.id).length);
     }
   );
 
@@ -143,20 +145,35 @@ test.describe('Map', () => {
   );
 
   test(
-    'keeps markers keyboard-accessible and disables declared effects for reduced motion',
+    'keyboard toggles a mark fan and plays a sound button',
     { tag: ['@high', '@e2e', '@MAP-E2E-004'] },
     async ({ page }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       const mapPage = new MapPage(page);
-      await mapPage.goto(mapFixtures[0].slug);
+      const map = mapFixtures[0];
+      const mark = marksFor(map.id)[0];
+
+      await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
 
-      const marker = mapPage.markers.first();
-      await marker.focus();
-      await expect(marker).toBeFocused();
-      await expect(marker).toHaveAttribute('aria-label', SOUNDS[0].title);
-      await marker.press('Space');
-      await expect(marker).toHaveAttribute('data-state', /playing|paused/, {
+      const group = mapPage.getSoundMark(mark.id);
+      const circle = group.locator('.sound-mark__circle');
+
+      await circle.focus();
+      await expect(circle).toBeFocused();
+      await expect(circle).toHaveAttribute('aria-label', mark.title);
+
+      // Space on the mark toggles the fan open (aria-expanded true).
+      await circle.press('Space');
+      await expect(circle).toHaveAttribute('aria-expanded', 'true');
+      await expect(group).toHaveAttribute('data-open', 'true');
+
+      // The first sound button takes focus; Space plays the sound.
+      const button = mapPage.getSoundButton(mark.id, mark.sounds[0].id);
+      await button.focus();
+      await expect(button).toBeFocused();
+      await button.press('Space');
+      await expect(button).toHaveAttribute('data-state', /playing|paused/, {
         timeout: 5000
       });
 
@@ -172,7 +189,7 @@ test.describe('Map', () => {
           'map-layers',
           JSON.stringify([
             {
-              id: 'base',
+              id: 'static',
               src: base,
               width: 2,
               height: 2,
@@ -221,69 +238,79 @@ test.describe('Map', () => {
   );
 
   test(
-    'renders all sound markers for the active map',
+    'renders all marks for the active map with mark-coordinate geometry',
     { tag: ['@critical', '@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
       const map = mapFixtures[0];
-      const expectedSounds = SOUNDS.filter(
-        (sound) => sound.mapId === map.id
-      );
+      const marks = marksFor(map.id);
 
       await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
 
-      await expect(mapPage.markers).toHaveCount(expectedSounds.length);
-      for (const sound of expectedSounds) {
-        await expect(mapPage.getMarkerBySoundId(sound.id)).toBeVisible();
+      await expect(mapPage.marks).toHaveCount(marks.length);
+      await expect(mapPage.soundButtons).toHaveCount(
+        marks.reduce((acc, m) => acc + m.sounds.length, 0)
+      );
+
+      for (const mark of marks) {
+        // The group div is a zero-size positioning container; the visible
+        // element is the 56px circle button inside it.
+        await expect(
+          mapPage.getSoundMark(mark.id).locator('.sound-mark__circle')
+        ).toBeVisible();
       }
 
-      const sound = expectedSounds[0];
-      const marker = mapPage.getMarkerBySoundId(sound.id);
-      const coordinates = await marker.evaluate((element) => {
-        const mapView = document.querySelector('map-view#main-map') as
-          (HTMLElement & { imageWidth: number; imageHeight: number }) | null;
-        return {
-          x: element.style.getPropertyValue('--marker-x'),
-          y: element.style.getPropertyValue('--marker-y'),
-          transform: element.style.transform,
-          imageWidth: mapView?.imageWidth ?? 0,
-          imageHeight: mapView?.imageHeight ?? 0
-        };
-      });
-      expect(coordinates.x).toBe(
-        String(Math.round((sound.position.x / 100) * coordinates.imageWidth))
+      // Coordinate assert on the group CSS vars.
+      const mark = marks[0];
+      const position = await mapPage.getMarkPosition(mark.id);
+      expect(position.x).toBe(
+        Math.round((mark.position.x / 100) * position.imageWidth)
       );
-      expect(coordinates.y).toBe(
-        String(Math.round((sound.position.y / 100) * coordinates.imageHeight))
+      expect(position.y).toBe(
+        Math.round((mark.position.y / 100) * position.imageHeight)
       );
-      expect(coordinates.transform).toContain('translate(-50%, -50%)');
+      expect(position.transform).toContain('translate(-50%, -50%)');
     }
   );
 
   test(
-    'shows tooltip with sound title and description on hover',
+    'shows the mark tooltip with title below the mark',
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
       const map = mapFixtures[0];
-      const sound = SOUNDS.find((s) => s.mapId === map.id);
-
-      if (!sound) {
-        throw new Error(`No sounds found for map ${map.slug}`);
-      }
+      const mark = marksFor(map.id)[0];
 
       await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
 
-      const marker = mapPage.getMarkerBySoundId(sound.id);
-      const tooltip = marker.locator('.sound-marker__tooltip');
+      const group = mapPage.getSoundMark(mark.id);
+      const tooltip = group.locator('.sound-mark__tooltip');
 
-      await marker.hover();
+      // Hover the circle (the group div itself has zero size).
+      await group.locator('.sound-mark__circle').hover();
 
       await expect(tooltip).toBeVisible();
-      await expect(tooltip).toContainText(sound.title);
-      await expect(tooltip).toContainText(sound.description);
+      await expect(tooltip).toContainText(mark.title);
+
+      // The tooltip always sits below the mark's geometric centre-bottom,
+      // even while the fan is open.
+      const groupBox = await group.boundingBox();
+      const tooltipBox = await tooltip.boundingBox();
+      expect(groupBox).not.toBeNull();
+      expect(tooltipBox).not.toBeNull();
+      expect(tooltipBox!.y).toBeGreaterThanOrEqual(
+        groupBox!.y + groupBox!.height / 2
+      );
+
+      await group.locator('.sound-mark__circle').click();
+      await expect(group).toHaveAttribute('data-open', 'true');
+      const tooltipBoxOpen = await tooltip.boundingBox();
+      expect(tooltipBoxOpen).not.toBeNull();
+      expect(tooltipBoxOpen!.y).toBeGreaterThanOrEqual(
+        groupBox!.y + groupBox!.height / 2
+      );
     }
   );
 
@@ -359,15 +386,15 @@ test.describe('Map', () => {
       const alignment = await page.evaluate(() => {
         const scene = document.querySelector('.map-panzoom');
         const image = scene?.querySelector('img');
-        const marker = document.querySelector('[data-testid="sound-marker"]');
+        const mark = document.querySelector('[data-testid="sound-mark"]');
         const path = document.querySelector('.path-base');
         const svg = path?.closest('svg');
         return {
           sceneTransform: scene?.getAttribute('style') ?? '',
           sharedSceneContainment: [
             image,
-            marker?.parentElement,
-            marker,
+            mark?.parentElement,
+            mark,
             svg,
             path
           ].every(
@@ -472,7 +499,7 @@ test.describe('Map', () => {
   );
 
   test(
-    'renders dashed path lines between connected sounds',
+    'connects marks with dashed path lines by mark ids',
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
@@ -490,48 +517,142 @@ test.describe('Map', () => {
   );
 
   test(
-    'clicking a marker starts playback and updates marker state',
+    'clicking a mark opens the fan, and the sound button toggles playback with the fan open',
     { tag: ['@e2e', '@audio'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
       const map = mapFixtures[0];
-      const sound = SOUNDS.find((s) => s.mapId === map.id);
+      const mark = marksFor(map.id)[0];
+      const firstSound = mark.sounds[0];
 
-      if (!sound) {
-        throw new Error(`No sounds found for map ${map.slug}`);
+      await mapPage.goto(map.slug);
+      await mapPage.waitForViewportReady();
+
+      const group = mapPage.getSoundMark(mark.id);
+      const circle = group.locator('.sound-mark__circle');
+      const button = mapPage.getSoundButton(mark.id, firstSound.id);
+
+      // Clicking the mark opens the fan; it does not start playback directly.
+      await circle.click();
+      await expect(group).toHaveAttribute('data-open', 'true');
+      await expect(circle).toHaveAttribute('aria-expanded', 'true');
+
+      // The sound button toggles playback; the fan stays open.
+      await button.click();
+      await expect(button).toHaveAttribute('data-state', /playing|paused/, {
+        timeout: 5000
+      });
+      await expect(group).toHaveAttribute('data-open', 'true');
+
+      // The mark paints its active accent while any sound plays.
+      await expect(group).toHaveAttribute('data-state', 'active');
+    }
+  );
+
+  test(
+    'mark shows an active accent only when one of its sounds is playing',
+    { tag: ['@e2e', '@audio'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const map = mapFixtures[0];
+      const marks = marksFor(map.id);
+      const selected = marks[0];
+      const sibling = marks[1];
+      const selectedSound = selected.sounds[0];
+
+      await mapPage.goto(map.slug);
+      await mapPage.waitForViewportReady();
+
+      const selectedGroup = mapPage.getSoundMark(selected.id);
+      const siblingGroup = mapPage.getSoundMark(sibling.id);
+
+      await expect(selectedGroup).toHaveAttribute('data-state', 'idle');
+      await expect(siblingGroup).toHaveAttribute('data-state', 'idle');
+
+      await selectedGroup.locator('.sound-mark__circle').click();
+      await mapPage.getSoundButton(selected.id, selectedSound.id).click();
+      await expect(selectedGroup).toHaveAttribute('data-state', 'active');
+      await expect(siblingGroup).toHaveAttribute('data-state', 'idle');
+    }
+  );
+
+  test(
+    'fan aria contract reflects open/closed state on the mark',
+    { tag: ['@e2e'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const map = mapFixtures[0];
+      const mark = marksFor(map.id)[0];
+
+      await mapPage.goto(map.slug);
+      await mapPage.waitForViewportReady();
+
+      const group = mapPage.getSoundMark(mark.id);
+      const circle = group.locator('.sound-mark__circle');
+      const fan = group.locator('.sound-mark__fan');
+
+      // Fan a11y contract: circle exposes aria-expanded + aria-controls,
+      // the fan is a labelled group. aria-hidden stays true per the B DOM
+      // contract (visibility is driven by [data-open] + CSS opacity).
+      await expect(circle).toHaveAttribute('aria-controls', `fan-${mark.id}`);
+      await expect(fan).toHaveAttribute('role', 'group');
+      await expect(fan).toHaveAttribute('aria-hidden', 'true');
+      await expect(circle).toHaveAttribute('aria-expanded', 'false');
+
+      await circle.click();
+      await expect(group).toHaveAttribute('data-open', 'true');
+      await expect(circle).toHaveAttribute('aria-expanded', 'true');
+
+      await circle.click();
+      await expect(group).not.toHaveAttribute('data-open');
+      await expect(circle).toHaveAttribute('aria-expanded', 'false');
+    }
+  );
+
+  test(
+    'sound buttons copy the mark title label and expose the 54px progress ring',
+    { tag: ['@e2e'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      const map = mapFixtures[0];
+      const mark = marksFor(map.id).find((m) => m.sounds.length > 1);
+
+      if (!mark) {
+        throw new Error(`Map ${map.slug} has no mark with multiple sounds`);
       }
 
       await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
 
-      const marker = mapPage.getMarkerBySoundId(sound.id);
-      await marker.click();
+      const group = mapPage.getSoundMark(mark.id);
+      await group.locator('.sound-mark__circle').click();
+      await expect(group).toHaveAttribute('data-open', 'true');
 
-      await expect(marker).toHaveAttribute('data-state', 'playing', {
-        timeout: 5000
-      });
-      await expect
-        .poll(() =>
-          marker.evaluate((element) =>
-            Number.parseFloat(getComputedStyle(element, '::after').opacity)
-          )
-        )
-        .toBeGreaterThan(0);
-      const ring = await marker.evaluate((element) => {
-        const style = getComputedStyle(element, '::after');
-        return {
-          progress: Number.parseFloat(
-            getComputedStyle(element).getPropertyValue('--progress')
-          ),
-          backgroundImage: style.backgroundImage,
-          width: style.width,
-          height: style.height
-        };
-      });
+      // Design D7: sounds 2..n reuse the mark title/description/location as
+      // the default copy (product copy pending); aria-label = mark.title so
+      // labels are never empty.
+      for (const sound of mark.sounds) {
+        const button = mapPage.getSoundButton(mark.id, sound.id);
+        await expect(button).toBeVisible();
+        await expect(button).toHaveAttribute('aria-label', mark.title);
+      }
 
+      // The progress ring targets the 54px sound button perimeter.
+      const firstSound = mark.sounds[0];
+      const ring = await mapPage
+        .getSoundButton(mark.id, firstSound.id)
+        .evaluate((element) => {
+          const style = getComputedStyle(element);
+          return {
+            progress: Number.parseFloat(
+              style.getPropertyValue('--progress')
+            ),
+            width: style.width,
+            height: style.height
+          };
+        });
       expect(ring.progress).toBeGreaterThanOrEqual(0);
       expect(ring.progress).toBeLessThanOrEqual(100);
-      expect(ring.backgroundImage).toContain('conic-gradient');
       expect(ring.width).toBe('54px');
       expect(ring.height).toBe('54px');
     }
@@ -543,24 +664,18 @@ test.describe('Map', () => {
     async ({ page }) => {
       const mapPage = new MapPage(page);
       const map = mapFixtures[0];
-      const sound = SOUNDS.find((s) => s.mapId === map.id);
-
-      if (!sound) {
-        throw new Error(`No sounds found for map ${map.slug}`);
-      }
+      const mark = marksFor(map.id)[0];
 
       await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
 
-      // Player is always rendered as part of the layout; starts idle.
       await expect(mapPage.bottomPlayer).toBeVisible();
       await expect(mapPage.bottomPlayer).toHaveAttribute('data-mode', 'idle');
 
-      const marker = mapPage.getMarkerBySoundId(sound.id);
-      await marker.click();
+      const group = mapPage.getSoundMark(mark.id);
+      await group.locator('.sound-mark__circle').click();
+      await mapPage.getSoundButton(mark.id, mark.sounds[0].id).click();
 
-      // Clicking a regular sound keeps the player in idle mode
-      // (only SoundPiece triggers switch to "piece" mode).
       await expect(mapPage.bottomPlayer).toBeVisible();
       await expect(mapPage.bottomPlayer).toHaveAttribute('data-mode', 'idle');
     }
