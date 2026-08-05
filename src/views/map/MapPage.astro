@@ -49,15 +49,14 @@ const mapData = {
       <MapCompositionPreview
         map={map}
         loading="eager"
-        class="absolute inset-0 z-10 size-full pt-4 pr-4 pb-20"
-        imageClass="size-full rounded-xl object-contain"
+        class="absolute inset-0 z-10 size-full"
+        imageClass="size-full object-contain"
       />
       <map-view
         map-layers={JSON.stringify(map.images)}
         render-context="active"
         id="main-map"
         class="min-h-0 min-w-0 flex-1"
-        start-zoom={0.3}
         min-zoom={0.2}
         max-zoom={2.0}
       >

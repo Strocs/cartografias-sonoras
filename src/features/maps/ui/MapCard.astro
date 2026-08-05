@@ -27,5 +27,7 @@ const { map, loading = 'lazy' } = Astro.props;
     loading={loading}
     class="h-full w-full"
     imageClass="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
+    widths={[360, 540, 720, 960]}
+    sizes="(min-width: 768px) 33vw, 92vw"
   />
 </a>

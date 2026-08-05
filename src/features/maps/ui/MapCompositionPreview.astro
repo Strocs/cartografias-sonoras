@@ -1,4 +1,6 @@
 ---
+import { Image } from 'astro:assets';
+
 import type { Map } from '../domain/types';
 
 interface Props {
@@ -6,13 +8,19 @@ interface Props {
   loading?: 'eager' | 'lazy';
   class?: string;
   imageClass?: string;
+  /** Responsive candidate widths for the generated `srcset`. */
+  widths?: number[];
+  /** The container's rendered width, so the browser picks the right candidate. */
+  sizes?: string;
 }
 
 const {
   map,
   loading = 'lazy',
   class: className = '',
-  imageClass = ''
+  imageClass = '',
+  widths = [640, 960, 1280, 1600],
+  sizes = '100vw'
 } = Astro.props;
 
 const labelId = `map-composition-label-${map.slug}`;
@@ -24,14 +32,16 @@ const labelId = `map-composition-label-${map.slug}`;
   transition:name={`map-composition-${map.slug}`}
   data-map-composition-preview
 >
-  <img
-    src={map.preview.src}
+  <Image
+    src={map.preview.asset}
     alt=""
     aria-hidden="true"
     class={imageClass}
     loading={loading}
     width={map.preview.width}
     height={map.preview.height}
+    widths={widths}
+    sizes={sizes}
     {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
   />
   <figcaption id={labelId} class="sr-only">{map.title}</figcaption>
