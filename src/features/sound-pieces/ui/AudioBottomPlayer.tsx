@@ -13,6 +13,7 @@ import type { SoundPiece } from '../domain/types';
 
 export interface AudioBottomPlayerProps {
   soundPiece?: SoundPiece | null;
+  enabled?: boolean;
 }
 
 const ACTIVE_STATUSES = new Set<AudioStatus>([
@@ -34,7 +35,8 @@ function selectIsPiecePlaying(state: AudioEngineState): boolean {
 }
 
 export function AudioBottomPlayer({
-  soundPiece
+  soundPiece,
+  enabled = true
 }: AudioBottomPlayerProps) {
   const isPieceMode = useAudioStore(selectIsPieceMode);
   const isPiecePlaying = useAudioStore(selectIsPiecePlaying);
@@ -49,6 +51,10 @@ export function AudioBottomPlayer({
   const seekPiece = useAudioStore((s) => s.seekPiece);
   const setVolume = useAudioStore((s) => s.setVolume);
   const toggleMute = useAudioStore((s) => s.toggleMute);
+
+  if (!enabled) {
+    return null;
+  }
 
   const isIdle = !isPieceMode;
 

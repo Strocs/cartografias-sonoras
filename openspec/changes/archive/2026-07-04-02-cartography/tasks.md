@@ -4,7 +4,7 @@
 
 - [x] 1.1 Copy `refs/maps/map{1,2,3}.png` to `public/maps/locacion-{1,2,3}.png`
 - [x] 1.2 Update `mock-maps.ts` — dimensions: 1216×864, 864×1243, 1160×912
-- [x] 1.3 Reconcile `mock-sounds.ts` coordinates to real image pixel bounds
+- [x] 1.3 Reconcile `sounds.ts` coordinates to real image pixel bounds
 - [x] 1.4 Reconcile `mock-paths.ts` points to real image pixel bounds
 - [x] 1.5 Add `--color-canvas: #F5F2ED`, `--color-charcoal: #1A2A3A` to `global.css`
 - [x] 1.6 Modify `MapViewport.tsx`: default `zoomControl: false`, create `pathPane` at zIndex 350, expose `getMap()` for feature components

@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 
 import { mapCompositionFixtures } from '../../fixtures/map-composition';
 import { mapFixtures } from '../../fixtures/maps';
-import { mockPaths } from '../../../src/features/paths/data/mock-paths';
-import { mockSounds } from '../../../src/features/sounds/data/mock-sounds';
+import { PATHS } from '../../../src/features/paths/data/paths';
+import { SOUNDS } from '../../../src/features/sounds/data/sounds';
 import { HomePage } from '../home/home-page';
 import { MapPage } from './map-page';
 
@@ -70,14 +70,14 @@ test.describe('Map', () => {
       await expect(page).toHaveURL(`/${firstMap.slug}`);
       await mapPage.waitForViewportReady();
       await expect(mapPage.markers).toHaveCount(
-        mockSounds.filter((sound) => sound.mapId === firstMap.id).length
+        SOUNDS.filter((sound) => sound.mapId === firstMap.id).length
       );
 
       await mapPage.getRailLink(nextMap.slug).click();
       await expect(page).toHaveURL(`/${nextMap.slug}`);
       await mapPage.waitForViewportReady();
       await expect(mapPage.markers).toHaveCount(
-        mockSounds.filter((sound) => sound.mapId === nextMap.id).length
+        SOUNDS.filter((sound) => sound.mapId === nextMap.id).length
       );
     }
   );
@@ -154,7 +154,7 @@ test.describe('Map', () => {
       const marker = mapPage.markers.first();
       await marker.focus();
       await expect(marker).toBeFocused();
-      await expect(marker).toHaveAttribute('aria-label', mockSounds[0].title);
+      await expect(marker).toHaveAttribute('aria-label', SOUNDS[0].title);
       await marker.press('Space');
       await expect(marker).toHaveAttribute('data-state', /playing|paused/, {
         timeout: 5000
@@ -226,7 +226,7 @@ test.describe('Map', () => {
     async ({ page }) => {
       const mapPage = new MapPage(page);
       const map = mapFixtures[0];
-      const expectedSounds = mockSounds.filter(
+      const expectedSounds = SOUNDS.filter(
         (sound) => sound.mapId === map.id
       );
 
@@ -267,7 +267,7 @@ test.describe('Map', () => {
     async ({ page }) => {
       const mapPage = new MapPage(page);
       const map = mapFixtures[0];
-      const sound = mockSounds.find((s) => s.mapId === map.id);
+      const sound = SOUNDS.find((s) => s.mapId === map.id);
 
       if (!sound) {
         throw new Error(`No sounds found for map ${map.slug}`);
@@ -477,7 +477,7 @@ test.describe('Map', () => {
     async ({ page }) => {
       const mapPage = new MapPage(page);
       const map = mapFixtures[0];
-      const expectedPaths = mockPaths.filter((path) => path.mapId === map.id);
+      const expectedPaths = PATHS.filter((path) => path.mapId === map.id);
 
       await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
@@ -495,7 +495,7 @@ test.describe('Map', () => {
     async ({ page }) => {
       const mapPage = new MapPage(page);
       const map = mapFixtures[0];
-      const sound = mockSounds.find((s) => s.mapId === map.id);
+      const sound = SOUNDS.find((s) => s.mapId === map.id);
 
       if (!sound) {
         throw new Error(`No sounds found for map ${map.slug}`);
@@ -543,7 +543,7 @@ test.describe('Map', () => {
     async ({ page }) => {
       const mapPage = new MapPage(page);
       const map = mapFixtures[0];
-      const sound = mockSounds.find((s) => s.mapId === map.id);
+      const sound = SOUNDS.find((s) => s.mapId === map.id);
 
       if (!sound) {
         throw new Error(`No sounds found for map ${map.slug}`);

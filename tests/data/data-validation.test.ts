@@ -2,16 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import { MAPS_DATA } from '../../src/features/maps/data';
 import { checkMapInvariants, mapSchema } from '../../src/features/maps/domain';
-import { mockPaths } from '../../src/features/paths/data';
+import { PATHS } from '../../src/features/paths/data';
 import { pathSchema } from '../../src/features/paths/domain';
-import { mockSoundPieces } from '../../src/features/sound-pieces/data';
+import { SOUND_PIECES } from '../../src/features/sound-pieces/data';
 import { soundPieceSchema } from '../../src/features/sound-pieces/domain';
-import { mockSounds } from '../../src/features/sounds/data';
+import { SOUNDS } from '../../src/features/sounds/data';
 import { soundSchema } from '../../src/features/sounds/domain';
 import { validateDataset } from '../../src/shared/utils/validators';
 
-describe('Mock data validation', () => {
-  it('validates all mock maps against the Map schema', () => {
+describe('Dataset validation', () => {
+  it('validates all maps against the Map schema', () => {
     for (const map of MAPS_DATA) {
       expect(mapSchema.parse(map)).toEqual(map);
       expect(() => checkMapInvariants(map)).not.toThrow();
@@ -23,37 +23,37 @@ describe('Mock data validation', () => {
     }
   });
 
-  it('validates all mock sounds against the Sound schema', () => {
-    for (const sound of mockSounds) {
+  it('validates all sounds against the Sound schema', () => {
+    for (const sound of SOUNDS) {
       expect(soundSchema.parse(sound)).toEqual(sound);
     }
   });
 
-  it('validates all mock sound pieces against the SoundPiece schema', () => {
-    for (const piece of mockSoundPieces) {
+  it('validates all sound pieces against the SoundPiece schema', () => {
+    for (const piece of SOUND_PIECES) {
       expect(soundPieceSchema.parse(piece)).toEqual(piece);
     }
   });
 
-  it('validates all mock paths against the Path schema', () => {
-    for (const path of mockPaths) {
+  it('validates all paths against the Path schema', () => {
+    for (const path of PATHS) {
       expect(pathSchema.parse(path)).toEqual(path);
     }
   });
 
   it('passes the dataset cross-reference validator', () => {
     // Filter out paths that reference non-existent sounds — these are known
-    // data gaps in the mock dataset that the validator is designed to catch.
-    const completePaths = mockPaths.filter((path) =>
+    // data gaps in the dataset that the validator is designed to catch.
+    const completePaths = PATHS.filter((path) =>
       [path.startSoundId, path.endSoundId].every((sid) =>
-        mockSounds.some((s) => s.id === sid)
+        SOUNDS.some((s) => s.id === sid)
       )
     );
 
     const result = validateDataset({
       maps: MAPS_DATA,
-      sounds: mockSounds,
-      soundPieces: mockSoundPieces,
+      sounds: SOUNDS,
+      soundPieces: SOUND_PIECES,
       paths: completePaths
     });
 
@@ -63,7 +63,7 @@ describe('Mock data validation', () => {
 
   it('has exactly one sound piece per map', () => {
     for (const map of MAPS_DATA) {
-      const pieces = mockSoundPieces.filter((p) => p.mapId === map.id);
+      const pieces = SOUND_PIECES.filter((p) => p.mapId === map.id);
       expect(pieces).toHaveLength(1);
       expect(pieces[0].id).toBe(map.soundPieceId);
     }
@@ -71,7 +71,7 @@ describe('Mock data validation', () => {
 
   it('has between 4 and 6 sounds per map', () => {
     for (const map of MAPS_DATA) {
-      const sounds = mockSounds.filter((s) => s.mapId === map.id);
+      const sounds = SOUNDS.filter((s) => s.mapId === map.id);
       expect(sounds.length).toBeGreaterThanOrEqual(4);
       expect(sounds.length).toBeLessThanOrEqual(6);
     }
@@ -79,15 +79,15 @@ describe('Mock data validation', () => {
 
   it('has exactly N-1 paths per map (one per connected pair)', () => {
     for (const map of MAPS_DATA) {
-      const sounds = mockSounds.filter((s) => s.mapId === map.id);
-      const paths = mockPaths.filter((p) => p.mapId === map.id);
+      const sounds = SOUNDS.filter((s) => s.mapId === map.id);
+      const paths = PATHS.filter((p) => p.mapId === map.id);
       expect(paths.length).toBe(sounds.length - 1);
     }
   });
 
   it('connects each path to sounds that belong to the same map', () => {
-    for (const path of mockPaths) {
-      const sounds = mockSounds.filter((s) =>
+    for (const path of PATHS) {
+      const sounds = SOUNDS.filter((s) =>
         [path.startSoundId, path.endSoundId].includes(s.id)
       );
 

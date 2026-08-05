@@ -80,11 +80,11 @@ mock-*.json ──→ features/*/data/index.ts (barrel)
 | `src/features/maps/data/index.ts` | Create | Barrel export |
 | `src/features/sounds/domain/types.ts` | Create | `Sound` type |
 | `src/features/sounds/domain/invariants.ts` | Create | Sound invariant checks |
-| `src/features/sounds/data/mock-sounds.json` | Create | ≥6 sounds (2 per map) |
+| `src/features/sounds/data/sounds.json` | Create | ≥6 sounds (2 per map) |
 | `src/features/sounds/data/index.ts` | Create | Barrel export |
 | `src/features/sound-pieces/domain/types.ts` | Create | `SoundPiece` type |
 | `src/features/sound-pieces/domain/invariants.ts` | Create | SoundPiece invariant checks |
-| `src/features/sound-pieces/data/mock-sound-pieces.json` | Create | 3 sound pieces (1 per map) |
+| `src/features/sound-pieces/data/sound-pieces.json` | Create | 3 sound pieces (1 per map) |
 | `src/features/sound-pieces/data/index.ts` | Create | Barrel export |
 | `src/features/paths/domain/types.ts` | Create | `Path` type |
 | `src/features/paths/domain/invariants.ts` | Create | Path invariant checks |

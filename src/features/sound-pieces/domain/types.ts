@@ -4,5 +4,5 @@ export interface SoundPiece {
   title: string;
   author: string;
   description: string;
-  audioUrl: string;
+  audioUrl: string | null;
 }

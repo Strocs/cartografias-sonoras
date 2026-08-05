@@ -150,6 +150,9 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
   };
 
   useMountEffect(() => {
+    if (!soundPiece && audioStore.getState().activePieceId !== null) {
+      audioTransitions.stopPiece();
+    }
     syncAllActiveAudio();
     const unsubscribe = audioStore.subscribe(syncAllActiveAudio);
     return unsubscribe;

@@ -5,7 +5,7 @@ import type { Path } from '../domain/types';
 // All values are percentages relative to the map image:
 //   (0, 0) = top-left corner, (100, 100) = bottom-right corner.
 
-export const mockPaths: Path[] = [
+export const PATHS: Path[] = [
   // Mapa 1 — Avenida de Aguirre — La Serena (2289×1636)
   // Start (77,20) → Waypoint desviado hacia abajo → End (68.4,30)
   {

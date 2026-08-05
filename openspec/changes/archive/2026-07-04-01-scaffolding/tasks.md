@@ -51,8 +51,8 @@ PRs 2/3 and PR 4 are parallelizable — both depend only on PR 1. Stacked-to-mai
 ## Phase 3: Mock Data
 
 - [x] 3.1 Create mock TypeScript data for 3 maps with placeholders in features/maps/data/mock-maps.ts
-- [x] 3.2 Create mock TypeScript data for ≥6 sounds with positions in features/sounds/data/mock-sounds.ts
-- [x] 3.3 Create mock TypeScript data for 3 sound pieces in features/sound-pieces/data/mock-sound-pieces.ts
+- [x] 3.2 Create mock TypeScript data for ≥6 sounds with positions in features/sounds/data/sounds.ts
+- [x] 3.3 Create mock TypeScript data for 3 sound pieces in features/sound-pieces/data/sound-pieces.ts
 - [x] 3.4 Create mock TypeScript data for ≥3 paths in features/paths/data/mock-paths.ts
 - [x] 3.5 Create barrel exports (data/index.ts) per feature
 - [x] 3.6 Write mock data validation test — dataset passes all invariants

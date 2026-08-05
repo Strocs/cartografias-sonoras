@@ -7,7 +7,7 @@ export const soundPieceSchema = z.object(
     title: z.string().min(1),
     author: z.string().min(1),
     description: z.string().min(1),
-    audioUrl: z.string(),
+    audioUrl: z.url().nullable()
   },
   { error: 'Invalid sound piece' }
 );

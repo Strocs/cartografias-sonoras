@@ -2,9 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import MapPage from '../views/map/MapPage.astro';
 import { MAPS_DATA } from '../features/maps/data/maps';
-import { mockSounds } from '../features/sounds/data/mock-sounds';
-import { mockPaths } from '../features/paths/data/mock-paths';
-import { mockSoundPieces } from '../features/sound-pieces/data/mock-sound-pieces';
+import { SOUNDS } from '../features/sounds/data/sounds';
+import { PATHS } from '../features/paths/data/paths';
+import { SOUND_PIECES } from '../features/sound-pieces/data/sound-pieces';
 
 export function getStaticPaths() {
   return MAPS_DATA.map((map) => ({ params: { slug: map.slug } }));
@@ -17,10 +17,9 @@ if (!map) {
   return new Response('Not found', { status: 404 });
 }
 
-const sounds = mockSounds.filter((sound) => sound.mapId === map.id);
-const paths = mockPaths.filter((path) => path.mapId === map.id);
-const soundPiece =
-  mockSoundPieces.find((piece) => piece.mapId === map.id) ?? null;
+const sounds = SOUNDS.filter((sound) => sound.mapId === map.id);
+const paths = PATHS.filter((path) => path.mapId === map.id);
+const soundPiece = SOUND_PIECES.find((piece) => piece.mapId === map.id) ?? null;
 ---
 
 <Layout title={map.title}>

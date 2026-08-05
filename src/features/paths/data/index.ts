@@ -1,1 +1,1 @@
-export { mockPaths } from './mock-paths';
+export { PATHS } from './paths';

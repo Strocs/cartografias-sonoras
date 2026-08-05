@@ -6,8 +6,8 @@ import {
   checkWaypointInvariants
 } from '../../src/features/paths/domain';
 import { MAPS_DATA } from '../../src/features/maps/data';
-import { mockPaths } from '../../src/features/paths/data';
-import { mockSounds } from '../../src/features/sounds/data';
+import { PATHS } from '../../src/features/paths/data';
+import { SOUNDS } from '../../src/features/sounds/data';
 
 const linearRoute = (): Path[] => [
   { id: 1, mapId: 2, waypoints: [], startSoundId: 201, endSoundId: 205 },
@@ -17,13 +17,13 @@ const linearRoute = (): Path[] => [
 ];
 
 const mapSounds = (mapId: number): number[] =>
-  mockSounds.filter((s) => s.mapId === mapId).map((s) => s.id);
+  SOUNDS.filter((s) => s.mapId === mapId).map((s) => s.id);
 
 const mapPaths = (mapId: number): Path[] =>
-  mockPaths.filter((p) => p.mapId === mapId);
+  PATHS.filter((p) => p.mapId === mapId);
 
-describe('checkRouteTopology — mock dataset', () => {
-  it('satisfies N-1 for every mock map', () => {
+describe('checkRouteTopology — dataset', () => {
+  it('satisfies N-1 for every map', () => {
     for (const map of MAPS_DATA) {
       const result = checkRouteTopology(
         map.id,

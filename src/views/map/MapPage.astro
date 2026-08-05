@@ -19,18 +19,27 @@ interface Props {
   sounds: Sound[];
   paths: Path[];
   soundPiece?: SoundPiece | null;
+  soundPieceEnabled?: boolean;
 }
 
-const { map, maps, sounds, paths, soundPiece } = Astro.props;
+const {
+  map,
+  maps,
+  sounds,
+  paths,
+  soundPiece,
+  soundPieceEnabled = true
+} = Astro.props;
 
 const audioPoolSounds = sounds.map((sound) => ({
   id: sound.id,
   audioUrl: sound.audioUrl
 }));
 
-const audioPoolPiece = soundPiece
-  ? { id: soundPiece.id, audioUrl: soundPiece.audioUrl }
-  : null;
+const audioPoolPiece =
+  soundPieceEnabled && soundPiece
+    ? { id: soundPiece.id, audioUrl: soundPiece.audioUrl }
+    : null;
 
 const mapData = {
   sounds,
@@ -73,7 +82,9 @@ const mapData = {
   </div>
 
   <div class="absolute right-8 bottom-4 z-[1001]">
-    <AudioBottomPlayer client:idle soundPiece={soundPiece} />
+    {soundPieceEnabled && (
+      <AudioBottomPlayer client:idle soundPiece={soundPiece} />
+    )}
   </div>
 
   <AudioPool client:idle sounds={audioPoolSounds} soundPiece={audioPoolPiece} />

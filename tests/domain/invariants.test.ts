@@ -44,7 +44,7 @@ const validSoundPiece: SoundPiece = {
   title: 'Obra Uno',
   author: 'Autor Uno',
   description: 'Descripción de la obra',
-  audioUrl: '/obra-uno.mp3'
+  audioUrl: 'https://cdn.com/obra-uno.wav'
 };
 
 const validSound: Sound = {
@@ -52,7 +52,7 @@ const validSound: Sound = {
   title: 'Sonido Uno',
   description: 'Descripción del sonido',
   location: 'Test Location',
-  audioUrl: '/sonido-uno.mp3',
+  audioUrl: 'https://cdn.com/sonido-uno.mp3',
   position: { x: 50, y: 50 },
   mapId: 1
 };
@@ -98,13 +98,15 @@ describe('Map invariants', () => {
     });
 
     expect(normalized).toMatchObject({
-      images: [{
-        id: 'base',
-        src: validMap.images[0].src,
-        frame: { x: 0, y: 0, width: 100, height: 100 },
-        optional: false,
-        effect: 'none'
-      }]
+      images: [
+        {
+          id: 'base',
+          src: validMap.images[0].src,
+          frame: { x: 0, y: 0, width: 100, height: 100 },
+          optional: false,
+          effect: 'none'
+        }
+      ]
     });
     expect(normalized).not.toHaveProperty('image');
   });

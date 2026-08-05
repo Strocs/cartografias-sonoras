@@ -151,4 +151,11 @@ describe('AudioBottomPlayer', () => {
       expect(audioStore.getState().piece.currentTime).toBe(90);
     });
   });
+
+  it('renders nothing when disabled', () => {
+    render(<AudioBottomPlayer soundPiece={SOUND_PIECE} enabled={false} />);
+
+    expect(screen.queryByTestId('audio-bottom-player')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bottom-play-pause')).not.toBeInTheDocument();
+  });
 });

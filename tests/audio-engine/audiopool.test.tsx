@@ -225,4 +225,26 @@ describe('AudioPool subscription', () => {
     expect(piece.status).toBe(AUDIO_STATUS.PLAYING);
     expect(piece.duration).toBe(180);
   });
+
+  it('stops a stale active piece on mount when soundPiece prop is absent', () => {
+    act(() => {
+      audioStore.getState().playPiece(100, 10);
+    });
+    expect(audioStore.getState().activePieceId).toBe(100);
+
+    const { container } = render(<AudioPool sounds={SOUNDS} />);
+
+    expect(audioStore.getState().activePieceId).toBeNull();
+    expect(audioStore.getState().piece.status).toBe(AUDIO_STATUS.IDLE);
+
+    act(() => {
+      audioStore.getState().playSound(1, 10);
+    });
+
+    expect(audioStore.getState().activePieceId).toBeNull();
+    expect(container.querySelectorAll('audio')).toHaveLength(1);
+    expect(audioStore.getState().activeSounds.get(1)?.status).toBe(
+      AUDIO_STATUS.LOADING
+    );
+  });
 });

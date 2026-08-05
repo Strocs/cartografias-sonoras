@@ -20,7 +20,7 @@ The working tree contains 11 modified files and 3 untracked files relative to th
 | `src/features/maps/config.ts` | **Unrelated work** | Extracts `DEFAULT_MAX_ZOOM` constant. Harmless, can be kept or merged regardless of engine choice. |
 | `src/views/map/MapPage.astro` | **Migration input** | Adds `start-zoom`, `min-zoom`, `max-zoom` attributes and layout classes (`min-h-0 min-w-0`). The binding script and `data-ready` observer pattern are relevant lifecycle evidence. |
 | `src/features/paths/data/mock-paths.ts` | **Unrelated work** | Fixture changes for paths. Not viewport-related. Preserve. |
-| `src/features/sounds/data/mock-sounds.ts` | **Unrelated work** | Fixture changes for sounds. Not viewport-related. Preserve. |
+| `src/features/sounds/data/sounds.ts` | **Unrelated work** | Fixture changes for sounds. Not viewport-related. Preserve. |
 | `src/features/sounds/ui/marker-styles.css` | **Unrelated work** | CSS tweak. Preserve. |
 | `src/features/sounds/ui/soundMarker.ts` | **Reusable evidence** | Marker transform logic (`applyTransform` with `translate(...) translate(-50%, -50%) scale(...)`) demonstrates how markers compensate for viewport scale. Relevant for alignment verification. |
 | `tests/maps/panzoom-setup.test.ts` | **Reusable evidence + migration input** | 9 tests covering `constrainTransform` pure geometry and gesture coordinator sequencing. The pure-geometry tests (`constrainTransform`, `getPanInterval`) migrate directly. The Panzoom-mock-based gesture tests must be rewritten against the new engine's public API. |

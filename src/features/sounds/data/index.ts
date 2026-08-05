@@ -1,1 +1,1 @@
-export { mockSounds } from './mock-sounds';
+export { SOUNDS } from './sounds';
