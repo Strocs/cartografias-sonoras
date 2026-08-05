@@ -5,18 +5,19 @@ import { AudioPool } from '../../shared/lib/audio-engine';
 import { AudioBottomPlayer } from '../../features/sound-pieces/ui/AudioBottomPlayer.tsx';
 import { MapControls } from '../../features/maps/ui/MapControls.tsx';
 
-import '../../features/sounds/ui/marker-styles.css';
+import '../../features/sounds/ui/mark-styles.css';
+import '../../features/sounds/ui/sound-button-styles.css';
 import '../../features/paths/styles/path-styles.css';
 
 import type { Map } from '../../features/maps/domain/types';
-import type { Sound } from '../../features/sounds/domain/types';
+import type { Mark } from '../../features/sounds/domain/types';
 import type { Path } from '../../features/paths/domain/types';
 import type { SoundPiece } from '../../features/sound-pieces/domain/types';
 
 interface Props {
   map: Map;
   maps: Map[];
-  sounds: Sound[];
+  marks: Mark[];
   paths: Path[];
   soundPiece?: SoundPiece | null;
   soundPieceEnabled?: boolean;
@@ -25,16 +26,20 @@ interface Props {
 const {
   map,
   maps,
-  sounds,
+  marks,
   paths,
   soundPiece,
   soundPieceEnabled = true
 } = Astro.props;
 
-const audioPoolSounds = sounds.map((sound) => ({
-  id: sound.id,
-  audioUrl: sound.audioUrl
-}));
+// The audio pool consumes a flat list of sound ids→urls only; each mark embeds
+// its sounds, so flatten them here.
+const audioPoolSounds = marks.flatMap((mark) =>
+  mark.sounds.map((sound) => ({
+    id: sound.id,
+    audioUrl: sound.audioUrl
+  }))
+);
 
 const audioPoolPiece =
   soundPieceEnabled && soundPiece
@@ -42,7 +47,7 @@ const audioPoolPiece =
     : null;
 
 const mapData = {
-  sounds,
+  marks,
   paths,
   imgWidth: map.images[0].width,
   imgHeight: map.images[0].height

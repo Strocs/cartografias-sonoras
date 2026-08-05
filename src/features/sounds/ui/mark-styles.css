@@ -1,0 +1,179 @@
+/**
+ * Vanilla Mark group styles.
+ *
+ * These classes target the DOM created by `mark.ts`: the `.sound-mark` group,
+ * its clickable circle, the fan of sound buttons, and the Mark-only tooltip.
+ * The sound buttons themselves are styled by `sound-button-styles.css`.
+ *
+ * They are separate from Tailwind utility classes so the runtime-generated
+ * markup is styled reliably without relying on the JIT scanner.
+ */
+
+@property --progress {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+
+/* Group transform holds the px translation; fan offsets stay group-local so
+   a single scaleFactor keeps sound buttons at constant screen size. */
+.sound-mark {
+  --mark-x: 0;
+  --mark-y: 0;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: center center;
+  z-index: 1;
+}
+
+.sound-mark:hover,
+.sound-mark:focus-within {
+  z-index: 10;
+}
+
+/* Active accent: any sound of this mark is playing/loading. */
+.sound-mark[data-state='active'] {
+  z-index: 10;
+}
+
+/* Red circle. */
+.sound-mark__circle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(239, 83, 80, 0.9);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.2);
+  color: white;
+  cursor: pointer;
+  outline: none;
+  transform: translate(-50%, -50%);
+  transition:
+    transform 200ms ease-out,
+    filter 200ms ease-out;
+}
+
+.sound-mark__circle:hover,
+.sound-mark__circle:focus-visible {
+  filter: brightness(1.1);
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.sound-mark__circle:focus-visible {
+  outline: 2px solid var(--color-charcoal, #2d2d2d);
+  outline-offset: 3px;
+}
+
+/* Active accent ring around the circle while any sound plays. */
+.sound-mark[data-state='active'] .sound-mark__circle::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px rgba(239, 83, 80, 0.9);
+  animation: mark-ripple 1.8s ease-out infinite;
+}
+
+.sound-mark__icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  pointer-events: none;
+}
+
+/* Fan — hidden unless the group is open (data-open). */
+.sound-mark__fan {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 200ms ease-out;
+}
+
+.sound-mark[data-open] .sound-mark__fan {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.sound-mark__fan-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mark-only tooltip, always below center-bottom. */
+.sound-mark__tooltip {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  z-index: 100;
+  width: 168px;
+  padding: 10px 14px;
+  border: 1px solid rgba(210, 180, 140, 0.6);
+  border-radius: 12px;
+  background: var(--color-canvas, #faf8f3);
+  color: var(--color-charcoal, #2d2d2d);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-4px);
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
+}
+
+.sound-mark:hover .sound-mark__tooltip,
+.sound-mark:focus-within .sound-mark__tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@keyframes mark-ripple {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 83, 80, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 12px rgba(239, 83, 80, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 83, 80, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sound-mark {
+    transition: none;
+  }
+
+  .sound-mark__circle,
+  .sound-mark__fan,
+  .sound-mark__tooltip {
+    transition: none;
+    animation: none;
+  }
+}

@@ -229,10 +229,10 @@ export const MARKS: Mark[] = [
 ];
 
 /**
- * Legacy flat marker list (one sound per point) kept so the pre-migration UI
- * stack ([slug].astro + mapViewBindings/soundMarker/pathStateEngine) keeps
- * resolving `position`/`mapId` from the running data. Removed when slice B
- * switches the UI to the Mark-group model.
+ * Legacy flat marker list (one sound per point) retained for the Playwright
+ * e2e suite (tests/pages/map/map.spec.ts), which still reads flat sound data
+ * with position/mapId. Removed in slice C when the e2e suite switches to the
+ * Mark-group DOM.
  */
 export const SOUNDS: LegacySound[] = MARKS.map((mark) => ({
   id: mark.id,

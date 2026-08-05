@@ -1,21 +1,29 @@
 import {
-  createSoundMarker,
-  removeSoundMarker,
-  updateSoundMarker,
-  type SoundMarkerState
-} from '@features/sounds/ui/soundMarker';
-import { clearPaths, renderPaths } from '@features/paths/ui/pathRenderer';
+  clearPaths,
+  renderPaths
+} from '@features/paths/ui/pathRenderer';
 import { audioStore, AUDIO_STATUS } from '@shared/lib/audio-engine';
 
+import {
+  createMark,
+  insertFanButton,
+  removeMark,
+  setFanOpen,
+  updateMark,
+  createSoundButton,
+  removeSoundButton,
+  updateSoundButton,
+  type SoundButtonStatus
+} from '@features/sounds/ui';
+import type { Mark } from '@features/sounds/domain/types';
 import type { Path } from '@features/paths/domain/types';
-import type { Sound } from '@features/sounds/domain/types';
 import type { MapViewElement } from '@features/maps/ui/map-view';
 
 import { computePathVisualStates } from './pathStateEngine';
 
 export interface MapViewBindingOptions {
   mapView: MapViewElement;
-  sounds: Sound[];
+  marks: Mark[];
   paths: Path[];
   imgWidth: number;
   imgHeight: number;
@@ -25,15 +33,16 @@ export interface MapViewBindingOptions {
  * Wires a `<map-view>` custom element to the vanilla audio store.
  *
  * Responsibilities:
- * - Create vanilla sound markers inside the marker layer.
+ * - Create a Mark group per mark (`.sound-mark`) with its fan of sound buttons.
  * - Render SVG paths based on the current audio playback state.
- * - Update marker selection + progress ring when the store changes.
- * - Activate sounds when a marker dispatches `marker:activate`.
- * - Keep marker visual size constant via the scale factor from `viewport-change`.
+ * - Toggle a mark's fan from `mark:activate`; toggle playback from `sound:activate`.
+ * - React to store changes: update each sound button, paint the mark accent when
+ *   any of its sounds is active, and re-derive path visuals.
+ * - Apply one `scaleFactor` per group on `viewport-change`.
  */
 export function bindMapView({
   mapView,
-  sounds,
+  marks,
   paths,
   imgWidth,
   imgHeight
@@ -46,40 +55,64 @@ export function bindMapView({
   }
 
   const svg = svgLayer;
-  const soundsById = new Map(sounds.map((sound) => [sound.id, sound]));
-  const markersById = new Map<number, HTMLButtonElement>();
-
   const imageWidth = mapView.imageWidth || imgWidth;
   const imageHeight = mapView.imageHeight || imgHeight;
   let currentScaleFactor = mapView.scaleFactor;
 
+  const marksById = new Map<number, HTMLDivElement>();
+  const soundButtonsById = new Map<number, HTMLButtonElement>();
+  const fanOpen = new Set<number>();
+
   // Initial render.
-  for (const sound of sounds) {
-    const marker = createSoundMarker(
-      sound,
-      imageWidth,
-      imageHeight,
-      currentScaleFactor
-    );
-    markerLayer.appendChild(marker);
-    markersById.set(sound.id, marker);
+  for (const mark of marks) {
+    const group = createMark(mark, imageWidth, imageHeight, currentScaleFactor);
+    markerLayer.appendChild(group);
+    marksById.set(mark.id, group);
+
+    const fan = group.querySelector<HTMLDivElement>('.sound-mark__fan');
+    if (fan !== null) {
+      mark.sounds.forEach((sound, index) => {
+        const button = createSoundButton(sound, mark);
+        insertFanButton(fan, index, button);
+        soundButtonsById.set(sound.id, button);
+      });
+    }
   }
 
   updatePaths();
 
-  // React to audio state changes: selection, progress, and path visuals.
+  // React to audio state changes: sound button state, mark accent, path visuals.
   const unsubscribe = audioStore.subscribe(
     (state) => state.activeSounds,
     () => {
-      updateMarkers();
+      updateSoundButtons();
+      updateMarkAccents();
       updatePaths();
     }
   );
 
-  // Marker activation toggles playback.
-  const markerActivateHandler = (event: Event) => {
-    const customEvent = event as CustomEvent;
-    const detail = customEvent.detail as
+  // Mark activation toggles its fan (stays open while a sound is clicked).
+  const markActivateHandler = (event: Event) => {
+    const detail = (event as CustomEvent).detail as
+      | { markId: number }
+      | undefined;
+    if (detail === undefined) return;
+
+    if (fanOpen.has(detail.markId)) {
+      fanOpen.delete(detail.markId);
+    } else {
+      fanOpen.add(detail.markId);
+    }
+
+    const group = marksById.get(detail.markId);
+    if (group !== undefined) {
+      setFanOpen(group, fanOpen.has(detail.markId));
+    }
+  };
+
+  // Sound activation toggles playback (play/pause/resume) by soundId + mapId.
+  const soundActivateHandler = (event: Event) => {
+    const detail = (event as CustomEvent).detail as
       | { soundId: number; mapId: number }
       | undefined;
     if (detail === undefined) return;
@@ -96,7 +129,7 @@ export function bindMapView({
     }
   };
 
-  // Viewport scale changes require compensating marker size.
+  // Viewport scale changes apply a single scale factor to each group.
   const viewportChangeHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail as
       | { scale: number }
@@ -104,56 +137,77 @@ export function bindMapView({
     if (detail === undefined) return;
 
     currentScaleFactor = 1 / detail.scale;
-    for (const marker of markersById.values()) {
-      updateSoundMarker(marker, { scaleFactor: currentScaleFactor });
+    for (const group of marksById.values()) {
+      updateMark(group, { scaleFactor: currentScaleFactor });
     }
   };
 
-  mapView.addEventListener('marker:activate', markerActivateHandler);
+  mapView.addEventListener('mark:activate', markActivateHandler);
+  mapView.addEventListener('sound:activate', soundActivateHandler);
   mapView.addEventListener('viewport-change', viewportChangeHandler);
 
-  function updateMarkers(): void {
+  function soundStatusOf(soundId: number): SoundButtonStatus {
+    const state = audioStore.getState().activeSounds.get(soundId);
+    const status = state?.status ?? AUDIO_STATUS.IDLE;
+    if (status === AUDIO_STATUS.PLAYING) return 'playing';
+    if (status === AUDIO_STATUS.LOADING) return 'loading';
+    if (status === AUDIO_STATUS.PAUSED) return 'paused';
+    return 'idle';
+  }
+
+  function updateSoundButtons(): void {
     const activeSounds = audioStore.getState().activeSounds;
 
-    for (const [soundId, marker] of markersById) {
+    for (const [soundId, button] of soundButtonsById) {
       const state = activeSounds.get(soundId);
-      const status = state?.status ?? AUDIO_STATUS.IDLE;
-
-      const markerStatus: SoundMarkerState['status'] =
-        status === AUDIO_STATUS.PLAYING || status === AUDIO_STATUS.LOADING
-          ? 'playing'
-          : status === AUDIO_STATUS.PAUSED
-            ? 'paused'
-            : 'idle';
-
       const progress =
         state !== undefined && state.duration > 0
           ? Math.min(100, Math.max(0, (state.currentTime / state.duration) * 100))
           : 0;
 
-      updateSoundMarker(marker, {
-        status: markerStatus,
-        progress,
-        scaleFactor: currentScaleFactor
+      updateSoundButton(button, { status: soundStatusOf(soundId), progress });
+    }
+  }
+
+  function updateMarkAccents(): void {
+    const activeSounds = audioStore.getState().activeSounds;
+
+    for (const mark of marks) {
+      const group = marksById.get(mark.id);
+      if (group === undefined) continue;
+
+      const anySoundActive = mark.sounds.some((sound) => {
+        const status = activeSounds.get(sound.id)?.status;
+        return status === AUDIO_STATUS.PLAYING || status === AUDIO_STATUS.LOADING;
       });
+
+      updateMark(group, { active: anySoundActive });
     }
   }
 
   function updatePaths(): void {
     const activeSounds = audioStore.getState().activeSounds;
-    const pathStates = computePathVisualStates(paths, soundsById, activeSounds);
+    const marksByIdMap = new Map(marks.map((mark) => [mark.id, mark]));
+    const pathStates = computePathVisualStates(paths, marksByIdMap, activeSounds);
     renderPaths(Array.from(pathStates.values()), svg, imageWidth, imageHeight);
   }
 
   return function unbind(): void {
     unsubscribe();
-    mapView.removeEventListener('marker:activate', markerActivateHandler);
+    mapView.removeEventListener('mark:activate', markActivateHandler);
+    mapView.removeEventListener('sound:activate', soundActivateHandler);
     mapView.removeEventListener('viewport-change', viewportChangeHandler);
 
-    for (const marker of markersById.values()) {
-      removeSoundMarker(marker);
+    for (const button of soundButtonsById.values()) {
+      removeSoundButton(button);
     }
-    markersById.clear();
+    soundButtonsById.clear();
+
+    for (const group of marksById.values()) {
+      removeMark(group);
+    }
+    marksById.clear();
+    fanOpen.clear();
 
     clearPaths(svg);
   };

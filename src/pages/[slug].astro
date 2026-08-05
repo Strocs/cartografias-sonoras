@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import MapPage from '../views/map/MapPage.astro';
 import { MAPS_DATA } from '../features/maps/data/maps';
-import { SOUNDS } from '../features/sounds/data/sounds';
+import { MARKS } from '../features/sounds/data/sounds';
 import { PATHS } from '../features/paths/data/paths';
 import { SOUND_PIECES } from '../features/sound-pieces/data/sound-pieces';
 
@@ -17,7 +17,7 @@ if (!map) {
   return new Response('Not found', { status: 404 });
 }
 
-const sounds = SOUNDS.filter((sound) => sound.mapId === map.id);
+const marks = MARKS.filter((mark) => mark.mapId === map.id);
 const paths = PATHS.filter((path) => path.mapId === map.id);
 const soundPiece = SOUND_PIECES.find((piece) => piece.mapId === map.id) ?? null;
 ---
@@ -26,7 +26,7 @@ const soundPiece = SOUND_PIECES.find((piece) => piece.mapId === map.id) ?? null;
   <MapPage
     map={map}
     maps={MAPS_DATA}
-    sounds={sounds}
+    marks={marks}
     paths={paths}
     soundPiece={soundPiece}
   />

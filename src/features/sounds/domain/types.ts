@@ -33,10 +33,10 @@ export interface Mark {
 }
 
 /**
- * Legacy flat marker shape retained so the pre-migration UI rendering stack
- * (soundMarker/mapViewBindings/pathStateEngine) keeps resolving sound position
- * and mapId from data that still carries them. Removed when slice B switches
- * the UI to the Mark-group model.
+ * Legacy flat marker shape retained for the Playwright e2e suite
+ * (tests/pages/map/map.spec.ts), which still reads flat sound data with
+ * position/mapId. Removed in slice C when the e2e suite switches to the
+ * Mark-group DOM.
  */
 export interface LegacySound extends Sound {
   position: Position;
