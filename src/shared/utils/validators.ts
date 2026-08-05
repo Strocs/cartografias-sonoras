@@ -3,7 +3,8 @@ export interface DatasetMap {
   soundPieceId: number;
 }
 
-export interface DatasetSound {
+/** A mark cross-reference record as expected by the dataset validator. */
+export interface DatasetMark {
   id: number;
   mapId: number;
 }
@@ -16,18 +17,18 @@ export interface DatasetSoundPiece {
 export interface DatasetPath {
   id: number;
   mapId: number;
-  startSoundId: number;
-  endSoundId: number;
+  startMarkId: number;
+  endMarkId: number;
 }
 
 export interface Dataset<
   M extends DatasetMap,
-  S extends DatasetSound,
+  Mk extends DatasetMark,
   P extends DatasetSoundPiece,
   Pa extends DatasetPath,
 > {
   maps: M[];
-  sounds: S[];
+  marks: Mk[];
   soundPieces: P[];
   paths: Pa[];
 }
@@ -39,10 +40,10 @@ export interface ValidationResult {
 
 export function validateDataset<
   M extends DatasetMap,
-  S extends DatasetSound,
+  Mk extends DatasetMark,
   P extends DatasetSoundPiece,
   Pa extends DatasetPath,
->(dataset: Dataset<M, S, P, Pa>): ValidationResult {
+>(dataset: Dataset<M, Mk, P, Pa>): ValidationResult {
   const errors: string[] = [];
 
   for (const map of dataset.maps) {
@@ -56,10 +57,10 @@ export function validateDataset<
     }
   }
 
-  for (const sound of dataset.sounds) {
-    const map = dataset.maps.find((m) => m.id === sound.mapId);
+  for (const mark of dataset.marks) {
+    const map = dataset.maps.find((m) => m.id === mark.mapId);
     if (!map) {
-      errors.push(`Sound ${sound.id} references missing map ${sound.mapId}`);
+      errors.push(`Mark ${mark.id} references missing map ${mark.mapId}`);
     }
   }
 
@@ -79,13 +80,13 @@ export function validateDataset<
       continue;
     }
 
-    for (const soundId of [path.startSoundId, path.endSoundId]) {
-      const sound = dataset.sounds.find((s) => s.id === soundId);
-      if (!sound) {
-        errors.push(`Path ${path.id} references missing sound ${soundId}`);
-      } else if (sound.mapId !== path.mapId) {
+    for (const markId of [path.startMarkId, path.endMarkId]) {
+      const mark = dataset.marks.find((m) => m.id === markId);
+      if (!mark) {
+        errors.push(`Path ${path.id} references missing mark ${markId}`);
+      } else if (mark.mapId !== path.mapId) {
         errors.push(
-          `Sound ${soundId} in path ${path.id} does not belong to map ${path.mapId}`
+          `Mark ${markId} in path ${path.id} does not belong to map ${path.mapId}`
         );
       }
     }
