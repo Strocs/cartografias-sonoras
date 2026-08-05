@@ -8,7 +8,7 @@ vi.mock('../../../src/views/map/mapViewBindings', () => ({
 
 import { bindMapPage } from '../../../src/views/map/mapPageController';
 
-const MAP_DATA = { sounds: [], paths: [], imgWidth: 100, imgHeight: 100 };
+const MAP_DATA = { marks: [], paths: [], imgWidth: 100, imgHeight: 100 };
 
 function createMapView(ready = false): HTMLElement {
   const el = document.createElement('map-view');

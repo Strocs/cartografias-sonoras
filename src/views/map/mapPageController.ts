@@ -2,10 +2,10 @@ import { bindMapView } from './mapViewBindings';
 
 import type { MapViewElement } from '@features/maps/ui/map-view';
 import type { Path } from '@features/paths/domain/types';
-import type { Sound } from '@features/sounds/domain/types';
+import type { Mark } from '@features/sounds/domain/types';
 
 interface MapPageData {
-  sounds: Sound[];
+  marks: Mark[];
   paths: Path[];
   imgWidth: number;
   imgHeight: number;
