@@ -79,9 +79,15 @@ describe('createMark', () => {
     const tooltip = group.querySelector<HTMLElement>('.sound-mark__tooltip');
     expect(tooltip).not.toBeNull();
     expect(tooltip?.getAttribute('role')).toBe('tooltip');
-    expect(group.querySelector('.sound-mark__tooltip')?.textContent).toBe(
-      mark.title
-    );
+    expect(
+      tooltip?.querySelector('.sound-mark__tooltip-title')?.textContent
+    ).toBe(mark.title);
+    expect(
+      tooltip?.querySelector('.sound-mark__tooltip-description')?.textContent
+    ).toBe(mark.description);
+    expect(
+      tooltip?.querySelector('.sound-mark__tooltip-location')?.textContent
+    ).toBe(mark.location);
   });
 
   it('bubbles mark:activate on circle click', () => {

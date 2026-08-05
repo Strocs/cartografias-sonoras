@@ -275,7 +275,7 @@ test.describe('Map', () => {
   );
 
   test(
-    'shows the mark tooltip with title below the mark',
+    'shows the mark tooltip with title, place and description below the mark',
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
@@ -293,6 +293,8 @@ test.describe('Map', () => {
 
       await expect(tooltip).toBeVisible();
       await expect(tooltip).toContainText(mark.title);
+      await expect(tooltip).toContainText(mark.location);
+      await expect(tooltip).toContainText(mark.description);
 
       // The tooltip always sits below the mark's geometric centre-bottom,
       // even while the fan is open.
