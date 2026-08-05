@@ -7,17 +7,17 @@ import {
 } from '../../src/features/paths/domain';
 import { MAPS_DATA } from '../../src/features/maps/data';
 import { PATHS } from '../../src/features/paths/data';
-import { SOUNDS } from '../../src/features/sounds/data';
+import { MARKS } from '../../src/features/sounds/data';
 
 const linearRoute = (): Path[] => [
-  { id: 1, mapId: 2, waypoints: [], startSoundId: 201, endSoundId: 205 },
-  { id: 2, mapId: 2, waypoints: [], startSoundId: 205, endSoundId: 202 },
-  { id: 3, mapId: 2, waypoints: [], startSoundId: 202, endSoundId: 203 },
-  { id: 4, mapId: 2, waypoints: [], startSoundId: 203, endSoundId: 204 }
+  { id: 1, mapId: 2, waypoints: [], startMarkId: 201, endMarkId: 205 },
+  { id: 2, mapId: 2, waypoints: [], startMarkId: 205, endMarkId: 202 },
+  { id: 3, mapId: 2, waypoints: [], startMarkId: 202, endMarkId: 203 },
+  { id: 4, mapId: 2, waypoints: [], startMarkId: 203, endMarkId: 204 }
 ];
 
-const mapSounds = (mapId: number): number[] =>
-  SOUNDS.filter((s) => s.mapId === mapId).map((s) => s.id);
+const mapMarks = (mapId: number): number[] =>
+  MARKS.filter((m) => m.mapId === mapId).map((m) => m.id);
 
 const mapPaths = (mapId: number): Path[] =>
   PATHS.filter((p) => p.mapId === mapId);
@@ -27,7 +27,7 @@ describe('checkRouteTopology — dataset', () => {
     for (const map of MAPS_DATA) {
       const result = checkRouteTopology(
         map.id,
-        mapSounds(map.id),
+        mapMarks(map.id),
         mapPaths(map.id)
       );
       expect(result.errors).toEqual([]);
@@ -56,10 +56,10 @@ describe('checkRouteTopology — linear route invariants', () => {
 
   it('rejects a disconnected route', () => {
     const paths = [
-      { id: 1, mapId: 2, waypoints: [], startSoundId: 201, endSoundId: 205 },
-      { id: 2, mapId: 2, waypoints: [], startSoundId: 202, endSoundId: 203 },
-      { id: 3, mapId: 2, waypoints: [], startSoundId: 203, endSoundId: 204 },
-      { id: 4, mapId: 2, waypoints: [], startSoundId: 204, endSoundId: 202 }
+      { id: 1, mapId: 2, waypoints: [], startMarkId: 201, endMarkId: 205 },
+      { id: 2, mapId: 2, waypoints: [], startMarkId: 202, endMarkId: 203 },
+      { id: 3, mapId: 2, waypoints: [], startMarkId: 203, endMarkId: 204 },
+      { id: 4, mapId: 2, waypoints: [], startMarkId: 204, endMarkId: 202 }
     ];
     const result = checkRouteTopology(2, [201, 205, 202, 203, 204], paths);
     expect(result.valid).toBe(false);
@@ -68,10 +68,10 @@ describe('checkRouteTopology — linear route invariants', () => {
 
   it('rejects a route with a cycle', () => {
     const paths = [
-      { id: 1, mapId: 2, waypoints: [], startSoundId: 201, endSoundId: 205 },
-      { id: 2, mapId: 2, waypoints: [], startSoundId: 205, endSoundId: 202 },
-      { id: 3, mapId: 2, waypoints: [], startSoundId: 202, endSoundId: 203 },
-      { id: 4, mapId: 2, waypoints: [], startSoundId: 203, endSoundId: 205 }
+      { id: 1, mapId: 2, waypoints: [], startMarkId: 201, endMarkId: 205 },
+      { id: 2, mapId: 2, waypoints: [], startMarkId: 205, endMarkId: 202 },
+      { id: 3, mapId: 2, waypoints: [], startMarkId: 202, endMarkId: 203 },
+      { id: 4, mapId: 2, waypoints: [], startMarkId: 203, endMarkId: 205 }
     ];
     const result = checkRouteTopology(2, [201, 205, 202, 203, 204], paths);
     expect(result.valid).toBe(false);
@@ -80,54 +80,54 @@ describe('checkRouteTopology — linear route invariants', () => {
 
   it('rejects a self-connection', () => {
     const paths = [
-      { id: 1, mapId: 2, waypoints: [], startSoundId: 201, endSoundId: 201 },
+      { id: 1, mapId: 2, waypoints: [], startMarkId: 201, endMarkId: 201 },
       ...linearRoute().slice(1)
     ];
     const result = checkRouteTopology(2, [201, 205, 202, 203, 204], paths);
     expect(result.valid).toBe(false);
-    expect(result.errors.join('\n')).toContain('self-connection');
+    expect(result.errors.join('\n')).toContain('two different marks');
   });
 
   it('rejects duplicate undirected edges', () => {
     const paths = [
       ...linearRoute(),
-      { id: 5, mapId: 2, waypoints: [], startSoundId: 203, endSoundId: 202 }
+      { id: 5, mapId: 2, waypoints: [], startMarkId: 203, endMarkId: 202 }
     ];
     const result = checkRouteTopology(2, [201, 205, 202, 203, 204], paths);
     expect(result.valid).toBe(false);
     expect(result.errors.join('\n')).toContain('Duplicate undirected edge');
   });
 
-  it('rejects a sound with no path', () => {
+  it('rejects a mark with no path', () => {
     const result = checkRouteTopology(
       2,
       [201, 205, 202, 203, 204, 999],
       linearRoute()
     );
     expect(result.valid).toBe(false);
-    expect(result.errors.join('\n')).toContain('Sound 999 has no path');
+    expect(result.errors.join('\n')).toContain('Mark 999 has no path');
   });
 
-  it('rejects a sound that does not belong to the map', () => {
+  it('rejects a mark that does not belong to the map', () => {
     const paths = [
-      { id: 1, mapId: 2, waypoints: [], startSoundId: 201, endSoundId: 205 },
-      { id: 2, mapId: 2, waypoints: [], startSoundId: 205, endSoundId: 202 },
-      { id: 3, mapId: 2, waypoints: [], startSoundId: 202, endSoundId: 999 },
-      { id: 4, mapId: 2, waypoints: [], startSoundId: 203, endSoundId: 204 }
+      { id: 1, mapId: 2, waypoints: [], startMarkId: 201, endMarkId: 205 },
+      { id: 2, mapId: 2, waypoints: [], startMarkId: 205, endMarkId: 202 },
+      { id: 3, mapId: 2, waypoints: [], startMarkId: 202, endMarkId: 999 },
+      { id: 4, mapId: 2, waypoints: [], startMarkId: 203, endMarkId: 204 }
     ];
     const result = checkRouteTopology(2, [201, 205, 202, 203, 204], paths);
     expect(result.valid).toBe(false);
     expect(result.errors.join('\n')).toContain(
-      'references sound 999 outside map 2'
+      'references mark 999 outside map 2'
     );
   });
 
   it('rejects a path that belongs to another map', () => {
     const paths = [
-      { id: 1, mapId: 2, waypoints: [], startSoundId: 201, endSoundId: 205 },
-      { id: 2, mapId: 1, waypoints: [], startSoundId: 205, endSoundId: 202 },
-      { id: 3, mapId: 2, waypoints: [], startSoundId: 202, endSoundId: 203 },
-      { id: 4, mapId: 2, waypoints: [], startSoundId: 203, endSoundId: 204 }
+      { id: 1, mapId: 2, waypoints: [], startMarkId: 201, endMarkId: 205 },
+      { id: 2, mapId: 1, waypoints: [], startMarkId: 205, endMarkId: 202 },
+      { id: 3, mapId: 2, waypoints: [], startMarkId: 202, endMarkId: 203 },
+      { id: 4, mapId: 2, waypoints: [], startMarkId: 203, endMarkId: 204 }
     ];
     const result = checkRouteTopology(2, [201, 205, 202, 203, 204], paths);
     expect(result.valid).toBe(false);
@@ -136,10 +136,10 @@ describe('checkRouteTopology — linear route invariants', () => {
 
   it('rejects a route with a non-degree-2 internal node', () => {
     const paths = [
-      { id: 1, mapId: 2, waypoints: [], startSoundId: 201, endSoundId: 205 },
-      { id: 2, mapId: 2, waypoints: [], startSoundId: 205, endSoundId: 202 },
-      { id: 3, mapId: 2, waypoints: [], startSoundId: 205, endSoundId: 203 },
-      { id: 4, mapId: 2, waypoints: [], startSoundId: 203, endSoundId: 204 }
+      { id: 1, mapId: 2, waypoints: [], startMarkId: 201, endMarkId: 205 },
+      { id: 2, mapId: 2, waypoints: [], startMarkId: 205, endMarkId: 202 },
+      { id: 3, mapId: 2, waypoints: [], startMarkId: 205, endMarkId: 203 },
+      { id: 4, mapId: 2, waypoints: [], startMarkId: 203, endMarkId: 204 }
     ];
     const result = checkRouteTopology(2, [201, 205, 202, 203, 204], paths);
     expect(result.valid).toBe(false);
@@ -153,8 +153,8 @@ describe('checkWaypointInvariants — finite geometry points', () => {
       id: 1,
       mapId: 2,
       waypoints: [{ x: 50, y: 50 }],
-      startSoundId: 201,
-      endSoundId: 202
+      startMarkId: 201,
+      endMarkId: 202
     };
     expect(() => checkWaypointInvariants(path)).not.toThrow();
   });
@@ -164,8 +164,8 @@ describe('checkWaypointInvariants — finite geometry points', () => {
       id: 1,
       mapId: 2,
       waypoints: [{ x: Infinity, y: 50 }],
-      startSoundId: 201,
-      endSoundId: 202
+      startMarkId: 201,
+      endMarkId: 202
     };
     expect(() => checkWaypointInvariants(path)).toThrow(
       'Waypoint coordinates must be finite'
@@ -177,8 +177,8 @@ describe('checkWaypointInvariants — finite geometry points', () => {
       id: 1,
       mapId: 2,
       waypoints: [{ x: 50, y: NaN }],
-      startSoundId: 201,
-      endSoundId: 202
+      startMarkId: 201,
+      endMarkId: 202
     };
     expect(() => checkWaypointInvariants(path)).toThrow(
       'Waypoint coordinates must be finite'
@@ -190,8 +190,8 @@ describe('checkWaypointInvariants — finite geometry points', () => {
       id: 1,
       mapId: 2,
       waypoints: [{ x: 150, y: 50 }],
-      startSoundId: 201,
-      endSoundId: 202
+      startMarkId: 201,
+      endMarkId: 202
     };
     expect(() => checkWaypointInvariants(path)).toThrow(
       'Waypoint must be within 0–100'
@@ -203,8 +203,8 @@ describe('checkWaypointInvariants — finite geometry points', () => {
       id: 1,
       mapId: 2,
       waypoints: [],
-      startSoundId: 201,
-      endSoundId: 202
+      startMarkId: 201,
+      endMarkId: 202
     };
     expect(() => checkWaypointInvariants(path)).not.toThrow();
   });

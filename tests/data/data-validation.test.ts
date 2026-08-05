@@ -6,8 +6,8 @@ import { PATHS } from '../../src/features/paths/data';
 import { pathSchema } from '../../src/features/paths/domain';
 import { SOUND_PIECES } from '../../src/features/sound-pieces/data';
 import { soundPieceSchema } from '../../src/features/sound-pieces/domain';
-import { SOUNDS } from '../../src/features/sounds/data';
-import { soundSchema } from '../../src/features/sounds/domain';
+import { MARKS } from '../../src/features/sounds/data';
+import { markSchema } from '../../src/features/sounds/domain';
 import { validateDataset } from '../../src/shared/utils/validators';
 
 describe('Dataset validation', () => {
@@ -23,9 +23,9 @@ describe('Dataset validation', () => {
     }
   });
 
-  it('validates all sounds against the Sound schema', () => {
-    for (const sound of SOUNDS) {
-      expect(soundSchema.parse(sound)).toEqual(sound);
+  it('validates all marks against the Mark schema', () => {
+    for (const mark of MARKS) {
+      expect(markSchema.parse(mark)).toEqual(mark);
     }
   });
 
@@ -42,19 +42,11 @@ describe('Dataset validation', () => {
   });
 
   it('passes the dataset cross-reference validator', () => {
-    // Filter out paths that reference non-existent sounds — these are known
-    // data gaps in the dataset that the validator is designed to catch.
-    const completePaths = PATHS.filter((path) =>
-      [path.startSoundId, path.endSoundId].every((sid) =>
-        SOUNDS.some((s) => s.id === sid)
-      )
-    );
-
     const result = validateDataset({
       maps: MAPS_DATA,
-      sounds: SOUNDS,
+      marks: MARKS.map((m) => ({ id: m.id, mapId: m.mapId })),
       soundPieces: SOUND_PIECES,
-      paths: completePaths
+      paths: PATHS
     });
 
     expect(result.success).toBe(true);
@@ -69,35 +61,73 @@ describe('Dataset validation', () => {
     }
   });
 
-  it('has between 4 and 6 sounds per map', () => {
-    for (const map of MAPS_DATA) {
-      const sounds = SOUNDS.filter((s) => s.mapId === map.id);
-      expect(sounds.length).toBeGreaterThanOrEqual(4);
-      expect(sounds.length).toBeLessThanOrEqual(6);
-    }
+  it('yields exactly one mark per point: 5/5/4 marks per map', () => {
+    expect(MARKS.filter((m) => m.mapId === 1)).toHaveLength(5);
+    expect(MARKS.filter((m) => m.mapId === 2)).toHaveLength(5);
+    expect(MARKS.filter((m) => m.mapId === 3)).toHaveLength(4);
   });
 
-  it('has exactly N-1 paths per map (one per connected pair)', () => {
-    for (const map of MAPS_DATA) {
-      const sounds = SOUNDS.filter((s) => s.mapId === map.id);
-      const paths = PATHS.filter((p) => p.mapId === map.id);
-      expect(paths.length).toBe(sounds.length - 1);
-    }
-  });
-
-  it('connects each path to sounds that belong to the same map', () => {
-    for (const path of PATHS) {
-      const sounds = SOUNDS.filter((s) =>
-        [path.startSoundId, path.endSoundId].includes(s.id)
+  it('yields total sounds 17/11/10 per map', () => {
+    const soundsPerMap = (mapId: number): number =>
+      MARKS.filter((m) => m.mapId === mapId).reduce(
+        (acc, mark) => acc + mark.sounds.length,
+        0
       );
 
-      // Skip paths that reference non-existent sounds (data gap).
-      if (sounds.length !== 2) {
-        continue;
-      }
+    expect(soundsPerMap(1)).toBe(17);
+    expect(soundsPerMap(2)).toBe(11);
+    expect(soundsPerMap(3)).toBe(10);
+  });
 
-      for (const sound of sounds) {
-        expect(sound.mapId).toBe(path.mapId);
+  it('keeps legacy first-sound ids as mark ids (101–105/201–205/301–304)', () => {
+    const ids = MARKS.map((m) => m.id);
+    expect(ids).toContain(101);
+    expect(ids).toContain(105);
+    expect(ids).toContain(201);
+    expect(ids).toContain(205);
+    expect(ids).toContain(301);
+    expect(ids).toContain(304);
+  });
+
+  it('keeps every derived sound id unique within its map', () => {
+    for (const map of MAPS_DATA) {
+      const ids = MARKS.filter((m) => m.mapId === map.id).flatMap((m) =>
+        m.sounds.map((s) => s.id)
+      );
+      expect(new Set(ids).size).toBe(ids.length);
+    }
+  });
+
+  it('has exactly N-1 paths per map (one per connected pair of marks)', () => {
+    for (const map of MAPS_DATA) {
+      const marks = MARKS.filter((m) => m.mapId === map.id);
+      const paths = PATHS.filter((p) => p.mapId === map.id);
+      expect(paths.length).toBe(marks.length - 1);
+    }
+  });
+
+  it('connects each path to marks that belong to the same map', () => {
+    for (const path of PATHS) {
+      const marks = MARKS.filter((m) =>
+        [path.startMarkId, path.endMarkId].includes(m.id)
+      );
+
+      expect(marks).toHaveLength(2);
+
+      for (const mark of marks) {
+        expect(mark.mapId).toBe(path.mapId);
+      }
+    }
+  });
+
+  it('emits per-point distinct audio URLs including MAP_02 (spec req 15)', () => {
+    for (const mark of MARKS) {
+      // Mark id encodes the point: mapId*100 + point.
+      const point = mark.id % 100;
+      const expectedSegment = `Punto_${point}_`;
+
+      for (const sound of mark.sounds) {
+        expect(sound.audioUrl).toContain(expectedSegment);
       }
     }
   });
