@@ -1,4 +1,4 @@
-import type { LegacySound, Mark, Sound } from '../domain/types';
+import type { Mark, Sound } from '../domain/types';
 
 const getSoundUrl = (mapId: number, point: number, soundNumber: number) => {
   return `https://mapasonoro.frijolmagico.cl/1/sonidos/Ruta_${mapId}_Punto_${point}_Sonido_${soundNumber}_Binaural_norm.wav`;
@@ -227,19 +227,3 @@ export const MARKS: Mark[] = [
   ...buildMarks(2, MAP_02_POINTS),
   ...buildMarks(3, MAP_03_POINTS)
 ];
-
-/**
- * Legacy flat marker list (one sound per point) retained for the Playwright
- * e2e suite (tests/pages/map/map.spec.ts), which still reads flat sound data
- * with position/mapId. Removed in slice C when the e2e suite switches to the
- * Mark-group DOM.
- */
-export const SOUNDS: LegacySound[] = MARKS.map((mark) => ({
-  id: mark.id,
-  title: mark.title,
-  description: mark.description,
-  location: mark.location,
-  audioUrl: mark.sounds[0].audioUrl,
-  position: mark.position,
-  mapId: mark.mapId
-}));

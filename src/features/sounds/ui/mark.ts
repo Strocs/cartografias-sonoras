@@ -65,7 +65,26 @@ export function createMark(
   const tooltip = document.createElement('div');
   tooltip.className = 'sound-mark__tooltip';
   tooltip.setAttribute('role', 'tooltip');
-  tooltip.textContent = mark.title;
+
+  const tooltipTitle = document.createElement('p');
+  tooltipTitle.className = 'sound-mark__tooltip-title';
+  tooltipTitle.textContent = mark.title;
+  tooltip.appendChild(tooltipTitle);
+
+  if (mark.location) {
+    const tooltipLocation = document.createElement('p');
+    tooltipLocation.className = 'sound-mark__tooltip-location';
+    tooltipLocation.textContent = mark.location;
+    tooltip.appendChild(tooltipLocation);
+  }
+
+  if (mark.description) {
+    const tooltipDescription = document.createElement('p');
+    tooltipDescription.className = 'sound-mark__tooltip-description';
+    tooltipDescription.textContent = mark.description;
+    tooltip.appendChild(tooltipDescription);
+  }
+
   group.appendChild(tooltip);
 
   const activate = () => {

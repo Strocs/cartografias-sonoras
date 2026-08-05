@@ -134,15 +134,33 @@
   background: var(--color-canvas, #faf8f3);
   color: var(--color-charcoal, #2d2d2d);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-align: center;
   opacity: 0;
   pointer-events: none;
   transform: translateX(-50%) translateY(-4px);
   transition:
     opacity 200ms ease-out,
     transform 200ms ease-out;
+}
+
+.sound-mark__tooltip-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-primary-brown, #8b5a2b);
+}
+
+.sound-mark__tooltip-location {
+  margin: 2px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  color: rgba(139, 90, 43, 0.6);
+}
+
+.sound-mark__tooltip-description {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: rgba(45, 45, 45, 0.8);
 }
 
 .sound-mark:hover .sound-mark__tooltip,

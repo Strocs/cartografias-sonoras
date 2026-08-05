@@ -9,10 +9,19 @@ export interface MapBounds {
   image: { left: number; right: number; top: number; bottom: number };
 }
 
+export interface MarkPositionProbe {
+  x: number;
+  y: number;
+  transform: string;
+  imageWidth: number;
+  imageHeight: number;
+}
+
 export class MapPage extends BasePage {
   readonly heading: Locator;
   readonly viewport: Locator;
-  readonly markers: Locator;
+  readonly marks: Locator;
+  readonly soundButtons: Locator;
   readonly hoverCards: Locator;
   readonly mapControls: Locator;
   readonly zoomInButton: Locator;
@@ -34,8 +43,9 @@ export class MapPage extends BasePage {
     super(page);
     this.heading = page.getByRole('heading');
     this.viewport = page.locator('map-view#main-map');
-    this.markers = page.getByTestId('sound-marker');
-    this.hoverCards = page.locator('.sound-marker__tooltip');
+    this.marks = page.getByTestId('sound-mark');
+    this.soundButtons = page.getByTestId('sound-button');
+    this.hoverCards = page.locator('.sound-mark__tooltip');
     this.mapControls = page.getByTestId('map-controls');
     this.zoomInButton = page.getByTestId('zoom-in');
     this.zoomOutButton = page.getByTestId('zoom-out');
@@ -91,9 +101,17 @@ export class MapPage extends BasePage {
     );
   }
 
-  getMarkerBySoundId(soundId: number): Locator {
+  /** The Mark group for a mark id (`data-testid="sound-mark"`). */
+  getSoundMark(markId: number): Locator {
     return this.page.locator(
-      `[data-testid="sound-marker"][data-sound-id="${soundId}"]`
+      `[data-testid="sound-mark"][data-mark-id="${markId}"]`
+    );
+  }
+
+  /** One sound button inside a mark's fan for a sound id. */
+  getSoundButton(markId: number, soundId: number): Locator {
+    return this.getSoundMark(markId).locator(
+      `[data-testid="sound-button"][data-sound-id="${soundId}"]`
     );
   }
 
@@ -105,6 +123,28 @@ export class MapPage extends BasePage {
     return this.page.evaluate(() => {
       const mapView = document.querySelector('map-view#main-map');
       return (mapView as HTMLMapViewElement | null)?.getScale() ?? 1;
+    });
+  }
+
+  async getMarkPosition(markId: number): Promise<MarkPositionProbe> {
+    const mark = this.getSoundMark(markId);
+    return mark.evaluate((element) => {
+      const mapView = document.querySelector('map-view#main-map') as
+        | (HTMLElement & { imageWidth: number; imageHeight: number })
+        | null;
+      const x = Number.parseFloat(
+        element.style.getPropertyValue('--mark-x')
+      );
+      const y = Number.parseFloat(
+        element.style.getPropertyValue('--mark-y')
+      );
+      return {
+        x,
+        y,
+        transform: element.style.transform,
+        imageWidth: mapView?.imageWidth ?? 0,
+        imageHeight: mapView?.imageHeight ?? 0
+      };
     });
   }
 
