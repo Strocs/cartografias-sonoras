@@ -24,7 +24,7 @@ describe('computeFanRadius', () => {
   it('uses defaults: mark radius + default sound radius + accepted head gap', () => {
     const { markRadius, soundRadius, headGap } = FAN_RADIUS_DEFAULTS;
     expect(computeFanRadius()).toBe(markRadius + soundRadius + headGap);
-    expect(computeFanRadius()).toBe(43);
+    expect(computeFanRadius()).toBe(35);
   });
 
   it('recomputes when the sound disc size changes (independent of mark)', () => {

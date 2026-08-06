@@ -75,6 +75,25 @@ describe('ViewportEngine corrected interaction semantics', () => {
     engine.destroy();
   });
 
+  it('reconfigures the zoom range via setRange and reprojects the current scale', () => {
+    const engine = new ViewportEngine(scene, config);
+    engine.zoomIn();
+    const before = engine.getState();
+    expect(before.scale).toBeGreaterThan(config.minScale);
+
+    // Shrink the range below the current scale: setRange must clamp strictly.
+    engine.setRange(config.minScale, config.minScale * 1.1);
+    const after = engine.getState();
+    expect(after.scale).toBeLessThanOrEqual(config.minScale * 1.1);
+    expect(after.scale).toBeGreaterThanOrEqual(config.minScale);
+    expectStrict(after);
+
+    // A scale already inside the new range is left untouched.
+    engine.setRange(0.4, 3);
+    expect(engine.getState().scale).toBe(after.scale);
+    engine.destroy();
+  });
+
   it('resists active overscroll, snaps strictly, and publishes neither drag coast nor inertial reasons after release', () => {
     const engine = new ViewportEngine(scene, config);
     engine.zoomIn();

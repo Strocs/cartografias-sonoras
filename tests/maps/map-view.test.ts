@@ -8,6 +8,7 @@ const engineInstances = vi.hoisted(
       reset: ReturnType<typeof vi.fn>;
       destroy: ReturnType<typeof vi.fn>;
       getState: ReturnType<typeof vi.fn>;
+      setRange: ReturnType<typeof vi.fn>;
     }>
 );
 
@@ -18,7 +19,8 @@ vi.mock('../../src/features/maps/lib/viewport/engine', () => ({
       zoomOut: vi.fn(),
       reset: vi.fn(),
       destroy: vi.fn(),
-      getState: vi.fn(() => ({ scale: 1, x: 0, y: 0 }))
+      getState: vi.fn(() => ({ scale: 1, x: 0, y: 0 })),
+      setRange: vi.fn()
     };
     engineInstances.push(instance);
     return instance;
@@ -613,17 +615,18 @@ describe('MapView custom element', () => {
     );
   });
 
-  it('constructs one engine with declarative zoom limits and decoded content dimensions', async () => {
+  it('constructs one engine with default factor zoom limits and decoded content dimensions', async () => {
     const el = document.createElement('map-view') as MapView;
     el.setAttribute('map-src', TEST_IMAGE_SRC);
     wrapper.appendChild(el);
 
     await waitForReady(el);
 
+    // Fit scale is 1 in the test environment, so factors map 1:1 to scales.
     expect(ViewportEngineMock).toHaveBeenCalledWith(expect.any(HTMLElement), {
       content: { width: 800, height: 600 },
-      minScale: 1,
-      maxScale: 4,
+      minScale: 0.8,
+      maxScale: 3,
       zoomStep: 0.3
     });
   });
@@ -662,15 +665,27 @@ describe('MapView custom element', () => {
     }
   );
 
-  it('rejects zoom ranges that do not contain the resolved start scale', () => {
+  it('resolves breakpoint-based zoom factors from the viewport width', async () => {
     const el = document.createElement('map-view') as MapView;
     el.setAttribute('map-src', TEST_IMAGE_SRC);
-    el.setAttribute('min-zoom', '2');
-    el.setAttribute('start-zoom', '1');
-    el.setAttribute('max-zoom', '3');
-    expect(() => wrapper.appendChild(el)).toThrow(
-      '<map-view> zoom configuration must satisfy min-zoom <= start-zoom <= max-zoom'
+    // In the test environment the fit scale is 1; simulate a mobile width by
+    // setting the wrapper to a narrow viewport and check the resolved range.
+    wrapper.style.width = '375px';
+    el.setAttribute(
+      'min-zoom',
+      '{"base":0.9,"md":0.8}'
     );
-    expect(ViewportEngineMock).not.toHaveBeenCalled();
+    el.setAttribute('max-zoom', '{"base":2.5,"md":3}');
+    wrapper.appendChild(el);
+
+    await waitForReady(el);
+
+    // Narrow viewport (< md) => base factors apply.
+    expect(ViewportEngineMock).toHaveBeenCalledWith(expect.any(HTMLElement), {
+      content: { width: 800, height: 600 },
+      minScale: 0.9,
+      maxScale: 2.5,
+      zoomStep: 0.3
+    });
   });
 });

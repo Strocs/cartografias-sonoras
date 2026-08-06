@@ -12,7 +12,7 @@ export const SOUND_BUTTON_SIZE = 30;
  * GLOBAL configurable size (px) of the visible sound disc, independent of the
  * mark size. Exposed to the button's DOM as `--disc-size`; the stylesheet
  * renders the disc from it (replacing the old fixed `inset` derivation).
- * The hit area/ring remain `SOUND_BUTTON_SIZE = 54`.
+ * The hit area/ring remain `SOUND_BUTTON_SIZE = 30`.
  */
 export const SOUND_VISIBLE_SIZE = 30;
 

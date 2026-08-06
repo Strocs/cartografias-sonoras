@@ -6,14 +6,21 @@ import { useMountEffect } from '@shared/hooks/useMountEffect';
 import { AUDIO_STATUS, audioStore, audioTransitions, useAudioStore } from '../';
 import type { AudioElementId, AudioEngineState, AudioStatus } from '../types';
 
-interface AudioPoolItem {
+/** A sound from a mark: audio is always present. */
+interface AudioPoolSound {
+  id: number;
+  audioUrl: string;
+}
+
+/** A background sound piece: audio may be absent (null = not played). */
+interface AudioPoolPiece {
   id: number;
   audioUrl: string | null;
 }
 
 interface AudioPoolProps {
-  sounds: AudioPoolItem[];
-  soundPiece?: AudioPoolItem | null;
+  sounds: AudioPoolSound[];
+  soundPiece?: AudioPoolPiece | null;
 }
 
 const ACTIVE_ELEMENT_STATUSES = new Set<AudioStatus>([
@@ -40,7 +47,7 @@ function selectPieceActive(state: AudioEngineState): boolean {
 }
 
 function findSoundUrl(
-  sounds: AudioPoolItem[],
+  sounds: AudioPoolSound[],
   soundId: number
 ): string | undefined {
   return sounds.find((sound) => sound.id === soundId)?.audioUrl;
@@ -234,7 +241,7 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
           />
         );
       })}
-      {pieceActive && soundPiece && (
+      {pieceActive && soundPiece?.audioUrl && (
         <audio
           key={`piece-${soundPiece.id}`}
           ref={registerAudio(soundPiece.id)}

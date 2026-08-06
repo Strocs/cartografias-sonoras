@@ -40,6 +40,8 @@ export class ViewportEngine {
   private readonly subscribers = new Set<ViewportSubscriber>();
   private readonly viewport: HTMLElement;
   private readonly resizeObserver: ResizeObserver | undefined;
+  private minScale: number;
+  private maxScale: number;
   private state: ViewportState;
   private phase: ViewportPhase = VIEWPORT_PHASE.INITIALIZING;
   private revision = 0;
@@ -55,6 +57,8 @@ export class ViewportEngine {
     this.assertConfig();
     if (scene.parentElement === null) throw new Error('Viewport scene must have a viewport parent');
     this.viewport = scene.parentElement;
+    this.minScale = this.config.minScale;
+    this.maxScale = this.config.maxScale;
     this.state = this.getFitState();
     this.scene.style.touchAction = 'none';
     this.scene.addEventListener('pointerdown', this.onPointerDown);
@@ -74,6 +78,19 @@ export class ViewportEngine {
   public zoomOut(): void { this.zoomAtCenter(1 / (1 + (this.config.zoomStep ?? 0.25)), 'zoom-out'); }
   public reset(): void { if (!this.destroyed) { this.cancelAnimation(); this.setState(this.getFitState(), VIEWPORT_PHASE.IDLE, 'reset'); } }
   public resize(): void { if (!this.destroyed) { this.cancelAnimation(); this.setState(this.getFitState(), VIEWPORT_PHASE.IDLE, 'resize'); } }
+  /**
+   * Reconfigures the zoom bounds without recreating the engine or interrupting
+   * ongoing pointer gestures. The current scale is re-projected strictly into
+   * the new range so the visible view always respects the updated bounds.
+   */
+  public setRange(minScale: number, maxScale: number): void {
+    if (this.destroyed) return;
+    if (!Number.isFinite(minScale) || !Number.isFinite(maxScale)) return;
+    this.minScale = Math.max(0, minScale);
+    this.maxScale = Math.max(this.minScale, maxScale);
+    this.cancelAnimation();
+    this.projectCurrentStrictly();
+  }
   public destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true; this.cancelAnimation(); this.resizeObserver?.disconnect();
@@ -118,9 +135,9 @@ export class ViewportEngine {
     this.cancelAnimation();
     const focal = this.localPoint(event);
     const requestedScale = this.state.scale * Math.exp(-clampWheelDelta(this.normalizeWheelDelta(event)) * WHEEL_SCALE_COEFFICIENT);
-    const crossedBound = requestedScale < this.config.minScale || requestedScale > this.config.maxScale;
-    const renderedScale = crossedBound ? applyScaleResistance(requestedScale, this.config.minScale, this.config.maxScale) : requestedScale;
-    if (this.shouldReduceMotion()) { this.commitFocalZoom(clampScale(requestedScale, this.config.minScale, this.config.maxScale), focal, VIEWPORT_PHASE.IDLE, 'wheel'); event.preventDefault(); return; }
+    const crossedBound = requestedScale < this.minScale || requestedScale > this.maxScale;
+    const renderedScale = crossedBound ? applyScaleResistance(requestedScale, this.minScale, this.maxScale) : requestedScale;
+    if (this.shouldReduceMotion()) { this.commitFocalZoom(clampScale(requestedScale, this.minScale, this.maxScale), focal, VIEWPORT_PHASE.IDLE, 'wheel'); event.preventDefault(); return; }
     const target = this.focalState(this.state, focal, renderedScale);
     this.wheel = { stage: WHEEL_STAGE.SMOOTHING, transition: createWheelTransition(this.state, target, WHEEL_INPUT_DURATION_MS), latestFocal: focal, lastInputAt: performance.now(), startedAt: undefined, crossedBound };
     this.phase = VIEWPORT_PHASE.ANIMATING; this.scheduler.scheduleFrame(this.advanceWheel); event.preventDefault();
@@ -128,7 +145,7 @@ export class ViewportEngine {
 
   private zoomAtCenter(factor: number, reason: string): void {
     if (this.destroyed) return;
-    this.cancelAnimation(); const viewport = this.getViewportSize(); const scale = clampScale(this.state.scale * factor, this.config.minScale, this.config.maxScale);
+    this.cancelAnimation(); const viewport = this.getViewportSize(); const scale = clampScale(this.state.scale * factor, this.minScale, this.maxScale);
     this.setState(this.focalState(this.state, { x: viewport.width / 2, y: viewport.height / 2 }, scale), VIEWPORT_PHASE.IDLE, reason);
   }
 
@@ -148,7 +165,7 @@ export class ViewportEngine {
     const wheel = this.wheel; if (this.destroyed || wheel === undefined) return;
     if (wheel.stage === WHEEL_STAGE.WAITING) {
       if (timestamp - wheel.lastInputAt < WHEEL_SETTLE_DEBOUNCE_MS) { this.scheduler.scheduleFrame(this.advanceWheel); return; }
-      const strictScale = clampScale(this.state.scale, this.config.minScale, this.config.maxScale);
+      const strictScale = clampScale(this.state.scale, this.minScale, this.maxScale);
       wheel.transition = createWheelTransition(this.state, this.focalState(this.state, wheel.latestFocal, strictScale), WHEEL_SETTLE_DURATION_MS); wheel.stage = WHEEL_STAGE.SETTLING; wheel.startedAt = timestamp;
     }
     wheel.startedAt ??= timestamp; const elapsed = timestamp - wheel.startedAt; const completed = elapsed >= wheel.transition.durationMs;
@@ -163,7 +180,7 @@ export class ViewportEngine {
   private movePinch(event: PointerEvent): void {
     const first = this.pointers.get(this.pinch!.firstPointerId); const second = this.pointers.get(this.pinch!.secondPointerId); if (first === undefined || second === undefined) return;
     const distance = Math.hypot(second.x - first.x, second.y - first.y); if (distance <= 0 || !Number.isFinite(distance)) return;
-    const center = this.toLocalPoint({ x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }); const scale = clampScale(this.pinch!.state.scale * distance / this.pinch!.distance, this.config.minScale, this.config.maxScale);
+    const center = this.toLocalPoint({ x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }); const scale = clampScale(this.pinch!.state.scale * distance / this.pinch!.distance, this.minScale, this.maxScale);
     const focalState = projectFocal(this.pinch!.state, this.pinch!.center, scale); const translated = { ...focalState, x: focalState.x + center.x - this.pinch!.center.x, y: focalState.y + center.y - this.pinch!.center.y };
     this.setState(applyBoundsResistance(translated, computeStrictBounds(this.getViewportSize(), this.config.content, scale)), VIEWPORT_PHASE.PINCHING, 'pinch'); event.preventDefault();
   }
@@ -171,10 +188,10 @@ export class ViewportEngine {
   private setState(state: ViewportState, phase: ViewportPhase, reason: string): void { this.state = state; this.phase = phase; this.commit(reason); }
   private commit(reason: string): void { if (this.destroyed) return; this.revision += 1; this.scene.style.transformOrigin = '0 0'; this.scene.style.transform = `translate3d(${this.state.x}px, ${this.state.y}px, 0) scale(${this.state.scale})`; this.scene.style.setProperty('--viewport-inverse-scale', String(1 / this.state.scale)); const detail: ViewportEventDetail = { state: this.getState(), reason }; for (const subscriber of this.subscribers) subscriber(detail.state); this.scene.dispatchEvent(new CustomEvent<ViewportEventDetail>('viewport-change', { detail })); }
   private focalState(from: ViewportState, focal: ViewportPoint, scale: number): ViewportState { const focalState = projectFocal(from, focal, scale); return projectToStrictTranslation(focalState, computeStrictBounds(this.getViewportSize(), this.config.content, scale)); }
-  private strictState(state: ViewportState): ViewportState { const scale = clampScale(state.scale, this.config.minScale, this.config.maxScale); return projectToStrictBounds({ ...state, scale }, computeStrictBounds(this.getViewportSize(), this.config.content, scale), this.config.minScale, this.config.maxScale); }
+  private strictState(state: ViewportState): ViewportState { const scale = clampScale(state.scale, this.minScale, this.maxScale); return projectToStrictBounds({ ...state, scale }, computeStrictBounds(this.getViewportSize(), this.config.content, scale), this.minScale, this.maxScale); }
   private projectCurrentStrictly(): void { const strict = this.strictState(this.state); if (!statesEqual(strict, this.state)) this.setState(strict, VIEWPORT_PHASE.IDLE, 'interrupt'); }
   private commitFocalZoom(scale: number, focal: ViewportPoint, phase: ViewportPhase, reason: string): void { this.setState(this.focalState(this.state, focal, scale), phase, reason); }
-  private getFitState(): ViewportState { const fit = computeFit(this.getViewportSize(), this.config.content); return this.strictState({ ...fit, scale: clampScale(fit.scale, this.config.minScale, this.config.maxScale) }); }
+  private getFitState(): ViewportState { const fit = computeFit(this.getViewportSize(), this.config.content); return this.strictState({ ...fit, scale: clampScale(fit.scale, this.minScale, this.maxScale) }); }
   private getViewportSize(): { width: number; height: number } { const rect = this.viewport.getBoundingClientRect(); if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 0 || rect.height <= 0) throw new Error('Viewport dimensions must be finite and positive'); return { width: rect.width, height: rect.height }; }
   private localPoint(event: MouseEvent): ViewportPoint { return this.toLocalPoint({ x: event.clientX, y: event.clientY }); }
   private toPointer(event: PointerEvent): PointerSample { return { x: event.clientX, y: event.clientY, pointerId: event.pointerId }; }

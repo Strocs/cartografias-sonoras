@@ -25,8 +25,8 @@ const mark: Mark = {
   location: 'Avenida de Aguirre',
   position: { x: 50, y: 25 },
   sounds: [
-    { id: 101, title: 'Fuente', description: '', location: '', audioUrl: '/a.mp3' },
-    { id: 112, title: 'Fuente', description: '', location: '', audioUrl: '/b.mp3' }
+    { id: 101, title: 'Fuente', description: null, location: '', audioUrl: '/a.mp3' },
+    { id: 112, title: 'Fuente', description: null, location: '', audioUrl: '/b.mp3' }
   ]
 };
 

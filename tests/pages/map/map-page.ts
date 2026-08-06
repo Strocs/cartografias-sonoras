@@ -148,6 +148,15 @@ export class MapPage extends BasePage {
     });
   }
 
+  async getImageSize(): Promise<{ width: number; height: number }> {
+    return this.page.evaluate(() => {
+      const mapView = document.querySelector('map-view#main-map') as
+        | (HTMLElement & { imageWidth: number; imageHeight: number })
+        | null;
+      return { width: mapView?.imageWidth ?? 0, height: mapView?.imageHeight ?? 0 };
+    });
+  }
+
   async getBounds(): Promise<MapBounds> {
     return this.page.evaluate(() => {
       const viewport = document

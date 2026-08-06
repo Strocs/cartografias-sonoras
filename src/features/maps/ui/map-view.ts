@@ -1,4 +1,8 @@
-import { DEFAULT_MAX_ZOOM } from '../config';
+import {
+  DEFAULT_MIN_ZOOM_FACTOR,
+  DEFAULT_MAX_ZOOM_FACTOR,
+  DEFAULT_START_ZOOM_FACTOR
+} from '../config';
 import type { MapLayer } from '../domain';
 import {
   RENDER_CONTEXT,
@@ -11,6 +15,11 @@ import {
   createMarkerLayer
 } from '../lib/layers';
 import { ViewportEngine } from '../lib/viewport/engine';
+import {
+  isZoomFactorMap,
+  resolveZoomFactor,
+  type ZoomFactorInput
+} from '../lib/viewport/zoom-factors';
 
 export interface MapViewElement extends HTMLElement {
   readonly scaleFactor: number;
@@ -44,9 +53,9 @@ type CompositionStatus =
   (typeof COMPOSITION_STATUS)[keyof typeof COMPOSITION_STATUS];
 
 interface ZoomAttributes {
-  minScale?: number;
-  maxScale?: number;
-  startScale?: number;
+  minScale?: ZoomFactorInput;
+  maxScale?: ZoomFactorInput;
+  startScale?: ZoomFactorInput;
 }
 
 /**
@@ -67,12 +76,15 @@ export class MapView extends HTMLElement implements MapViewElement {
   private _svgLayer: SVGSVGElement | null = null;
   private _markerLayer: HTMLDivElement | null = null;
   private _viewportChangeHandler: ((event: Event) => void) | null = null;
+  private _zoomResizeObserver: ResizeObserver | null = null;
+  private _zoomAttributes: ZoomAttributes = {};
 
   connectedCallback() {
     this._setStatus(COMPOSITION_STATUS.INITIALIZING);
 
     const layers = this._readLayers();
     const zoomAttributes = this._parseZoomAttributes();
+    this._zoomAttributes = zoomAttributes;
     this._buildDom();
     void this._initialize(layers, zoomAttributes, ++this._lifecycle);
   }
@@ -245,11 +257,25 @@ export class MapView extends HTMLElement implements MapViewElement {
       this._svgLayer = createSvgLayer(this._container);
       this._markerLayer = createMarkerLayer(this._container);
 
-      const startScale = zoomAttributes.startScale ?? this._computeStartScale();
-      const minScale = zoomAttributes.minScale ?? startScale;
-      const maxScale = zoomAttributes.maxScale ?? DEFAULT_MAX_ZOOM;
+      const viewportWidth = this._viewport?.clientWidth ?? 0;
+      const fitScale = this._computeStartScale();
 
-      this._assertZoomRange(minScale, startScale, maxScale);
+      const startFactor = resolveZoomFactor(
+        zoomAttributes.startScale ?? DEFAULT_START_ZOOM_FACTOR,
+        viewportWidth
+      );
+      const minFactor = resolveZoomFactor(
+        zoomAttributes.minScale ?? DEFAULT_MIN_ZOOM_FACTOR,
+        viewportWidth
+      );
+      const maxFactor = resolveZoomFactor(
+        zoomAttributes.maxScale ?? DEFAULT_MAX_ZOOM_FACTOR,
+        viewportWidth
+      );
+
+      const startScale = fitScale * startFactor;
+      const minScale = fitScale * minFactor;
+      const maxScale = fitScale * maxFactor;
 
       this._engine = new ViewportEngine(this._container, {
         content: { width: naturalWidth, height: naturalHeight },
@@ -257,6 +283,8 @@ export class MapView extends HTMLElement implements MapViewElement {
         maxScale,
         zoomStep: 0.3
       });
+
+      this._watchZoomBreakpoints(zoomAttributes);
 
       this._viewportChangeHandler = (event: Event) => {
         const detail = (event as CustomEvent).detail as
@@ -292,6 +320,41 @@ export class MapView extends HTMLElement implements MapViewElement {
       if (!this._isCurrentLifecycle(lifecycle, hiddenImg)) return;
       this._fail(this._toError(error, 'Map initialization failed'));
     }
+  }
+
+  /**
+   * Observes viewport size changes so breakpoint-based zoom factors can be
+   * re-resolved and pushed to the engine without recreating it. A number factor
+   * never changes, so the observer is only mounted when at least one attribute
+   * uses a breakpoint map.
+   */
+  private _watchZoomBreakpoints(attributes: ZoomAttributes): void {
+    const usesBreakpoints = [attributes.minScale, attributes.maxScale, attributes.startScale]
+      .some(isZoomFactorMap);
+    if (!usesBreakpoints) return;
+    if (typeof ResizeObserver === 'undefined' || this._viewport === null) return;
+
+    this._zoomResizeObserver = new ResizeObserver(() => this._syncZoomRange());
+    this._zoomResizeObserver.observe(this._viewport);
+  }
+
+  private _syncZoomRange(): void {
+    const engine = this._engine;
+    const viewport = this._viewport;
+    if (engine === null || viewport === null) return;
+
+    const viewportWidth = viewport.clientWidth;
+    const fitScale = this._computeStartScale();
+    const minFactor = resolveZoomFactor(
+      this._zoomAttributes.minScale ?? DEFAULT_MIN_ZOOM_FACTOR,
+      viewportWidth
+    );
+    const maxFactor = resolveZoomFactor(
+      this._zoomAttributes.maxScale ?? DEFAULT_MAX_ZOOM_FACTOR,
+      viewportWidth
+    );
+
+    engine.setRange(fitScale * minFactor, fitScale * maxFactor);
   }
 
   private _readLayers(): readonly MapLayer[] {
@@ -421,45 +484,56 @@ export class MapView extends HTMLElement implements MapViewElement {
 
   private _parseZoomAttributes(): ZoomAttributes {
     const attributes = {
-      minScale: this._parsePositiveNumberAttribute(MIN_ZOOM_ATTR),
-      maxScale: this._parsePositiveNumberAttribute(MAX_ZOOM_ATTR),
-      startScale: this._parsePositiveNumberAttribute(START_ZOOM_ATTR)
+      minScale: this._parseZoomFactorAttribute(MIN_ZOOM_ATTR),
+      maxScale: this._parseZoomFactorAttribute(MAX_ZOOM_ATTR),
+      startScale: this._parseZoomFactorAttribute(START_ZOOM_ATTR)
     };
-
-    if (attributes.startScale !== undefined) {
-      this._assertZoomRange(
-        attributes.minScale ?? attributes.startScale,
-        attributes.startScale,
-        attributes.maxScale ?? DEFAULT_MAX_ZOOM
-      );
-    }
 
     return attributes;
   }
 
-  private _parsePositiveNumberAttribute(name: string): number | undefined {
+  private _parseZoomFactorAttribute(
+    name: string
+  ): ZoomFactorInput | undefined {
     const rawValue = this.getAttribute(name);
     if (rawValue === null) return undefined;
 
-    const value = Number(rawValue);
-    if (!Number.isFinite(value) || value <= 0) {
-      throw new Error(
-        `<map-view> "${name}" attribute must be a finite positive number; received "${rawValue}"`
-      );
+    const parsed: unknown = (() => {
+      try {
+        return JSON.parse(rawValue);
+      } catch {
+        return undefined;
+      }
+    })();
+
+    if (typeof parsed === 'number') {
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        throw new Error(
+          `<map-view> "${name}" attribute must be a finite positive number; received "${rawValue}"`
+        );
+      }
+      return parsed;
     }
 
-    return value;
-  }
+    if (isZoomFactorMap(parsed)) {
+      const map: Record<string, unknown> = parsed;
+      for (const [bp, value] of Object.entries(map)) {
+        if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+          throw new Error(
+            `<map-view> "${name}" breakpoint "${bp}" must be a finite positive number; received "${String(value)}"`
+          );
+        }
+      }
+      return parsed;
+    }
 
-  private _assertZoomRange(
-    minScale: number,
-    startScale: number,
-    maxScale: number
-  ): void {
-    if (minScale <= startScale && startScale <= maxScale) return;
-
+    // Malformed or non-numeric input (e.g. "1px", "Infinity", "").
+    const fallbackNumber = Number(rawValue);
+    if (Number.isFinite(fallbackNumber) && fallbackNumber > 0) {
+      return fallbackNumber;
+    }
     throw new Error(
-      `<map-view> zoom configuration must satisfy ${MIN_ZOOM_ATTR} <= ${START_ZOOM_ATTR} <= ${MAX_ZOOM_ATTR}; resolved values were ${minScale} <= ${startScale} <= ${maxScale}`
+      `<map-view> "${name}" attribute must be a finite positive number; received "${rawValue}"`
     );
   }
 
@@ -483,6 +557,9 @@ export class MapView extends HTMLElement implements MapViewElement {
       );
       this._viewportChangeHandler = null;
     }
+
+    this._zoomResizeObserver?.disconnect();
+    this._zoomResizeObserver = null;
 
     this._engine?.destroy();
     this._engine = null;

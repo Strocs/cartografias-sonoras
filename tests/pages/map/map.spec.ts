@@ -285,13 +285,18 @@ test.describe('Map', () => {
       const group = mapPage.getSoundMark(mark.id);
       const tooltip = group.locator('.sound-mark__tooltip');
 
-      // Hover the circle (the group div itself has zero size).
-      await group.locator('.sound-mark__circle').hover();
+      // Hover the pin: the tooltip activates from either the head or the tail
+      // (the tail reaches lower than the group origin and would otherwise
+      // intercept the head's hover zone).
+      await group.locator('.sound-mark__tail').hover();
 
       await expect(tooltip).toBeVisible();
       await expect(tooltip).toContainText(mark.title);
       await expect(tooltip).toContainText(mark.location);
-      await expect(tooltip).toContainText(mark.description);
+      // Description is optional: only render/assert when present.
+      if (mark.description) {
+        await expect(tooltip).toContainText(mark.description);
+      }
 
       // The tooltip always sits below the mark's geometric centre-bottom,
       // while the fan itself stays always-visible (no toggle state).
@@ -344,7 +349,17 @@ test.describe('Map', () => {
         await mapPage.zoomOutButton.click();
       }
 
-      await expect.poll(() => mapPage.getZoom()).toBeCloseTo(0.2, 5);
+      // The minimum zoom is fit-relative: `md` factor (0.8) × fit scale.
+      const viewportBox = (await mapPage.viewport.boundingBox())!;
+      const image = await mapPage.getImageSize();
+      const fit = Math.min(
+        viewportBox.width / image.width,
+        viewportBox.height / image.height
+      );
+      const mdFactor = 0.8;
+      await expect
+        .poll(() => mapPage.getZoom())
+        .toBeCloseTo(mdFactor * fit, 5);
       const bounds = await mapPage.getBounds();
       expect(bounds.image.left).toBeGreaterThanOrEqual(
         bounds.viewport.left - 1
@@ -592,7 +607,7 @@ test.describe('Map', () => {
   );
 
   test(
-    'sound buttons copy the mark title label and expose the 54px progress ring',
+    'sound buttons copy the mark title label and expose the 30px progress ring',
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
@@ -620,7 +635,7 @@ test.describe('Map', () => {
         await expect(button).toHaveAttribute('aria-label', mark.title);
       }
 
-      // The progress ring targets the 54px sound button perimeter.
+      // The progress ring targets the 30px sound button perimeter.
       const firstSound = mark.sounds[0];
       const ring = await mapPage
         .getSoundButton(mark.id, firstSound.id)
@@ -636,8 +651,8 @@ test.describe('Map', () => {
         });
       expect(ring.progress).toBeGreaterThanOrEqual(0);
       expect(ring.progress).toBeLessThanOrEqual(100);
-      expect(ring.width).toBe('54px');
-      expect(ring.height).toBe('54px');
+      expect(ring.width).toBe('30px');
+      expect(ring.height).toBe('30px');
     }
   );
 
@@ -655,8 +670,7 @@ test.describe('Map', () => {
       await expect(mapPage.bottomPlayer).toBeVisible();
       await expect(mapPage.bottomPlayer).toHaveAttribute('data-mode', 'idle');
 
-      const group = mapPage.getSoundMark(mark.id);
-      await group.locator('.sound-mark__circle').click();
+      // The fan needs no toggle — the sound button is directly clickable.
       await mapPage.getSoundButton(mark.id, mark.sounds[0].id).click();
 
       await expect(mapPage.bottomPlayer).toBeVisible();

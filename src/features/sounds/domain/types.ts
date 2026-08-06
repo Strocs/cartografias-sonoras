@@ -12,7 +12,7 @@ export interface Position {
 export interface Sound {
   id: number;
   title: string;
-  description: string;
+  description: string | null;
   location: string;
   audioUrl: string;
   geoReferenceUrl?: string;
@@ -26,7 +26,7 @@ export interface Mark {
   id: number;
   mapId: number;
   title: string;
-  description: string;
+  description: string | null;
   position: Position;
   location: string;
   sounds: Sound[];

@@ -56,7 +56,7 @@ export const FAN_RADIUS_DEFAULTS: Required<FanRadiusInput> = {
 /**
  * Computes the ALWAYS-VISIBLE fan radius from the mark head radius, the sound
  * disc radius and an explicit head gap: `computeFanRadius` = mark + sound +
- * headGap. With the defaults that is 15 + 16 + 12 = 43px.
+ * headGap. With the defaults that is 15 + 16 + 4 = 35px.
  */
 export function computeFanRadius(input: FanRadiusInput = {}): number {
   const { markRadius, soundRadius, headGap } = {

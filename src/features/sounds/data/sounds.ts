@@ -13,7 +13,7 @@ interface PointEntry {
   soundCount: number;
   mark: {
     title: string;
-    description: string;
+    description: string | null;
     location: string;
     position: { x: number; y: number };
   };
@@ -26,7 +26,7 @@ const MAP_01_POINTS: PointEntry[] = [
     soundCount: 4,
     mark: {
       title: 'Faro',
-      description: '',
+      description: null,
       location: 'Avenida de Aguirre',
       position: { x: 83, y: 18 }
     }
@@ -36,7 +36,7 @@ const MAP_01_POINTS: PointEntry[] = [
     soundCount: 4,
     mark: {
       title: 'Frontis Faro',
-      description: '',
+      description: null,
       location: 'Avenida de Aguirre',
       position: { x: 75, y: 28 }
     }
