@@ -25,22 +25,20 @@ const MAP_01_POINTS: PointEntry[] = [
     point: 1,
     soundCount: 4,
     mark: {
-      title: 'Fuente central',
-      description:
-        'Murmullo constante del agua cayendo en la pileta principal de la plaza.',
+      title: 'Faro',
+      description: '',
       location: 'Avenida de Aguirre',
-      position: { x: 17, y: 8 }
+      position: { x: 79, y: 19 }
     }
   },
   {
     point: 2,
     soundCount: 4,
     mark: {
-      title: 'Conversaciones en bancas',
-      description:
-        'Fragmentos de diálogos entre personas que descansan en las bancas de la plaza.',
+      title: 'Frontis Faro',
+      description: '',
       location: 'Avenida de Aguirre',
-      position: { x: 26, y: 20 }
+      position: { x: 75, y: 25 }
     }
   },
   {
@@ -51,7 +49,7 @@ const MAP_01_POINTS: PointEntry[] = [
       description:
         'Voces de vendedores ofreciendo productos y el sonido de sus carros moviéndose por las veredas.',
       location: 'Avenida de Aguirre',
-      position: { x: 42, y: 40 }
+      position: { x: 56, y: 40 }
     }
   },
   {
@@ -62,7 +60,7 @@ const MAP_01_POINTS: PointEntry[] = [
       description:
         'Pasos dispersos, conversaciones breves y el vaivén de la gente transitando por la plaza.',
       location: 'Avenida de Aguirre',
-      position: { x: 59, y: 60 }
+      position: { x: 39, y: 57 }
     }
   },
   {
@@ -73,7 +71,7 @@ const MAP_01_POINTS: PointEntry[] = [
       description:
         'Aleteos y arrullos de palomas concentradas cerca de los bordes de la plaza.',
       location: 'Avenida de Aguirre',
-      position: { x: 76, y: 80 }
+      position: { x: 18, y: 82 }
     }
   }
 ];
@@ -190,7 +188,8 @@ const soundIdFor = (
   point: number,
   soundIdx: number,
   legacyMarkId: number
-): number => (soundIdx === 1 ? legacyMarkId : mapId * 100 + point * 10 + soundIdx);
+): number =>
+  soundIdx === 1 ? legacyMarkId : mapId * 100 + point * 10 + soundIdx;
 
 function buildMark(mapId: number, entry: PointEntry): Mark {
   const legacyMarkId = mapId * 100 + entry.point;

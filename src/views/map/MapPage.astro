@@ -71,8 +71,8 @@ const mapData = {
         render-context="active"
         id="main-map"
         class="min-h-0 min-w-0 flex-1"
-        min-zoom={0.2}
-        max-zoom={2.0}
+        min-zoom={0.5}
+        max-zoom={1}
       >
       </map-view>
       <MapControls client:visible mapViewId="main-map" />
@@ -87,9 +87,11 @@ const mapData = {
   </div>
 
   <div class="absolute right-8 bottom-4 z-[1001]">
-    {soundPieceEnabled && (
-      <AudioBottomPlayer client:idle soundPiece={soundPiece} />
-    )}
+    {
+      soundPieceEnabled && (
+        <AudioBottomPlayer client:idle soundPiece={soundPiece} />
+      )
+    }
   </div>
 
   <AudioPool client:idle sounds={audioPoolSounds} soundPiece={audioPoolPiece} />

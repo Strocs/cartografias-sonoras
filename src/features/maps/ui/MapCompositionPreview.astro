@@ -33,7 +33,7 @@ const labelId = `map-composition-label-${map.slug}`;
   data-map-composition-preview
 >
   <Image
-    src={map.preview.asset}
+    src={map.preview.asset!}
     alt=""
     aria-hidden="true"
     class={imageClass}
@@ -42,7 +42,7 @@ const labelId = `map-composition-label-${map.slug}`;
     height={map.preview.height}
     widths={widths}
     sizes={sizes}
-    {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
+    {...loading === 'eager' ? { fetchpriority: 'high' } : {}}
   />
   <figcaption id={labelId} class="sr-only">{map.title}</figcaption>
 </figure>

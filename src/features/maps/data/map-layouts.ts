@@ -40,7 +40,7 @@ export const mapLayouts: MapLayout[] = [
       },
       {
         id: 'layer-0',
-        frame: { x: 0, y: 0, width: 100, height: 100 },
+        frame: { x: 69.35, y: 2.7, width: 19.5, height: 19.5 },
         optional: true,
         effect: 'parallax'
       }

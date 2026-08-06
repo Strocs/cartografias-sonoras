@@ -4,7 +4,8 @@ import {
   createSoundButton,
   removeSoundButton,
   updateSoundButton,
-  SOUND_BUTTON_SIZE
+  SOUND_BUTTON_SIZE,
+  SOUND_VISIBLE_SIZE
 } from '../../src/features/sounds/ui/soundButton';
 import { createMark } from '../../src/features/sounds/ui/mark';
 
@@ -55,6 +56,16 @@ describe('createSoundButton', () => {
     expect(button.getAttribute('data-state')).toBe('idle');
     expect(button.getAttribute('data-state')).toBe('idle');
     expect(container.contains(button)).toBe(true);
+
+    container.remove();
+  });
+
+  it('exposes the global sound disc size as --disc-size on the button', () => {
+    const { container, button } = appendButton();
+
+    expect(button.style.getPropertyValue('--disc-size')).toBe(
+      `${SOUND_VISIBLE_SIZE}px`
+    );
 
     container.remove();
   });

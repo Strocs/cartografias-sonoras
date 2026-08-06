@@ -1,11 +1,36 @@
 import { describe, expect, it } from 'vitest';
 
-import { computeFanSlots } from '../../src/features/sounds/ui/fanGeometry';
+import {
+  computeFanRadius,
+  computeFanSlots,
+  FAN_RADIUS_DEFAULTS
+} from '../../src/features/sounds/ui/fanGeometry';
 
 const R = 100;
 const S = 90;
 // Magnitude of the dx/dy offsets in the slanted layouts (r·cos(45°)).
 const D = Math.cos((Math.PI / 180) * 45) * R;
+
+describe('computeFanRadius', () => {
+  it('derives the radius from mark radius + sound radius + explicit gap', () => {
+    expect(computeFanRadius({ markRadius: 22, soundRadius: 18, gap: -4 })).toBe(
+      36
+    );
+  });
+
+  it('uses defaults: mark radius + default sound radius + accepted overlap', () => {
+    const { markRadius, soundRadius, gap } = FAN_RADIUS_DEFAULTS;
+    expect(computeFanRadius()).toBe(markRadius + soundRadius + gap);
+    expect(computeFanRadius()).toBe(36);
+  });
+
+  it('recomputes when the sound disc size changes (independent of mark)', () => {
+    const bigger = computeFanRadius({ soundRadius: 24 });
+    const smaller = computeFanRadius({ soundRadius: 12 });
+    expect(bigger).toBeGreaterThan(smaller);
+    expect(bigger - smaller).toBe(12);
+  });
+});
 
 describe('computeFanSlots', () => {
   it('places a single slot on the top-center axis', () => {
@@ -79,11 +104,11 @@ describe('computeFanSlots', () => {
     expect(slots[1].dx).toBeCloseTo(-slots[2].dx, 6);
   });
 
-  it('uses default radius 64 and step 50 when options are omitted', () => {
+  it('uses the derived default radius and step 50 when options are omitted', () => {
     const slots = computeFanSlots(1);
 
     expect(slots[0].dx).toBeCloseTo(0, 6);
-    expect(slots[0].dy).toBeCloseTo(-64, 6);
+    expect(slots[0].dy).toBeCloseTo(-computeFanRadius(), 6);
   });
 
   it('rejects a count below one', () => {

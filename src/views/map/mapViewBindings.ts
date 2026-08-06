@@ -8,7 +8,6 @@ import {
   createMark,
   insertFanButton,
   removeMark,
-  setFanOpen,
   updateMark,
   createSoundButton,
   removeSoundButton,
@@ -33,9 +32,10 @@ export interface MapViewBindingOptions {
  * Wires a `<map-view>` custom element to the vanilla audio store.
  *
  * Responsibilities:
- * - Create a Mark group per mark (`.sound-mark`) with its fan of sound buttons.
+ * - Create a Mark group per mark (`.sound-mark`) with its fan of sound buttons
+ *   (the fan is always visible; there is no open/close toggle).
  * - Render SVG paths based on the current audio playback state.
- * - Toggle a mark's fan from `mark:activate`; toggle playback from `sound:activate`.
+ * - Toggle playback from `sound:activate`.
  * - React to store changes: update each sound button, paint the mark accent when
  *   any of its sounds is active, and re-derive path visuals.
  * - Apply one `scaleFactor` per group on `viewport-change`.
@@ -61,7 +61,6 @@ export function bindMapView({
 
   const marksById = new Map<number, HTMLDivElement>();
   const soundButtonsById = new Map<number, HTMLButtonElement>();
-  const fanOpen = new Set<number>();
 
   // Initial render.
   for (const mark of marks) {
@@ -90,25 +89,6 @@ export function bindMapView({
       updatePaths();
     }
   );
-
-  // Mark activation toggles its fan (stays open while a sound is clicked).
-  const markActivateHandler = (event: Event) => {
-    const detail = (event as CustomEvent).detail as
-      | { markId: number }
-      | undefined;
-    if (detail === undefined) return;
-
-    if (fanOpen.has(detail.markId)) {
-      fanOpen.delete(detail.markId);
-    } else {
-      fanOpen.add(detail.markId);
-    }
-
-    const group = marksById.get(detail.markId);
-    if (group !== undefined) {
-      setFanOpen(group, fanOpen.has(detail.markId));
-    }
-  };
 
   // Sound activation toggles playback (play/pause/resume) by soundId + mapId.
   const soundActivateHandler = (event: Event) => {
@@ -142,7 +122,6 @@ export function bindMapView({
     }
   };
 
-  mapView.addEventListener('mark:activate', markActivateHandler);
   mapView.addEventListener('sound:activate', soundActivateHandler);
   mapView.addEventListener('viewport-change', viewportChangeHandler);
 
@@ -194,7 +173,6 @@ export function bindMapView({
 
   return function unbind(): void {
     unsubscribe();
-    mapView.removeEventListener('mark:activate', markActivateHandler);
     mapView.removeEventListener('sound:activate', soundActivateHandler);
     mapView.removeEventListener('viewport-change', viewportChangeHandler);
 
@@ -207,7 +185,6 @@ export function bindMapView({
       removeMark(group);
     }
     marksById.clear();
-    fanOpen.clear();
 
     clearPaths(svg);
   };

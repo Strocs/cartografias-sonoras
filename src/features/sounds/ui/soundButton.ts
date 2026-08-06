@@ -5,8 +5,16 @@ const BUTTON_CLASS = 'sound-button';
 const PLAY_ICON_CLASS = 'sound-button__icon--play';
 const PAUSE_ICON_CLASS = 'sound-button__icon--pause';
 
-/** Target button diameter; the progress ring renders at this perimeter. */
-export const SOUND_BUTTON_SIZE = 54;
+/** Target button diameter (hit area); the progress ring renders at this perimeter. */
+export const SOUND_BUTTON_SIZE = 30;
+
+/**
+ * GLOBAL configurable size (px) of the visible sound disc, independent of the
+ * mark size. Exposed to the button's DOM as `--disc-size`; the stylesheet
+ * renders the disc from it (replacing the old fixed `inset` derivation).
+ * The hit area/ring remain `SOUND_BUTTON_SIZE = 54`.
+ */
+export const SOUND_VISIBLE_SIZE = 30;
 
 export type SoundButtonStatus = 'idle' | 'playing' | 'paused' | 'loading';
 
@@ -29,6 +37,7 @@ export function createSoundButton(sound: Sound, mark: Mark): HTMLButtonElement {
   button.style.setProperty('--progress', '0%');
   button.style.width = `${SOUND_BUTTON_SIZE}px`;
   button.style.height = `${SOUND_BUTTON_SIZE}px`;
+  button.style.setProperty('--disc-size', `${SOUND_VISIBLE_SIZE}px`);
 
   button.appendChild(createIconSpan(PLAY_ICON_CLASS, createPlayIcon()));
   button.appendChild(createIconSpan(PAUSE_ICON_CLASS, createPauseIcon()));
@@ -75,7 +84,10 @@ export function removeSoundButton(button: HTMLButtonElement): void {
   button.remove();
 }
 
-function createIconSpan(className: string, svg: SVGSVGElement): HTMLSpanElement {
+function createIconSpan(
+  className: string,
+  svg: SVGSVGElement
+): HTMLSpanElement {
   const span = document.createElement('span');
   span.className = `sound-button__icon ${className}`;
   span.setAttribute('aria-hidden', 'true');

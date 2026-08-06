@@ -1,32 +1,35 @@
 import { relativeToPixel } from '@shared/lib/coordinates';
 
 import type { Mark } from '../domain/types';
-import { computeFanSlots } from './fanGeometry';
-import { createPlayIcon } from './icons';
+import { computeFanRadius, computeFanSlots } from './fanGeometry';
+import { SOUND_VISIBLE_SIZE } from './soundButton';
 
 const MARK_CLASS = 'sound-mark';
 const CIRCLE_CLASS = 'sound-mark__circle';
 const FAN_CLASS = 'sound-mark__fan';
 
 /**
- * Creates a Mark as an accessible group container.
+ * Creates a Mark group container.
  *
  * The group is positioned with a single transform:
- *   translate(xpx, ypx) translate(-50%, -50%) scale(f)
+ *   translate(xpx, ypx) scale(f)
  * where the pixel translation is derived from `mark.position` (0–100 % of the
- * image) via `relativeToPixel`. Children (circle, fan, tooltip) live at
- * group-local offsets so a single `scaleFactor` keeps sound buttons at a
- * constant screen size (design D5).
+ * image) via `relativeToPixel`. The group origin IS the circle center — the
+ * circle centers itself via margins, and fan items radiate from the same
+ * origin (design D5).
+ *
+ * The mark is a LONG-TERM visual anchor, NOT a toggle: the fan of sound
+ * buttons is ALWAYS visible around the circle. No hover growth animation —
+ * the fan sits at its final radius (mark radius + 12px) at all times.
  *
  * DOM contract:
  * - group: `.sound-mark`, data-testid="sound-mark", data-mark-id, data-map-id,
  *   data-state (idle | active)
- * - circle: `.sound-mark__circle` `<button>` — aria-label=mark.title,
- *   aria-expanded, aria-controls=fan-{id}; bubbles `mark:activate`
- *   {markId, mapId} on click/Enter/Space (keyboard handled by bindings too)
- * - fan: `.sound-mark__fan` role=group, id=fan-{id}, aria-hidden, one
- *   `.sound-mark__fan-item` per sound at group-local dx/dy offsets
- * - tooltip: `.sound-mark__tooltip` role=tooltip at top: calc(100% + 12px)
+ * - circle: `.sound-mark__circle` `<div aria-hidden="true">` — decorative red
+ *   disc; the Mark-only tooltip is triggered by :hover on this disc alone
+ * - fan: `.sound-mark__fan` role=group, aria-label=mark.title, id=fan-{id},
+ *   one `.sound-mark__fan-item` per sound at group-local dx/dy offsets
+ * - tooltip: `.sound-mark__tooltip` role=tooltip below the circle
  */
 export function createMark(
   mark: Mark,
@@ -46,20 +49,16 @@ export function createMark(
   group.style.setProperty('--mark-y', String(pixel.y));
   applyTransform(group, pixel.x, pixel.y, scaleFactor);
 
-  const circle = document.createElement('button');
-  circle.type = 'button';
+  const circle = document.createElement('div');
   circle.className = CIRCLE_CLASS;
-  circle.setAttribute('aria-label', mark.title);
-  circle.setAttribute('aria-expanded', 'false');
-  circle.setAttribute('aria-controls', `fan-${mark.id}`);
-  circle.appendChild(createIconSpan(createPlayIcon()));
+  circle.setAttribute('aria-hidden', 'true');
   group.appendChild(circle);
 
   const fan = document.createElement('div');
   fan.className = FAN_CLASS;
   fan.setAttribute('role', 'group');
   fan.id = `fan-${mark.id}`;
-  fan.setAttribute('aria-hidden', 'true');
+  fan.setAttribute('aria-label', mark.title);
   group.appendChild(fan);
 
   const tooltip = document.createElement('div');
@@ -87,30 +86,23 @@ export function createMark(
 
   group.appendChild(tooltip);
 
-  const activate = () => {
-    group.dispatchEvent(
-      new CustomEvent('mark:activate', {
-        bubbles: true,
-        detail: { markId: mark.id, mapId: mark.mapId }
-      })
-    );
-  };
-
-  circle.addEventListener('click', activate);
-  circle.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      activate();
-    }
-  });
-
   // Pre-create the fan slot items; bindings inject the sound buttons so the
-  // button factory stays owned by soundButton.ts.
-  const slots = computeFanSlots(mark.sounds.length);
+  // button factory stays owned by soundButton.ts. The trailing
+  // translate(-50%, -50%) shifts each item by half of ITS OWN box (the item
+  // shrink-wraps the 54px button), so the button center lands exactly on the
+  // slot position (dx, dy) computed by fanGeometry — the mark circle center is
+  // the fan's pivot.
+  //
+  // The fan radius is derived from the global sound disc size and the mark
+  // circle radius via an explicit overlap (computeFanRadius), not hardcoded.
+  const fanRadius = computeFanRadius({
+    soundRadius: SOUND_VISIBLE_SIZE / 2
+  });
+  const slots = computeFanSlots(mark.sounds.length, { radius: fanRadius });
   mark.sounds.forEach((_sound, index) => {
     const item = document.createElement('div');
     item.className = 'sound-mark__fan-item';
-    item.style.transform = `translate(${slots[index].dx}px, ${slots[index].dy}px)`;
+    item.style.transform = `translate(${slots[index].dx}px, ${slots[index].dy}px) translate(-50%, -50%)`;
     fan.appendChild(item);
   });
 
@@ -151,20 +143,6 @@ export function updateMark(
   }
 }
 
-/**
- * Mirrors fan open/closed state into the a11y surface: `aria-expanded` on the
- * circle and `data-open` on the group (CSS shows the fan via `[data-open]`).
- */
-export function setFanOpen(group: HTMLDivElement, open: boolean): void {
-  const circle = group.querySelector<HTMLButtonElement>(`.${CIRCLE_CLASS}`);
-  circle?.setAttribute('aria-expanded', String(open));
-  if (open) {
-    group.setAttribute('data-open', 'true');
-  } else {
-    group.removeAttribute('data-open');
-  }
-}
-
 /** Removes a Mark group from the DOM. */
 export function removeMark(group: HTMLDivElement): void {
   group.remove();
@@ -176,13 +154,5 @@ function applyTransform(
   y: number,
   scaleFactor: number
 ): void {
-  group.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scaleFactor})`;
-}
-
-function createIconSpan(svg: SVGSVGElement): HTMLSpanElement {
-  const span = document.createElement('span');
-  span.className = 'sound-mark__icon sound-mark__icon--play';
-  span.setAttribute('aria-hidden', 'true');
-  span.appendChild(svg);
-  return span;
+  group.style.transform = `translate(${x}px, ${y}px) scale(${scaleFactor})`;
 }

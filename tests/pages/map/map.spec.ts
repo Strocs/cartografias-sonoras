@@ -145,7 +145,7 @@ test.describe('Map', () => {
   );
 
   test(
-    'keyboard toggles a mark fan and plays a sound button',
+    'keyboard focus reaches a sound button and plays it (fan is always visible)',
     { tag: ['@high', '@e2e', '@MAP-E2E-004'] },
     async ({ page }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -157,16 +157,14 @@ test.describe('Map', () => {
       await mapPage.waitForViewportReady();
 
       const group = mapPage.getSoundMark(mark.id);
-      const circle = group.locator('.sound-mark__circle');
 
-      await circle.focus();
-      await expect(circle).toBeFocused();
-      await expect(circle).toHaveAttribute('aria-label', mark.title);
-
-      // Space on the mark toggles the fan open (aria-expanded true).
-      await circle.press('Space');
-      await expect(circle).toHaveAttribute('aria-expanded', 'true');
-      await expect(group).toHaveAttribute('data-open', 'true');
+      // The mark circle is a decorative disc (not focusable); the sound
+      // buttons are the interactive elements and are reachable directly.
+      await expect(group.locator('.sound-mark__circle')).toHaveAttribute(
+        'aria-hidden',
+        'true'
+      );
+      await expect(group).not.toHaveAttribute('data-open');
 
       // The first sound button takes focus; Space plays the sound.
       const button = mapPage.getSoundButton(mark.id, mark.sounds[0].id);
@@ -270,7 +268,6 @@ test.describe('Map', () => {
       expect(position.y).toBe(
         Math.round((mark.position.y / 100) * position.imageHeight)
       );
-      expect(position.transform).toContain('translate(-50%, -50%)');
     }
   );
 
@@ -297,7 +294,7 @@ test.describe('Map', () => {
       await expect(tooltip).toContainText(mark.description);
 
       // The tooltip always sits below the mark's geometric centre-bottom,
-      // even while the fan is open.
+      // while the fan itself stays always-visible (no toggle state).
       const groupBox = await group.boundingBox();
       const tooltipBox = await tooltip.boundingBox();
       expect(groupBox).not.toBeNull();
@@ -306,13 +303,7 @@ test.describe('Map', () => {
         groupBox!.y + groupBox!.height / 2
       );
 
-      await group.locator('.sound-mark__circle').click();
-      await expect(group).toHaveAttribute('data-open', 'true');
-      const tooltipBoxOpen = await tooltip.boundingBox();
-      expect(tooltipBoxOpen).not.toBeNull();
-      expect(tooltipBoxOpen!.y).toBeGreaterThanOrEqual(
-        groupBox!.y + groupBox!.height / 2
-      );
+      await expect(group).not.toHaveAttribute('data-open');
     }
   );
 
@@ -519,7 +510,7 @@ test.describe('Map', () => {
   );
 
   test(
-    'clicking a mark opens the fan, and the sound button toggles playback with the fan open',
+    'the sound button toggles playback while the fan stays always visible',
     { tag: ['@e2e', '@audio'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
@@ -531,20 +522,16 @@ test.describe('Map', () => {
       await mapPage.waitForViewportReady();
 
       const group = mapPage.getSoundMark(mark.id);
-      const circle = group.locator('.sound-mark__circle');
       const button = mapPage.getSoundButton(mark.id, firstSound.id);
 
-      // Clicking the mark opens the fan; it does not start playback directly.
-      await circle.click();
-      await expect(group).toHaveAttribute('data-open', 'true');
-      await expect(circle).toHaveAttribute('aria-expanded', 'true');
+      // No fan toggle: the button is directly interactive.
+      await expect(group).not.toHaveAttribute('data-open');
 
-      // The sound button toggles playback; the fan stays open.
+      // The sound button toggles playback without any mark toggle.
       await button.click();
       await expect(button).toHaveAttribute('data-state', /playing|paused/, {
         timeout: 5000
       });
-      await expect(group).toHaveAttribute('data-open', 'true');
 
       // The mark paints its active accent while any sound plays.
       await expect(group).toHaveAttribute('data-state', 'active');
@@ -571,7 +558,6 @@ test.describe('Map', () => {
       await expect(selectedGroup).toHaveAttribute('data-state', 'idle');
       await expect(siblingGroup).toHaveAttribute('data-state', 'idle');
 
-      await selectedGroup.locator('.sound-mark__circle').click();
       await mapPage.getSoundButton(selected.id, selectedSound.id).click();
       await expect(selectedGroup).toHaveAttribute('data-state', 'active');
       await expect(siblingGroup).toHaveAttribute('data-state', 'idle');
@@ -579,7 +565,7 @@ test.describe('Map', () => {
   );
 
   test(
-    'fan aria contract reflects open/closed state on the mark',
+    'mark aria contract: decorative disc + labelled always-visible fan',
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
@@ -593,21 +579,15 @@ test.describe('Map', () => {
       const circle = group.locator('.sound-mark__circle');
       const fan = group.locator('.sound-mark__fan');
 
-      // Fan a11y contract: circle exposes aria-expanded + aria-controls,
-      // the fan is a labelled group. aria-hidden stays true per the B DOM
-      // contract (visibility is driven by [data-open] + CSS opacity).
-      await expect(circle).toHaveAttribute('aria-controls', `fan-${mark.id}`);
+      // New contract: the disc is decorative (aria-hidden) and the fan is a
+      // labelled group that is always exposed — no open/closed aria state.
+      await expect(circle).toHaveAttribute('aria-hidden', 'true');
+      await expect(circle).not.toHaveAttribute('aria-expanded');
+      await expect(circle).not.toHaveAttribute('aria-controls');
       await expect(fan).toHaveAttribute('role', 'group');
-      await expect(fan).toHaveAttribute('aria-hidden', 'true');
-      await expect(circle).toHaveAttribute('aria-expanded', 'false');
-
-      await circle.click();
-      await expect(group).toHaveAttribute('data-open', 'true');
-      await expect(circle).toHaveAttribute('aria-expanded', 'true');
-
-      await circle.click();
+      await expect(fan).toHaveAttribute('aria-label', mark.title);
+      await expect(fan).not.toHaveAttribute('aria-hidden');
       await expect(group).not.toHaveAttribute('data-open');
-      await expect(circle).toHaveAttribute('aria-expanded', 'false');
     }
   );
 
@@ -627,8 +607,9 @@ test.describe('Map', () => {
       await mapPage.waitForViewportReady();
 
       const group = mapPage.getSoundMark(mark.id);
-      await group.locator('.sound-mark__circle').click();
-      await expect(group).toHaveAttribute('data-open', 'true');
+
+      // The fan needs no toggle — buttons are visible and interactive.
+      await expect(group).not.toHaveAttribute('data-open');
 
       // Design D7: sounds 2..n reuse the mark title/description/location as
       // the default copy (product copy pending); aria-label = mark.title so

@@ -8,7 +8,7 @@ import type { AudioElementId, AudioEngineState, AudioStatus } from '../types';
 
 interface AudioPoolItem {
   id: number;
-  audioUrl: string;
+  audioUrl: string | null;
 }
 
 interface AudioPoolProps {
@@ -19,7 +19,7 @@ interface AudioPoolProps {
 const ACTIVE_ELEMENT_STATUSES = new Set<AudioStatus>([
   AUDIO_STATUS.LOADING,
   AUDIO_STATUS.PLAYING,
-  AUDIO_STATUS.PAUSED,
+  AUDIO_STATUS.PAUSED
 ]);
 
 function selectActiveSoundIds(state: AudioEngineState): string {
@@ -86,7 +86,10 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
   };
 
   const applyGlobalVolume = (state: AudioEngineState): void => {
-    if (state.volume === prevVolume.current && state.muted === prevMuted.current) {
+    if (
+      state.volume === prevVolume.current &&
+      state.muted === prevMuted.current
+    ) {
       return;
     }
     audioRefs.current.forEach((audio) => {
@@ -158,18 +161,19 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
     return unsubscribe;
   });
 
-  const registerAudio = (id: AudioElementId) => (element: HTMLAudioElement | null) => {
-    if (element === null) {
-      audioRefs.current.delete(id);
-      prevStatuses.current.delete(id);
-      return;
-    }
+  const registerAudio =
+    (id: AudioElementId) => (element: HTMLAudioElement | null) => {
+      if (element === null) {
+        audioRefs.current.delete(id);
+        prevStatuses.current.delete(id);
+        return;
+      }
 
-    element.volume = prevVolume.current;
-    element.muted = prevMuted.current;
-    audioRefs.current.set(id, element);
-    syncAudioElement(id, element, audioStore.getState());
-  };
+      element.volume = prevVolume.current;
+      element.muted = prevMuted.current;
+      audioRefs.current.set(id, element);
+      syncAudioElement(id, element, audioStore.getState());
+    };
 
   const handleLoadedMetadata =
     (id: AudioElementId, isPiece: boolean) =>

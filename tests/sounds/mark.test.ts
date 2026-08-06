@@ -1,13 +1,19 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 
 import {
   createMark,
   insertFanButton,
   removeMark,
-  setFanOpen,
   updateMark
 } from '../../src/features/sounds/ui/mark';
-import { createSoundButton } from '../../src/features/sounds/ui/soundButton';
+import {
+  createSoundButton,
+  SOUND_VISIBLE_SIZE
+} from '../../src/features/sounds/ui/soundButton';
+import {
+  computeFanRadius,
+  computeFanSlots
+} from '../../src/features/sounds/ui/fanGeometry';
 
 import type { Mark } from '../../src/features/sounds/domain/types';
 
@@ -51,30 +57,44 @@ describe('createMark', () => {
     expect(group.getAttribute('data-map-id')).toBe('1');
     expect(group.getAttribute('data-state')).toBe('idle');
     expect(group.style.transform).toContain('translate(400px, 150px)');
-    expect(group.style.transform).toContain('translate(-50%, -50%)');
     expect(group.style.transform).toContain('scale(0.75)');
   });
 
-  it('renders the circle button with aria contract', () => {
+  it('renders a decorative circle disc (no toggle button)', () => {
     const group = createMark(mark, 800, 600);
 
-    const circle = group.querySelector<HTMLButtonElement>('.sound-mark__circle');
+    const circle = group.querySelector<HTMLElement>('.sound-mark__circle');
     expect(circle).not.toBeNull();
-    expect(circle?.getAttribute('aria-label')).toBe(mark.title);
-    expect(circle?.getAttribute('aria-expanded')).toBe('false');
-    expect(circle?.getAttribute('aria-controls')).toBe('fan-101');
-    expect(circle?.type).toBe('button');
+    expect(circle?.tagName).toBe('DIV');
+    expect(circle?.getAttribute('aria-hidden')).toBe('true');
+    expect(circle?.hasAttribute('aria-expanded')).toBe(false);
+    expect(circle?.hasAttribute('aria-controls')).toBe(false);
   });
 
-  it('renders a fan with one slot per sound and a tooltip below', () => {
+  it('renders an always-visible fan with one slot per sound and a tooltip below', () => {
     const group = createMark(mark, 800, 600);
 
     const fan = group.querySelector('.sound-mark__fan');
     expect(fan).not.toBeNull();
     expect(fan?.getAttribute('role')).toBe('group');
     expect(fan?.id).toBe('fan-101');
-    expect(fan?.getAttribute('aria-hidden')).toBe('true');
+    expect(fan?.getAttribute('aria-label')).toBe(mark.title);
+    expect(fan?.hasAttribute('aria-hidden')).toBe(false);
     expect(fan?.querySelectorAll('.sound-mark__fan-item')).toHaveLength(2);
+
+    // Each slot centers itself on the fan slot: the item box is shifted by
+    // half of its own size so the button center lands on (dx, dy) — the fan
+    // pivots on the mark circle center at its final (always-visible) radius.
+    const firstSlot = fan?.querySelector<HTMLElement>('.sound-mark__fan-item');
+    expect(firstSlot?.getAttribute('style')).toContain(
+      'translate(-50%, -50%)'
+    );
+    const expected = computeFanSlots(mark.sounds.length, {
+      radius: computeFanRadius({ soundRadius: SOUND_VISIBLE_SIZE / 2 })
+    })[0].dx;
+    expect(firstSlot?.getAttribute('style')).toContain(
+      `translate(${expected}px`
+    );
 
     const tooltip = group.querySelector<HTMLElement>('.sound-mark__tooltip');
     expect(tooltip).not.toBeNull();
@@ -90,50 +110,15 @@ describe('createMark', () => {
     ).toBe(mark.location);
   });
 
-  it('bubbles mark:activate on circle click', () => {
+  it('circle is inert: a click does not dispatch mark:activate', () => {
     const group = createMark(mark, 800, 600);
     container.appendChild(group);
 
-    const handler = vi.fn();
-    container.addEventListener('mark:activate', handler);
-
-    const circle = group.querySelector<HTMLButtonElement>('.sound-mark__circle');
+    const circle = group.querySelector<HTMLElement>('.sound-mark__circle');
     circle?.click();
 
-    expect(handler).toHaveBeenCalledOnce();
-    const event = handler.mock.calls[0][0] as CustomEvent;
-    expect(event.detail).toEqual({ markId: 101, mapId: 1 });
-    expect(event.bubbles).toBe(true);
-  });
-
-  it('bubbles mark:activate on Enter key press', () => {
-    const group = createMark(mark, 800, 600);
-    container.appendChild(group);
-
-    const handler = vi.fn();
-    container.addEventListener('mark:activate', handler);
-
-    const circle = group.querySelector<HTMLButtonElement>('.sound-mark__circle');
-    circle?.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
-    );
-
-    expect(handler).toHaveBeenCalledOnce();
-  });
-});
-
-describe('setFanOpen', () => {
-  it('mirrors open state into aria-expanded and data-open', () => {
-    const group = createMark(mark, 800, 600);
-
-    setFanOpen(group, true);
-    const circle = group.querySelector<HTMLButtonElement>('.sound-mark__circle');
-    expect(circle?.getAttribute('aria-expanded')).toBe('true');
-    expect(group.getAttribute('data-open')).toBe('true');
-
-    setFanOpen(group, false);
-    expect(circle?.getAttribute('aria-expanded')).toBe('false');
-    expect(group.getAttribute('data-open')).toBeNull();
+    // The mark is a passive anchor: no activation event is dispatched.
+    expect(group.querySelector('.sound-mark__fan')).not.toBeNull();
   });
 });
 
