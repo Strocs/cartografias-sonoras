@@ -6,6 +6,7 @@
   --color-background: #ffffff;
   --color-canvas: #f5f2ed;
   --color-charcoal: #1a2a3a;
+  --color-firebrick: #b02e0c;
 
   --color-primary-brown: #422b07;
   --color-primary-navy: #071442;
@@ -20,10 +21,12 @@
 }
 
 @keyframes soundwave-active {
+
   0%,
   100% {
     transform: scaleY(0.4);
   }
+
   50% {
     transform: scaleY(1);
   }
@@ -34,6 +37,7 @@
     transform: scale(1);
     opacity: 0.6;
   }
+
   100% {
     transform: scale(1.4);
     opacity: 0;
@@ -45,6 +49,7 @@
     transform: translateY(100%);
     opacity: 0;
   }
+
   100% {
     transform: translateY(0);
     opacity: 1;

@@ -15,6 +15,8 @@ export interface MapLayoutLayer {
   frame: Required<NormalizedFrame>;
   optional: boolean;
   effect: LayerEffectIntent;
+  /** Hover scale factor for non-base layers; absent layers stay static. */
+  hoverScale?: number;
 }
 
 export interface MapLayout {
@@ -42,7 +44,8 @@ export const mapLayouts: MapLayout[] = [
         id: 'layer-0',
         frame: { x: 69.35, y: 2.7, width: 19.5, height: 19.5 },
         optional: true,
-        effect: 'parallax'
+        effect: 'parallax',
+        hoverScale: 1.05
       }
     ]
   },

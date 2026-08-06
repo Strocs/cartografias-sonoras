@@ -26,10 +26,15 @@
 .sound-mark {
   --mark-x: 0;
   --mark-y: 0;
+  --head-size: 30px;
+  --head-radius: calc(var(--head-size) / 2);
+  --pin-tail-height: 45px;
+  --pin-tail-overlap: 0px;
 
   position: absolute;
   top: 0;
   left: 0;
+  pointer-events: auto;
   transform-origin: center center;
   z-index: 50;
 }
@@ -50,15 +55,27 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 44px;
-  height: 44px;
-  margin-top: -22px;
-  margin-left: -22px;
+  width: var(--head-size);
+  height: var(--head-size);
+  margin-top: calc(-1 * var(--pin-offset) - var(--head-radius));
+  margin-left: calc(-1 * var(--head-radius));
   padding: 0;
   border: 1px solid var(--color-secondary-sand);
   border-radius: 9999px;
   background: firebrick;
   z-index: 50;
+}
+
+/* Pin tail: its tip ends at the group origin, which is the mark position. */
+.sound-mark__tail {
+  position: absolute;
+  top: calc(-1 * var(--pin-offset) - var(--pin-tail-overlap));
+  left: calc(-1 * var(--head-radius));
+  width: var(--head-size);
+  height: calc(var(--pin-tail-height) + var(--pin-tail-overlap));
+  overflow: visible;
+  pointer-events: auto;
+  z-index: 51;
 }
 
 /* Fan — ALWAYS visible and interactive. No [data-open] gating, no hover
@@ -84,7 +101,7 @@
    while hovering the disc — hovering the sounds never opens the tooltip. */
 .sound-mark__tooltip {
   position: absolute;
-  top: 34px;
+  top: 12px;
   left: 0;
   z-index: 100;
   width: 168px;
@@ -123,7 +140,8 @@
   color: rgba(45, 45, 45, 0.8);
 }
 
-.sound-mark__circle:hover~.sound-mark__tooltip {
+.sound-mark__circle:hover~.sound-mark__tooltip,
+.sound-mark__tail:hover~.sound-mark__tooltip {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }

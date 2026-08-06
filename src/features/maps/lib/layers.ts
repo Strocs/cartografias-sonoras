@@ -38,7 +38,9 @@ export function createSvgLayer(container: HTMLElement): SVGSVGElement {
 export function createMarkerLayer(container: HTMLElement): HTMLDivElement {
   const markerLayer = document.createElement('div');
   applyLayerStyles(markerLayer);
-  markerLayer.style.pointerEvents = 'auto';
+  // Let pointer events reach image layers in empty map areas. Interactive
+  // marks opt back in explicitly through `.sound-mark`.
+  markerLayer.style.pointerEvents = 'none';
   container.appendChild(markerLayer);
   return markerLayer;
 }
@@ -51,6 +53,7 @@ export function createImageLayer(
 ): HTMLImageElement {
   const geometry = resolveLayerGeometry(layer, base);
   const wrapper = document.createElement('div');
+  wrapper.classList.add(LAYER_CLASS);
   wrapper.dataset.mapLayer = layer.id;
   wrapper.dataset.effectActive = String(effectActive);
   if (layer.className) {
@@ -61,7 +64,14 @@ export function createImageLayer(
   wrapper.style.top = `${geometry.y}px`;
   wrapper.style.width = `${geometry.width}px`;
   wrapper.style.height = `${geometry.height}px`;
-  wrapper.style.pointerEvents = layer.pointerEvents ? 'auto' : 'none';
+
+  const hoverScale = layer.optional ? layer.hoverScale : undefined;
+  if (hoverScale !== undefined) {
+    wrapper.dataset.hoverScale = String(hoverScale);
+    wrapper.style.setProperty('--layer-hover-scale', String(hoverScale));
+  }
+  wrapper.style.pointerEvents =
+    layer.pointerEvents || hoverScale !== undefined ? 'auto' : 'none';
 
   const image = document.createElement('img');
   image.src = layer.src;
@@ -73,7 +83,10 @@ export function createImageLayer(
   image.style.width = '100%';
   image.style.height = '100%';
   image.style.objectFit = 'contain';
-  if (effectActive) image.style.animationName = `map-layer-${layer.effect}`;
+  if (effectActive) {
+    image.style.animationName = `map-layer-${layer.effect}`;
+    image.dataset.layerEffect = layer.effect;
+  }
   wrapper.appendChild(image);
   container.appendChild(wrapper);
   return image;

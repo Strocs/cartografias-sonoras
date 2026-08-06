@@ -1,0 +1,71 @@
+/**
+ * Map layer visual effects.
+ *
+ * `map-view` sets `animationName` (and a `data-layer-effect` marker) on
+ * decorative layer images; the matching keyframes live here. Ambience motion
+ * is opt-in: the element only applies it for the active render context and
+ * when the user has not requested reduced motion.
+ *
+ * Hover is data/attribute-driven rather than className-driven: any non-base
+ * layer declaring `hoverScale` in its layer JSON gets a `data-hover-scale`
+ * attribute plus a `--layer-hover-scale` custom property, and the rule below
+ * composes the transform from that value. The base layer never carries the
+ * attribute, so its behavior is untouched.
+ */
+
+/* ── Layer animation timing ─────────────────────────────────────── */
+
+.map-layer > img[data-layer-effect] {
+  animation-duration: 5s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+/* ── Hover scale (non-base layers only) ─────────────────────────── */
+
+.map-layer[data-hover-scale] {
+  transition: transform 220ms ease-out;
+}
+
+.map-layer[data-hover-scale]:hover {
+  transform: scale(var(--layer-hover-scale));
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .map-layer > img[data-layer-effect] {
+    animation: none;
+  }
+
+  .map-layer[data-hover-scale],
+  .map-layer[data-hover-scale]:hover {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Keyframes ──────────────────────────────────────────────────── */
+
+@keyframes map-layer-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes map-layer-parallax {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.06);
+  }
+
+  50% {
+    transform: translate3d(4px, -4px, 0) scale(1.06);
+  }
+}

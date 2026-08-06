@@ -419,6 +419,47 @@ describe('MapView custom element', () => {
     expect(overlay.style.top).toBe('120px');
   });
 
+  it('renders a data-driven hover scale on non-base layers only', async () => {
+    const hoverLayers = [
+      {
+        id: 'base',
+        src: TEST_IMAGE_SRC,
+        width: 800,
+        height: 600,
+        frame: { x: 0, y: 0, width: 100, height: 100 },
+        optional: false,
+        effect: 'none',
+        hoverScale: 1.05
+      },
+      {
+        id: 'overlay',
+        src: `${TEST_IMAGE_SRC}#overlay`,
+        width: 200,
+        height: 400,
+        frame: { x: 25, y: 20, width: 50, height: 50 },
+        optional: true,
+        effect: 'float',
+        hoverScale: 1.05
+      }
+    ] as const;
+    const el = document.createElement('map-view') as MapView;
+    el.setAttribute('map-layers', JSON.stringify(hoverLayers));
+    wrapper.appendChild(el);
+    await waitForReady(el);
+
+    const base = el.querySelector('[data-map-layer="base"]') as HTMLElement;
+    expect(base.hasAttribute('data-hover-scale')).toBe(false);
+    expect(base.style.pointerEvents).toBe('none');
+
+    const overlay = el.querySelector(
+      '[data-map-layer="overlay"]'
+    ) as HTMLElement;
+    expect(overlay.classList.contains('map-layer')).toBe(true);
+    expect(overlay.getAttribute('data-hover-scale')).toBe('1.05');
+    expect(overlay.style.getPropertyValue('--layer-hover-scale')).toBe('1.05');
+    expect(overlay.style.pointerEvents).toBe('auto');
+  });
+
   it('exposes public zoom and reset methods', async () => {
     const el = document.createElement('map-view') as MapView;
     el.setAttribute('map-src', TEST_IMAGE_SRC);

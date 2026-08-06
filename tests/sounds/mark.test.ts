@@ -90,7 +90,8 @@ describe('createMark', () => {
       'translate(-50%, -50%)'
     );
     const expected = computeFanSlots(mark.sounds.length, {
-      radius: computeFanRadius({ soundRadius: SOUND_VISIBLE_SIZE / 2 })
+      radius: computeFanRadius({ soundRadius: SOUND_VISIBLE_SIZE / 2 }),
+      soundGap: SOUND_VISIBLE_SIZE + 8
     })[0].dx;
     expect(firstSlot?.getAttribute('style')).toContain(
       `translate(${expected}px`

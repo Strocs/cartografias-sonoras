@@ -140,4 +140,47 @@ describe('Dataset validation', () => {
     }
     expect(new Set(slugs).size).toBe(slugs.length);
   });
+
+  it('declares a hover scale of 1.05 for map 1 layer-0 only', () => {
+    const map1 = MAPS_DATA.find((m) => m.id === 1);
+    expect(map1?.images[1]).toMatchObject({ id: 'layer-0', hoverScale: 1.05 });
+
+    for (const map of MAPS_DATA) {
+      const [base, ...overlays] = map.images;
+      expect(base.hoverScale).toBeUndefined();
+      for (const overlay of overlays) {
+        if (map.id === 1 && overlay.id === 'layer-0') {
+          expect(overlay.hoverScale).toBe(1.05);
+        } else {
+          expect(overlay.hoverScale).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  it('validates and rejects layer hoverScale in the map schema', () => {
+    const map1 = MAPS_DATA.find((m) => m.id === 1);
+    expect(map1).toBeDefined();
+    expect(mapSchema.parse(map1!)).toEqual(map1);
+
+    const layer = map1!.images[1];
+    expect(() =>
+      mapSchema.parse({
+        ...map1,
+        images: [map1!.images[0], { ...layer, hoverScale: 0 }]
+      })
+    ).toThrow();
+    expect(() =>
+      mapSchema.parse({
+        ...map1,
+        images: [map1!.images[0], { ...layer, hoverScale: -1 }]
+      })
+    ).toThrow();
+    expect(() =>
+      mapSchema.parse({
+        ...map1,
+        images: [map1!.images[0], { ...layer, hoverScale: 1.05 }]
+      })
+    ).not.toThrow();
+  });
 });

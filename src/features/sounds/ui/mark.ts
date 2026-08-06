@@ -1,12 +1,32 @@
 import { relativeToPixel } from '@shared/lib/coordinates';
 
 import type { Mark } from '../domain/types';
-import { computeFanRadius, computeFanSlots } from './fanGeometry';
+import {
+  computeFanRadius,
+  computeFanSlots,
+  MARK_RADIUS,
+  MARK_SIZE,
+  SOUND_FAN_OVERLAP
+} from './fanGeometry';
 import { SOUND_VISIBLE_SIZE } from './soundButton';
 
 const MARK_CLASS = 'sound-mark';
-const CIRCLE_CLASS = 'sound-mark__circle';
+const HEAD_CLASS = 'sound-mark__circle';
+const TAIL_CLASS = 'sound-mark__tail';
 const FAN_CLASS = 'sound-mark__fan';
+
+/**
+ * Distance (px) between the pin TIP (group origin == mark.position) and the
+ * CENTER of the pin HEAD disc. The head — not the tip — is the pivot for the
+ * sound fan radius and the tooltip. The tail begins at the head center and is
+ * one-and-a-half head diameters long.
+ */
+export const PIN_TAIL_HEIGHT = MARK_SIZE * 1.5;
+export const PIN_TAIL_OVERLAP = 0;
+// The tail begins at the head center and ends at the geographic tip.
+export const PIN_HEAD_OFFSET = PIN_TAIL_HEIGHT;
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /**
  * Creates a Mark group container.
@@ -14,22 +34,30 @@ const FAN_CLASS = 'sound-mark__fan';
  * The group is positioned with a single transform:
  *   translate(xpx, ypx) scale(f)
  * where the pixel translation is derived from `mark.position` (0–100 % of the
- * image) via `relativeToPixel`. The group origin IS the circle center — the
- * circle centers itself via margins, and fan items radiate from the same
- * origin (design D5).
+ * image) via `relativeToPixel`. The group origin IS the pin TIP — the tip stays
+ * glued to the geographic coordinate.
+ *
+ * The pin is drawn as a teardrop: a circular head (`.sound-mark__circle`,
+ * 30px, 1px var(--color-secondary-sand) border) plus a triangular tail
+ * (`.sound-mark__tail`) whose base starts at the head center and tapers down to
+ * the tip at the group origin. The head CENTER sits PIN_HEAD_OFFSET px above the tip
+ * and remains the pivot for the sound fan radius and the tooltip — the fan
+ * radiates from the head, never from the tip.
  *
  * The mark is a LONG-TERM visual anchor, NOT a toggle: the fan of sound
- * buttons is ALWAYS visible around the circle. No hover growth animation —
- * the fan sits at its final radius (mark radius + 12px) at all times.
+ * buttons is ALWAYS visible around the head. No hover growth animation.
  *
  * DOM contract:
  * - group: `.sound-mark`, data-testid="sound-mark", data-mark-id, data-map-id,
- *   data-state (idle | active)
- * - circle: `.sound-mark__circle` `<div aria-hidden="true">` — decorative red
- *   disc; the Mark-only tooltip is triggered by :hover on this disc alone
+ *   data-state (idle | active), style var --pin-offset = PIN_HEAD_OFFSET
+ * - head: `.sound-mark__circle` `<div aria-hidden="true">` — decorative red
+ *   head disc (the pin teardrop's head); the Mark-only tooltip is triggered by
+ *   :hover on this disc alone
+ * - tail: `.sound-mark__tail` `<svg aria-hidden="true">` — the teardrop tail
+ *   whose bottom-centre tip sits on the group origin (mark.position)
  * - fan: `.sound-mark__fan` role=group, aria-label=mark.title, id=fan-{id},
- *   one `.sound-mark__fan-item` per sound at group-local dx/dy offsets
- * - tooltip: `.sound-mark__tooltip` role=tooltip below the circle
+ *   one `.sound-mark__fan-item` per sound at head-relative dx/dy offsets
+ * - tooltip: `.sound-mark__tooltip` role=tooltip below the head
  */
 export function createMark(
   mark: Mark,
@@ -45,14 +73,21 @@ export function createMark(
   group.setAttribute('data-mark-id', String(mark.id));
   group.setAttribute('data-map-id', String(mark.mapId));
   group.setAttribute('data-state', 'idle');
+  group.style.setProperty('--head-size', `${MARK_SIZE}px`);
+  group.style.setProperty('--head-radius', `${MARK_RADIUS}px`);
+  group.style.setProperty('--pin-tail-height', `${PIN_TAIL_HEIGHT}px`);
+  group.style.setProperty('--pin-tail-overlap', `${PIN_TAIL_OVERLAP}px`);
+  group.style.setProperty('--pin-offset', `${PIN_HEAD_OFFSET}px`);
   group.style.setProperty('--mark-x', String(pixel.x));
   group.style.setProperty('--mark-y', String(pixel.y));
   applyTransform(group, pixel.x, pixel.y, scaleFactor);
 
-  const circle = document.createElement('div');
-  circle.className = CIRCLE_CLASS;
-  circle.setAttribute('aria-hidden', 'true');
-  group.appendChild(circle);
+  const head = document.createElement('div');
+  head.className = HEAD_CLASS;
+  head.setAttribute('aria-hidden', 'true');
+  group.appendChild(head);
+
+  group.appendChild(createTail());
 
   const fan = document.createElement('div');
   fan.className = FAN_CLASS;
@@ -94,11 +129,19 @@ export function createMark(
   // the fan's pivot.
   //
   // The fan radius is derived from the global sound disc size and the mark
-  // circle radius via an explicit overlap (computeFanRadius), not hardcoded.
+  // circle radius via an explicit head gap (computeFanRadius), not hardcoded.
+  // The angular step is derived from the visible sound diameter (SOUND_VISIBLE_SIZE)
+  // so adjacent sound discs are spaced one visible diameter apart.
   const fanRadius = computeFanRadius({
-    soundRadius: SOUND_VISIBLE_SIZE / 2
+    markRadius: MARK_RADIUS,
+    soundRadius: SOUND_VISIBLE_SIZE / 2,
+    headGap: -SOUND_FAN_OVERLAP
   });
-  const slots = computeFanSlots(mark.sounds.length, { radius: fanRadius });
+  const slots = computeFanSlots(mark.sounds.length, {
+    radius: fanRadius,
+    soundGap: SOUND_VISIBLE_SIZE + 8
+  });
+  fan.style.transform = `translateY(calc(-1 * var(--pin-offset)))`;
   mark.sounds.forEach((_sound, index) => {
     const item = document.createElement('div');
     item.className = 'sound-mark__fan-item';
@@ -155,4 +198,37 @@ function applyTransform(
   scaleFactor: number
 ): void {
   group.style.transform = `translate(${x}px, ${y}px) scale(${scaleFactor})`;
+}
+
+function createTail(): SVGSVGElement {
+  const tail = document.createElementNS(SVG_NS, 'svg');
+  tail.setAttribute('class', TAIL_CLASS);
+  tail.setAttribute('aria-hidden', 'true');
+  tail.setAttribute('viewBox', `0 0 ${MARK_SIZE} ${PIN_TAIL_HEIGHT}`);
+  tail.setAttribute('preserveAspectRatio', 'none');
+  tail.setAttribute('width', String(MARK_SIZE));
+  tail.setAttribute('height', String(PIN_TAIL_HEIGHT));
+
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute(
+    'd',
+    `M 0 0 H ${MARK_SIZE} L ${MARK_SIZE / 2} ${PIN_TAIL_HEIGHT} Z`
+  );
+  path.setAttribute('fill', 'firebrick');
+  tail.appendChild(path);
+
+  // Draw only the two sloped sides. Leaving the base open lets the tail sit
+  // over the head without creating a visible seam between the two shapes.
+  const border = document.createElementNS(SVG_NS, 'path');
+  border.setAttribute(
+    'd',
+    `M 0 0 L ${MARK_SIZE / 2} ${PIN_TAIL_HEIGHT} L ${MARK_SIZE} 0`
+  );
+  border.setAttribute('fill', 'none');
+  border.setAttribute('stroke', 'var(--color-secondary-sand)');
+  border.setAttribute('stroke-width', '1');
+  border.setAttribute('stroke-linejoin', 'round');
+  tail.appendChild(border);
+
+  return tail;
 }

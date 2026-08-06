@@ -30,6 +30,12 @@ export interface MapLayerOptions extends MapImage {
   frame?: NormalizedFrame;
   optional: boolean;
   effect: LayerEffectIntent;
+  /**
+   * Hover scale factor for non-base layers (e.g. 1.05). A positive value
+   * opts the layer into a data-driven hover animation; the base layer never
+   * carries one.
+   */
+  hoverScale?: number;
   className?: string;
   pointerEvents?: boolean;
 }

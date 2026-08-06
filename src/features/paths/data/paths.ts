@@ -17,7 +17,10 @@ export const PATHS: Path[] = [
   {
     id: 1002,
     mapId: 1,
-    waypoints: [],
+    waypoints: [
+      { x: 64.8, y: 38 },
+      { x: 61.3, y: 35 }
+    ],
     startMarkId: 102,
     endMarkId: 103
   },
@@ -32,7 +35,10 @@ export const PATHS: Path[] = [
   {
     id: 1004,
     mapId: 1,
-    waypoints: [],
+    waypoints: [
+      { x: 26.7, y: 69 },
+      { x: 28.9, y: 71.5 }
+    ],
     startMarkId: 104,
     endMarkId: 105
   },

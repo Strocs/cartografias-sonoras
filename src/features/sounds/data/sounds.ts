@@ -28,7 +28,7 @@ const MAP_01_POINTS: PointEntry[] = [
       title: 'Faro',
       description: '',
       location: 'Avenida de Aguirre',
-      position: { x: 79, y: 19 }
+      position: { x: 83, y: 18 }
     }
   },
   {
@@ -38,7 +38,7 @@ const MAP_01_POINTS: PointEntry[] = [
       title: 'Frontis Faro',
       description: '',
       location: 'Avenida de Aguirre',
-      position: { x: 75, y: 25 }
+      position: { x: 75, y: 28 }
     }
   },
   {

@@ -13,8 +13,7 @@
   /* ── Base ─────────────────────────────────────────────────────── */
 
   .path-base {
-    @apply fill-none stroke-[var(--color-secondary-blue)] stroke-2
-           transition-all duration-300;
+    @apply fill-none stroke-[var(--color-firebrick)] stroke-12 transition-all duration-300;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -22,33 +21,33 @@
   /* ── Variants ─────────────────────────────────────────────────── */
 
   .path-idle {
-    stroke: var(--color-charcoal);
-    stroke-opacity: 0.4;
+    stroke: firebrick;
+    stroke-opacity: 0.6;
   }
 
   .path-single {
     /* One sound active — medium prominence */
-    stroke-opacity: 0.85;
+    stroke-opacity: 0.9;
   }
 
   .path-both {
     /* Both sounds active — full intensity with glow */
-    @apply drop-shadow-[0_0_10px_var(--color-secondary-blue)];
+    @apply drop-shadow-[0_0_10px_var(--color-firebrick)];
     stroke-opacity: 1;
   }
 
   /* BEM aliases used by the vanilla pathRenderer. */
   .path--idle {
-    stroke: var(--color-charcoal);
+    stroke: firebrick;
     stroke-opacity: 0.4;
   }
 
   .path--single {
-    stroke-opacity: 0.85;
+    stroke-opacity: 0.75;
   }
 
   .path--both {
-    filter: drop-shadow(0 0 10px var(--color-secondary-blue));
+    filter: drop-shadow(0 0 8px var(--color-firebrick));
     stroke-opacity: 1;
   }
 
@@ -79,6 +78,7 @@
 /* ── Keyframes ──────────────────────────────────────────────────── */
 
 @keyframes path-glow {
+
   0%,
   100% {
     opacity: 0.6;

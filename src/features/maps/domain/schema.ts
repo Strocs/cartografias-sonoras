@@ -36,6 +36,7 @@ export const mapLayerSchema = mapImageSchema.extend({
   frame: normalizedFrameSchema,
   optional: z.boolean(),
   effect: z.enum(LAYER_EFFECT),
+  hoverScale: z.number().positive().optional(),
   className: z.string().min(1).optional(),
   pointerEvents: z.boolean().optional()
 });
