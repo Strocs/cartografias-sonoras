@@ -24,6 +24,8 @@ export interface MapLayout {
   slug: string;
   title: string;
   soundPieceId: number;
+  /** Whether the map route renders the bottom sound-piece player. */
+  soundPieceEnabled: boolean;
   layers: readonly [MapLayoutLayer, ...MapLayoutLayer[]];
 }
 
@@ -33,6 +35,7 @@ export const mapLayouts: MapLayout[] = [
     slug: 'avenida-de-aguirre-la-serena',
     title: 'Avenida de Aguirre - La Serena',
     soundPieceId: 1,
+    soundPieceEnabled: true,
     layers: [
       {
         id: 'base',
@@ -54,6 +57,7 @@ export const mapLayouts: MapLayout[] = [
     slug: 'plaza-de-armas-la-serena',
     title: 'Plaza de Armas - La Serena',
     soundPieceId: 2,
+    soundPieceEnabled: true,
     layers: [
       {
         id: 'base',
@@ -74,6 +78,7 @@ export const mapLayouts: MapLayout[] = [
     slug: 'cruz-del-tercer-milenio-coquimbo',
     title: 'Cruz del Tercer Milenio - Coquimbo',
     soundPieceId: 3,
+    soundPieceEnabled: true,
     layers: [
       {
         id: 'base',

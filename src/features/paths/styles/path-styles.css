@@ -13,49 +13,32 @@
   /* ── Base ─────────────────────────────────────────────────────── */
 
   .path-base {
-    @apply fill-none stroke-[var(--color-firebrick)] stroke-12 transition-all duration-300;
+    @apply fill-none transition-all duration-300;
     stroke-linecap: round;
     stroke-linejoin: round;
+    stroke-width: 6;
   }
 
   /* ── Variants ─────────────────────────────────────────────────── */
 
-  .path-idle {
-    stroke: firebrick;
-    stroke-opacity: 0.6;
-  }
-
-  .path-single {
-    /* One sound active — medium prominence */
-    stroke-opacity: 0.9;
-  }
-
-  .path-both {
-    /* Both sounds active — full intensity with glow */
-    @apply drop-shadow-[0_0_10px_var(--color-firebrick)];
-    stroke-opacity: 1;
-  }
-
   /* BEM aliases used by the vanilla pathRenderer. */
-  .path--idle {
-    stroke: firebrick;
-    stroke-opacity: 0.4;
-  }
 
   .path--single {
-    stroke-opacity: 0.75;
+    stroke-opacity: 0;
   }
 
   .path--both {
-    filter: drop-shadow(0 0 8px var(--color-firebrick));
+    stroke: var(--color-canvas);
+    filter: drop-shadow(0 0 8px var(--color-canvas));
     stroke-opacity: 1;
   }
 
   /* ── Pulse animation (single variant) ─────────────────────────── */
 
   .path-pulse circle {
-    fill: var(--color-secondary-blue);
-    filter: drop-shadow(0 0 4px var(--color-secondary-blue));
+    fill: firebrick;
+    stroke: var(--color-secondary-sand);
+    stroke-width: 2;
     animation: path-glow 1.5s ease-in-out infinite;
   }
 

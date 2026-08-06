@@ -37,7 +37,8 @@ const validMap: Map = {
     }
   ],
   preview: { src: '/mapa-uno-preview.jpg', width: 800, height: 600 },
-  soundPieceId: 10
+  soundPieceId: 10,
+  soundPieceEnabled: true
 };
 
 const validSoundPiece: SoundPiece = {

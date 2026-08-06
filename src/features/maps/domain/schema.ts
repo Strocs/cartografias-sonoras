@@ -50,7 +50,8 @@ export const mapSchema = z.preprocess(
       title: z.string().min(1),
       images: z.array(mapLayerSchema).min(1),
       preview: mapImageSchema,
-      soundPieceId: z.number().int().positive()
+      soundPieceId: z.number().int().positive(),
+      soundPieceEnabled: z.boolean()
     },
     { error: 'Invalid map' }
   )

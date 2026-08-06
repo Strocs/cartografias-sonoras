@@ -56,4 +56,6 @@ export interface Map {
   images: readonly [MapLayer, ...MapLayer[]];
   preview: MapImage;
   soundPieceId: number;
+  /** Whether the map route renders the bottom sound-piece player. */
+  soundPieceEnabled: boolean;
 }

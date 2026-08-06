@@ -69,6 +69,7 @@ function bindAssets(layout: MapLayout, assets: MapAssets): Map {
     slug: layout.slug,
     title: layout.title,
     soundPieceId: layout.soundPieceId,
+    soundPieceEnabled: layout.soundPieceEnabled,
     preview: toMapImage(assets.preview),
     images: [
       { ...baseLayer, ...toMapImage(assets.base) },

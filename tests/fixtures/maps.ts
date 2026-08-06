@@ -12,8 +12,14 @@ export interface MapFixture {
   id: number;
   slug: string;
   title: string;
+  soundPieceEnabled: boolean;
 }
 
 export const mapFixtures: MapFixture[] = mapLayouts.map(
-  ({ id, slug, title }) => ({ id, slug, title })
+  ({ id, slug, title, soundPieceEnabled }) => ({
+    id,
+    slug,
+    title,
+    soundPieceEnabled
+  })
 );

@@ -657,7 +657,7 @@ test.describe('Map', () => {
   );
 
   test(
-    'bottom player renders and stays in idle mode for regular sounds',
+    'bottom player renders only when the sound piece system is enabled and stays in idle mode',
     { tag: ['@e2e', '@audio'] },
     async ({ page }) => {
       const mapPage = new MapPage(page);
@@ -666,6 +666,11 @@ test.describe('Map', () => {
 
       await mapPage.goto(map.slug);
       await mapPage.waitForViewportReady();
+
+      if (!map.soundPieceEnabled) {
+        await expect(mapPage.bottomPlayer).toHaveCount(0);
+        return;
+      }
 
       await expect(mapPage.bottomPlayer).toBeVisible();
       await expect(mapPage.bottomPlayer).toHaveAttribute('data-mode', 'idle');

@@ -4,11 +4,11 @@ import type { PathVisualState } from '../domain/PathVisualState';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 /** Number of luminous points that travel along a `single` path's geometry. */
-const PARTICLE_COUNT = 4;
-const PULSE_DURATION_SECONDS = 1.5;
+const PARTICLE_COUNT = 8;
+const PULSE_DURATION_SECONDS = 3;
 /** Full loop duration for one particle; each particle repeats this cycle. */
 const PULSE_DURATION = `${PULSE_DURATION_SECONDS}s`;
-const PULSE_RADIUS = '4';
+const PULSE_RADIUS = '8';
 const PATH_CLASS_BASE = 'path-base';
 
 /** Maps a PathVisualState variant to the legacy CSS class used by the React PathOverlay. */
@@ -77,7 +77,10 @@ export function renderPaths(
     // remains the unique selector for diff/reuse logic.
     pathEl.setAttribute('id', `path-${state.pathId}`);
     pathEl.setAttribute('vector-effect', 'non-scaling-stroke');
-    pathEl.setAttribute('class', `${PATH_CLASS_BASE} ${legacyClass} ${bemClass}`);
+    pathEl.setAttribute(
+      'class',
+      `${PATH_CLASS_BASE} ${legacyClass} ${bemClass}`
+    );
 
     // Remove inline overrides so CSS classes take effect, then re-apply any
     // explicit style config if present.
@@ -91,7 +94,12 @@ export function renderPaths(
     }
 
     if (state.variant === 'single') {
-      createPulseGroup(svgElement, state.pathId, state.activeEndpoint, state.style);
+      createPulseGroup(
+        svgElement,
+        state.pathId,
+        state.activeEndpoint,
+        state.style
+      );
     }
   }
 

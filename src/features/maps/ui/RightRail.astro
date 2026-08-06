@@ -14,15 +14,17 @@ const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
 ---
 
 <aside
-  class={`absolute top-0 right-0 left-0 z-[100] h-[150px] w-full shrink-0 px-4 py-4 md:relative md:h-full md:w-36 md:max-h-dvh md:px-0 md:pr-4 ${className ?? ''}`}
+  class={`absolute right-0 bottom-0 left-0 z-100 h-32 w-full shrink-0 px-4 py-4 md:relative md:h-full md:w-36 md:max-h-dvh md:px-0 md:pr-4 ${className ?? ''}`}
   data-testid="right-rail"
 >
-  <div class="flex h-full flex-row gap-4 overflow-x-auto md:flex-col md:overflow-visible">
+  <div
+    class="flex h-full flex-row gap-4 overflow-x-auto md:flex-col md:overflow-visible"
+  >
     {
       inactiveMaps.map((map) => (
         <a
           href={`/${map.slug}`}
-          class="group relative flex h-full flex-1 flex-col overflow-hidden rounded-xl border shadow-lg border-secondary-sand/60"
+          class="group border-secondary-sand/60 bg-canvas relative flex h-full flex-1 flex-col overflow-hidden rounded-xl border shadow-lg"
           data-rail-card
         >
           <div

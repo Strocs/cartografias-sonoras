@@ -79,18 +79,26 @@ const mapData = {
       <MapControls client:visible mapViewId="main-map" />
     </div>
     <RightRail maps={maps} activeSlug={map.slug} class="shrink-0" />
+  </div>
+
+  <div
+    class="pointer-events-none absolute right-4 bottom-28 left-4 z-1001 flex flex-col gap-3 md:right-8 md:bottom-4 md:left-8 md:flex-row md:items-end md:justify-between"
+  >
     <h2
-      class="text-charcoal/60 absolute bottom-4 left-8 z-[1001] block text-3xl font-black uppercase"
+      class="text-charcoal/60 block text-xl font-black uppercase md:text-3xl"
       transition:name={`map-title-${map.slug}`}
     >
       {map.title}
     </h2>
-  </div>
-
-  <div class="absolute right-8 bottom-4 z-[1001]">
     {
       soundPieceEnabled && (
-        <AudioBottomPlayer client:idle soundPiece={soundPiece} />
+        <div class="pointer-events-auto w-full max-w-2xl md:w-auto">
+          <AudioBottomPlayer
+            client:idle
+            soundPiece={soundPiece}
+            enabled={soundPieceEnabled}
+          />
+        </div>
       )
     }
   </div>
