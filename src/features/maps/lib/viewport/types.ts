@@ -39,9 +39,20 @@ export interface ViewportBounds {
 }
 
 export interface ViewportConfig {
-  content: ViewportSize;
+  /**
+   * Natural size of the transformed scene. Optional: when omitted the engine
+   * derives it from the live viewport (container-space mode), so pan/zoom stays
+   * fresh across resizes without external synchronization.
+   */
+  content?: ViewportSize;
   minScale: number;
   maxScale: number;
+  /**
+   * Initial zoom for the resting/fit view. Defaults to the fitted scale (the
+   * state in which the content fits the viewport). Used for init, reset, and
+   * re-fit after resize.
+   */
+  startScale?: number;
   zoomStep?: number;
   reducedMotion?: boolean;
 }

@@ -150,11 +150,12 @@ describe('MapView custom element', () => {
     expect(el.getAttribute('data-composition-status')).toBe('ready');
     expect(el.querySelector('.map-viewport')).not.toBeNull();
     expect(el.querySelector('.map-panzoom')).not.toBeNull();
+    expect(el.querySelector('.map-world')).not.toBeNull();
     expect(
-      el.querySelector('.map-panzoom > [data-map-layer] > img')
+      el.querySelector('.map-panzoom > .map-world > [data-map-layer] > img')
     ).not.toBeNull();
-    expect(el.querySelector('.map-panzoom > svg')).not.toBeNull();
-    expect(el.querySelector('.map-panzoom > div')).not.toBeNull();
+    expect(el.querySelector('.map-panzoom > .map-world > svg')).not.toBeNull();
+    expect(el.querySelector('.map-panzoom > .map-world > div')).not.toBeNull();
   });
 
   it('publishes initializing on connect and clears ready until composition settles', async () => {
@@ -622,9 +623,10 @@ describe('MapView custom element', () => {
 
     await waitForReady(el);
 
-    // Fit scale is 1 in the test environment, so factors map 1:1 to scales.
+    // Content is derived from the live viewport (container space), so the
+    // engine is constructed without an explicit content size.
     expect(ViewportEngineMock).toHaveBeenCalledWith(expect.any(HTMLElement), {
-      content: { width: 800, height: 600 },
+      startScale: 1,
       minScale: 0.8,
       maxScale: 3,
       zoomStep: 0.3
@@ -642,7 +644,7 @@ describe('MapView custom element', () => {
     await waitForReady(el);
 
     expect(ViewportEngineMock).toHaveBeenCalledWith(expect.any(HTMLElement), {
-      content: { width: 800, height: 600 },
+      startScale: 1.25,
       minScale: 0.75,
       maxScale: 3.5,
       zoomStep: 0.3
@@ -682,7 +684,7 @@ describe('MapView custom element', () => {
 
     // Narrow viewport (< md) => base factors apply.
     expect(ViewportEngineMock).toHaveBeenCalledWith(expect.any(HTMLElement), {
-      content: { width: 800, height: 600 },
+      startScale: 1,
       minScale: 0.9,
       maxScale: 2.5,
       zoomStep: 0.3

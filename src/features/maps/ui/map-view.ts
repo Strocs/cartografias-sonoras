@@ -71,6 +71,8 @@ export class MapView extends HTMLElement implements MapViewElement {
   private _engine: ViewportEngine | null = null;
   private _viewport: HTMLDivElement | null = null;
   private _container: HTMLDivElement | null = null;
+  private _world: HTMLDivElement | null = null;
+  private _worldFit = 1;
   private _visibleImg: HTMLImageElement | null = null;
   private _hiddenImg: HTMLImageElement | null = null;
   private _svgLayer: SVGSVGElement | null = null;
@@ -96,7 +98,7 @@ export class MapView extends HTMLElement implements MapViewElement {
   /** Returns the visual scale compensation factor (1 / current zoom). */
   get scaleFactor(): number {
     const scale = this._engine?.getState().scale ?? 1;
-    return 1 / scale;
+    return 1 / (this._worldFit * scale);
   }
 
   /** Returns the natural width of the decoded map image. */
@@ -163,9 +165,24 @@ export class MapView extends HTMLElement implements MapViewElement {
     const container = document.createElement('div');
     container.className = 'map-panzoom';
     container.style.position = 'relative';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.overflow = 'hidden';
     container.style.transformOrigin = '0 0';
     viewport.appendChild(container);
     this._container = container;
+
+    // The rendering world: it carries the map content at its natural pixel size
+    // and self-fits into the container. The interaction engine transforms the
+    // container above it, never the world or its children.
+    const world = document.createElement('div');
+    world.className = 'map-world';
+    world.style.position = 'absolute';
+    world.style.left = '0';
+    world.style.top = '0';
+    world.style.transformOrigin = '0 0';
+    container.appendChild(world);
+    this._world = world;
   }
 
   private async _initialize(
@@ -209,11 +226,21 @@ export class MapView extends HTMLElement implements MapViewElement {
         width: naturalWidth,
         height: naturalHeight
       };
-      this._container.style.width = `${naturalWidth}px`;
-      this._container.style.height = `${naturalHeight}px`;
+
+      // The world carries the map at its natural pixel size.
+      const world = this._world;
+      if (world === null) return;
+      world.style.width = `${naturalWidth}px`;
+      world.style.height = `${naturalHeight}px`;
+
+      // The world self-fits into the container (contain, never enlarged). The
+      // interaction engine above operates in container space independently.
+      const worldFit = this._computeWorldFit();
+      this._worldFit = worldFit;
+      this._applyWorldFit(world, worldFit);
 
       this._visibleImg = createImageLayer(
-        this._container,
+        world,
         decodedBase,
         decodedBase,
         false
@@ -233,7 +260,7 @@ export class MapView extends HTMLElement implements MapViewElement {
       );
       if (
         !this._isCurrentLifecycle(lifecycle, hiddenImg) ||
-        this._container === null
+        this._world === null
       )
         return;
 
@@ -246,7 +273,7 @@ export class MapView extends HTMLElement implements MapViewElement {
       for (const { layer, failed } of settled) {
         if (!failed) {
           createImageLayer(
-            this._container,
+            this._world,
             layer,
             decodedBase,
             enablesEffect(layer, effectContext, reducedMotion)
@@ -254,11 +281,10 @@ export class MapView extends HTMLElement implements MapViewElement {
         }
       }
 
-      this._svgLayer = createSvgLayer(this._container);
-      this._markerLayer = createMarkerLayer(this._container);
+      this._svgLayer = createSvgLayer(this._world);
+      this._markerLayer = createMarkerLayer(this._world);
 
       const viewportWidth = this._viewport?.clientWidth ?? 0;
-      const fitScale = this._computeStartScale();
 
       const startFactor = resolveZoomFactor(
         zoomAttributes.startScale ?? DEFAULT_START_ZOOM_FACTOR,
@@ -273,14 +299,12 @@ export class MapView extends HTMLElement implements MapViewElement {
         viewportWidth
       );
 
-      const startScale = fitScale * startFactor;
-      const minScale = fitScale * minFactor;
-      const maxScale = fitScale * maxFactor;
-
+      // Container-space interaction: zoom factors are relative to the container
+      // (1x = the world self-fits the container). No image-fit participates here.
       this._engine = new ViewportEngine(this._container, {
-        content: { width: naturalWidth, height: naturalHeight },
-        minScale,
-        maxScale,
+        startScale: startFactor,
+        minScale: minFactor,
+        maxScale: maxFactor,
         zoomStep: 0.3
       });
 
@@ -291,6 +315,10 @@ export class MapView extends HTMLElement implements MapViewElement {
           { state?: { scale: number; x: number; y: number } } | undefined;
         const state = detail?.state;
         if (state === undefined) return;
+
+        // Re-fit the rendering world when the container resizes (the engine
+        // recomposes and emits a viewport-change on every resize).
+        this._refreshWorldFit();
 
         this.dispatchEvent(
           new CustomEvent('viewport-change', {
@@ -344,7 +372,6 @@ export class MapView extends HTMLElement implements MapViewElement {
     if (engine === null || viewport === null) return;
 
     const viewportWidth = viewport.clientWidth;
-    const fitScale = this._computeStartScale();
     const minFactor = resolveZoomFactor(
       this._zoomAttributes.minScale ?? DEFAULT_MIN_ZOOM_FACTOR,
       viewportWidth
@@ -354,7 +381,7 @@ export class MapView extends HTMLElement implements MapViewElement {
       viewportWidth
     );
 
-    engine.setRange(fitScale * minFactor, fitScale * maxFactor);
+    engine.setRange(minFactor, maxFactor);
   }
 
   private _readLayers(): readonly MapLayer[] {
@@ -461,25 +488,45 @@ export class MapView extends HTMLElement implements MapViewElement {
     return error instanceof Error ? error : new Error(fallback);
   }
 
-  private _computeStartScale(): number {
-    if (this._viewport === null || this._container === null) {
+  private _computeWorldFit(): number {
+    if (this._viewport === null || this._world === null) {
       return 1;
     }
 
     const viewportWidth = this._viewport.clientWidth;
     const viewportHeight = this._viewport.clientHeight;
-    const containerWidth = this._container.clientWidth;
-    const containerHeight = this._container.clientHeight;
+    const worldWidth = this._world.clientWidth;
+    const worldHeight = this._world.clientHeight;
 
-    if (containerWidth === 0 || containerHeight === 0) {
+    if (worldWidth === 0 || worldHeight === 0) {
       return 1;
     }
 
     return Math.min(
       1,
-      viewportWidth / containerWidth,
-      viewportHeight / containerHeight
+      viewportWidth / worldWidth,
+      viewportHeight / worldHeight
     );
+  }
+
+  /** Centres and fits the world into the container (contain, never enlarged). */
+  private _applyWorldFit(world: HTMLDivElement, fit: number): void {
+    const viewportWidth = this._viewport?.clientWidth ?? 0;
+    const viewportHeight = this._viewport?.clientHeight ?? 0;
+    const offsetX = (viewportWidth - world.clientWidth * fit) / 2;
+    const offsetY = (viewportHeight - world.clientHeight * fit) / 2;
+    world.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${fit})`;
+  }
+
+  /** Re-fits the world when the container resizes; no-op when nothing changed. */
+  private _refreshWorldFit(): void {
+    const world = this._world;
+    if (world === null) return;
+    const fit = this._computeWorldFit();
+    if (fit !== this._worldFit) {
+      this._worldFit = fit;
+      this._applyWorldFit(world, fit);
+    }
   }
 
   private _parseZoomAttributes(): ZoomAttributes {
@@ -569,6 +616,8 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._visibleImg = null;
     this._hiddenImg = null;
     this._container = null;
+    this._world = null;
+    this._worldFit = 1;
     this._viewport = null;
     this.querySelectorAll('img').forEach((image) =>
       image.removeAttribute('src')

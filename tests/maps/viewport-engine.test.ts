@@ -61,6 +61,45 @@ describe('ViewportEngine corrected interaction semantics', () => {
     expect(state.y).toBeLessThanOrEqual(bounds.maxY);
   }
 
+  it('derives content from the live viewport when omitted (container-space mode)', () => {
+    // No `content` in config: the engine treats the scene as filling the
+    // container, so 1x fits the viewport exactly (scale 1, centred at origin).
+    const engine = new ViewportEngine(scene, { minScale: 0.5, maxScale: 4 });
+    const initial = engine.getState();
+    expect(initial.scale).toBe(1);
+    expect(initial.x).toBe(0);
+    expect(initial.y).toBe(0);
+
+    // At zoom-in the pan bounds derive from the container (viewport) size, not
+    // from any external content size.
+    engine.zoomIn();
+    const zoomed = engine.getState();
+    const bounds = computeStrictBounds(
+      { width: rect.width, height: rect.height },
+      { width: rect.width, height: rect.height },
+      zoomed.scale
+    );
+    expect(zoomed.x).toBeGreaterThanOrEqual(bounds.minX);
+    expect(zoomed.x).toBeLessThanOrEqual(bounds.maxX);
+    expect(zoomed.y).toBeGreaterThanOrEqual(bounds.minY);
+    expect(zoomed.y).toBeLessThanOrEqual(bounds.maxY);
+    engine.destroy();
+  });
+
+  it('respects startScale as the initial centred zoom when provided', () => {
+    const engine = new ViewportEngine(scene, {
+      minScale: 0.5,
+      maxScale: 4,
+      startScale: 2
+    });
+    const initial = engine.getState();
+    // Container 400x300 at scale 2, centred: content fills 800x600.
+    expect(initial.scale).toBe(2);
+    expect(initial.x).toBe((rect.width - rect.width * 2) / 2);
+    expect(initial.y).toBe((rect.height - rect.height * 2) / 2);
+    engine.destroy();
+  });
+
   it('keeps an offset viewport zero-delta stable and maps an in-range client delta exactly', () => {
     const engine = new ViewportEngine(scene, config);
     engine.zoomIn();

@@ -23,7 +23,7 @@ import {
   type ViewportTransition,
   type WheelStage,
 } from './transitions';
-import { VIEWPORT_PHASE, type ViewportConfig, type ViewportEventDetail, type ViewportPhase, type ViewportPoint, type ViewportSnapshot, type ViewportState, type ViewportSubscriber } from './types';
+import { VIEWPORT_PHASE, type ViewportConfig, type ViewportEventDetail, type ViewportPhase, type ViewportPoint, type ViewportSize, type ViewportSnapshot, type ViewportState, type ViewportSubscriber } from './types';
 
 interface PointerSample extends ViewportPoint { pointerId: number; }
 interface DragGesture { pointer: ViewportPoint; state: ViewportState; }
@@ -117,7 +117,7 @@ export class ViewportEngine {
     if (this.pointers.size > 1 && this.pinch !== undefined) { this.movePinch(event); return; }
     if (this.pointers.size !== 1 || this.drag === undefined) return;
     const requested = { x: this.drag.state.x + event.clientX - this.drag.pointer.x, y: this.drag.state.y + event.clientY - this.drag.pointer.y, scale: this.drag.state.scale };
-    const bounds = computeStrictBounds(this.getViewportSize(), this.config.content, requested.scale);
+    const bounds = computeStrictBounds(this.getViewportSize(), this.getContentSize(), requested.scale);
     this.setState(applyBoundsResistance(requested, bounds), VIEWPORT_PHASE.DRAGGING, 'drag'); event.preventDefault();
   };
 
@@ -182,16 +182,26 @@ export class ViewportEngine {
     const distance = Math.hypot(second.x - first.x, second.y - first.y); if (distance <= 0 || !Number.isFinite(distance)) return;
     const center = this.toLocalPoint({ x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }); const scale = clampScale(this.pinch!.state.scale * distance / this.pinch!.distance, this.minScale, this.maxScale);
     const focalState = projectFocal(this.pinch!.state, this.pinch!.center, scale); const translated = { ...focalState, x: focalState.x + center.x - this.pinch!.center.x, y: focalState.y + center.y - this.pinch!.center.y };
-    this.setState(applyBoundsResistance(translated, computeStrictBounds(this.getViewportSize(), this.config.content, scale)), VIEWPORT_PHASE.PINCHING, 'pinch'); event.preventDefault();
+    this.setState(applyBoundsResistance(translated, computeStrictBounds(this.getViewportSize(), this.getContentSize(), scale)), VIEWPORT_PHASE.PINCHING, 'pinch'); event.preventDefault();
   }
   private beginPinch(): void { const values = [...this.pointers.values()]; const [first, second] = values; if (first === undefined || second === undefined) return; const distance = Math.hypot(second.x - first.x, second.y - first.y); if (distance <= 0 || !Number.isFinite(distance)) return; this.pinch = { firstPointerId: first.pointerId, secondPointerId: second.pointerId, center: this.toLocalPoint({ x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }), distance, state: { ...this.state } }; }
   private setState(state: ViewportState, phase: ViewportPhase, reason: string): void { this.state = state; this.phase = phase; this.commit(reason); }
   private commit(reason: string): void { if (this.destroyed) return; this.revision += 1; this.scene.style.transformOrigin = '0 0'; this.scene.style.transform = `translate3d(${this.state.x}px, ${this.state.y}px, 0) scale(${this.state.scale})`; this.scene.style.setProperty('--viewport-inverse-scale', String(1 / this.state.scale)); const detail: ViewportEventDetail = { state: this.getState(), reason }; for (const subscriber of this.subscribers) subscriber(detail.state); this.scene.dispatchEvent(new CustomEvent<ViewportEventDetail>('viewport-change', { detail })); }
-  private focalState(from: ViewportState, focal: ViewportPoint, scale: number): ViewportState { const focalState = projectFocal(from, focal, scale); return projectToStrictTranslation(focalState, computeStrictBounds(this.getViewportSize(), this.config.content, scale)); }
-  private strictState(state: ViewportState): ViewportState { const scale = clampScale(state.scale, this.minScale, this.maxScale); return projectToStrictBounds({ ...state, scale }, computeStrictBounds(this.getViewportSize(), this.config.content, scale), this.minScale, this.maxScale); }
+  private focalState(from: ViewportState, focal: ViewportPoint, scale: number): ViewportState { const focalState = projectFocal(from, focal, scale); return projectToStrictTranslation(focalState, computeStrictBounds(this.getViewportSize(), this.getContentSize(), scale)); }
+  private strictState(state: ViewportState): ViewportState { const scale = clampScale(state.scale, this.minScale, this.maxScale); return projectToStrictBounds({ ...state, scale }, computeStrictBounds(this.getViewportSize(), this.getContentSize(), scale), this.minScale, this.maxScale); }
   private projectCurrentStrictly(): void { const strict = this.strictState(this.state); if (!statesEqual(strict, this.state)) this.setState(strict, VIEWPORT_PHASE.IDLE, 'interrupt'); }
   private commitFocalZoom(scale: number, focal: ViewportPoint, phase: ViewportPhase, reason: string): void { this.setState(this.focalState(this.state, focal, scale), phase, reason); }
-  private getFitState(): ViewportState { const fit = computeFit(this.getViewportSize(), this.config.content); return this.strictState({ ...fit, scale: clampScale(fit.scale, this.minScale, this.maxScale) }); }
+  private getFitState(): ViewportState {
+    const viewport = this.getViewportSize();
+    const content = this.getContentSize();
+    const fitScale = computeFit(viewport, content).scale;
+    const scale = clampScale(this.config.startScale ?? fitScale, this.minScale, this.maxScale);
+    return {
+      x: (viewport.width - content.width * scale) / 2,
+      y: (viewport.height - content.height * scale) / 2,
+      scale,
+    };
+  }
   private getViewportSize(): { width: number; height: number } { const rect = this.viewport.getBoundingClientRect(); if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 0 || rect.height <= 0) throw new Error('Viewport dimensions must be finite and positive'); return { width: rect.width, height: rect.height }; }
   private localPoint(event: MouseEvent): ViewportPoint { return this.toLocalPoint({ x: event.clientX, y: event.clientY }); }
   private toPointer(event: PointerEvent): PointerSample { return { x: event.clientX, y: event.clientY, pointerId: event.pointerId }; }
@@ -204,6 +214,12 @@ export class ViewportEngine {
   private removeWindowPointerFallback(): void { if (!this.usingWindowPointerFallback) return; window.removeEventListener('pointermove', this.onWindowPointerMove); window.removeEventListener('pointerup', this.onWindowPointerRelease); window.removeEventListener('pointercancel', this.onWindowPointerRelease); this.usingWindowPointerFallback = false; }
   private isSceneEvent(event: Event): boolean { const target = event.target; return target instanceof Node && this.scene.contains(target); }
   private isInteractiveTarget(target: EventTarget | null): boolean { return target instanceof Element && target.closest('button, a, input, select, textarea, [contenteditable="true"], [role="button"]') !== null; }
-  private assertConfig(): void { if (!Number.isFinite(this.config.content.width) || !Number.isFinite(this.config.content.height) || this.config.content.width <= 0 || this.config.content.height <= 0) throw new Error('Content dimensions must be finite and positive'); clampScale(this.config.minScale, this.config.minScale, this.config.maxScale); }
+  /**
+   * The natural size of the transformed scene. Container-space mode (scene
+   * fills the viewport) omits `content`, so the engine derives it from the live
+   * viewport on every operation — always fresh across resizes.
+   */
+  private getContentSize(): ViewportSize { return this.config.content ?? this.getViewportSize(); }
+  private assertConfig(): void { if (this.config.content !== undefined && (!Number.isFinite(this.config.content.width) || !Number.isFinite(this.config.content.height) || this.config.content.width <= 0 || this.config.content.height <= 0)) throw new Error('Content dimensions must be finite and positive'); clampScale(this.config.minScale, this.config.minScale, this.config.maxScale); }
   private emitError(message: string): void { this.scene.dispatchEvent(new CustomEvent('viewport-error', { detail: { message } })); }
 }

@@ -116,7 +116,9 @@ export function bindMapView({
       | undefined;
     if (detail === undefined) return;
 
-    currentScaleFactor = 1 / detail.scale;
+    // Re-read the compensation factor from the element so it includes the
+    // world self-fit (stays correct after container resizes, too).
+    currentScaleFactor = mapView.scaleFactor;
     for (const group of marksById.values()) {
       updateMark(group, { scaleFactor: currentScaleFactor });
     }
