@@ -152,6 +152,129 @@ describe('renderPaths', () => {
     expect(animateMotion?.getAttribute('keyPoints')).toBe('1;0');
   });
 
+  it('gives the path a real id that matches the animateMotion reference', () => {
+    const states: PathVisualState[] = [
+      {
+        pathId: 1,
+        points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+        variant: 'single',
+        activeEndpoint: 'start'
+      }
+    ];
+
+    renderPaths(states, svg, 200, 100);
+
+    const path = svg.querySelector('path[data-path-id="1"]');
+    expect(path?.getAttribute('id')).toBe('path-1');
+
+    const mpath = svg.querySelector('mpath');
+    expect(mpath?.getAttribute('href')).toBe('#path-1');
+  });
+
+  it('renders multiple staggered particles for the single variant', () => {
+    const states: PathVisualState[] = [
+      {
+        pathId: 1,
+        points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+        variant: 'single',
+        activeEndpoint: 'start'
+      }
+    ];
+
+    renderPaths(states, svg, 200, 100);
+
+    const particles = svg.querySelectorAll('.path-pulse circle');
+    expect(particles.length).toBeGreaterThanOrEqual(2);
+
+    const begins = Array.from(
+      svg.querySelectorAll('.path-pulse circle animateMotion')
+    ).map((motion) => motion.getAttribute('begin'));
+    const uniqueBegins = new Set(begins);
+    expect(uniqueBegins.size).toBe(particles.length);
+  });
+
+  it('travels start->end for activeEndpoint "start" and end->start for "end"', () => {
+    const startStates: PathVisualState[] = [
+      {
+        pathId: 1,
+        points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+        variant: 'single',
+        activeEndpoint: 'start'
+      }
+    ];
+    const endStates: PathVisualState[] = [
+      {
+        pathId: 2,
+        points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+        variant: 'single',
+        activeEndpoint: 'end'
+      }
+    ];
+
+    renderPaths([...startStates, ...endStates], svg, 200, 100);
+
+    const startMotions = svg.querySelectorAll(
+      '.path-pulse circle animateMotion'
+    );
+    const endMotion = Array.from(startMotions).find((motion) =>
+      motion
+        .closest('g')
+        ?.querySelector('mpath')
+        ?.getAttribute('href')
+        ?.includes('path-2')
+    );
+    const startMotion = Array.from(startMotions).find((motion) =>
+      motion
+        .closest('g')
+        ?.querySelector('mpath')
+        ?.getAttribute('href')
+        ?.includes('path-1')
+    );
+
+    expect(startMotion?.getAttribute('keyPoints')).toBeNull();
+    expect(endMotion?.getAttribute('keyPoints')).toBe('1;0');
+  });
+
+  it('renders no travelling particles for the "both" variant', () => {
+    const states: PathVisualState[] = [
+      {
+        pathId: 1,
+        points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+        variant: 'both'
+      }
+    ];
+
+    renderPaths(states, svg, 200, 100);
+
+    expect(svg.querySelector('.path-pulse')).toBeNull();
+    expect(svg.querySelectorAll('.path-pulse circle').length).toBe(0);
+    expect(svg.querySelector('path[data-path-id="1"]')).not.toBeNull();
+  });
+
+  it('uses the full polyline geometry including waypoint breaks for motion', () => {
+    const states: PathVisualState[] = [
+      {
+        pathId: 1,
+        points: [
+          { x: 0, y: 0 },
+          { x: 50, y: 20 },
+          { x: 100, y: 100 }
+        ],
+        variant: 'single',
+        activeEndpoint: 'start'
+      }
+    ];
+
+    renderPaths(states, svg, 200, 100);
+
+    const path = svg.querySelector('path[data-path-id="1"]');
+    expect(path?.getAttribute('d')).toBe('M 0 0 L 100 20 L 200 100');
+
+    const mpath = svg.querySelector('mpath');
+    expect(mpath?.getAttribute('href')).toBe(`#${path?.getAttribute('id')}`);
+    expect(svg.querySelectorAll('path[id="path-1"]').length).toBe(1);
+  });
+
   it('does not render paths with fewer than two points', () => {
     const states: PathVisualState[] = [
       { pathId: 1, points: [{ x: 50, y: 50 }], variant: 'idle' }

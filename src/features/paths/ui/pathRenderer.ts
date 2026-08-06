@@ -3,7 +3,11 @@ import { buildPolylineD } from '../lib/pathEngine';
 import type { PathVisualState } from '../domain/PathVisualState';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const PULSE_DURATION = '1.5s';
+/** Number of luminous points that travel along a `single` path's geometry. */
+const PARTICLE_COUNT = 4;
+const PULSE_DURATION_SECONDS = 1.5;
+/** Full loop duration for one particle; each particle repeats this cycle. */
+const PULSE_DURATION = `${PULSE_DURATION_SECONDS}s`;
 const PULSE_RADIUS = '4';
 const PATH_CLASS_BASE = 'path-base';
 
@@ -68,6 +72,10 @@ export function renderPaths(
     pathEl.setAttribute('d', d);
     pathEl.setAttribute('data-testid', 'map-path');
     pathEl.setAttribute('data-path-id', String(state.pathId));
+    // Real `id` so <animateMotion>/<mpath> can reference this path. It is kept
+    // in sync with `path-{id}` referenced in the pulse group; `data-path-id`
+    // remains the unique selector for diff/reuse logic.
+    pathEl.setAttribute('id', `path-${state.pathId}`);
     pathEl.setAttribute('vector-effect', 'non-scaling-stroke');
     pathEl.setAttribute('class', `${PATH_CLASS_BASE} ${legacyClass} ${bemClass}`);
 
@@ -131,33 +139,40 @@ function createPulseGroup(
   style?: PathVisualState['style']
 ): void {
   const routeId = `path-${pathId}`;
+  const stagger = PULSE_DURATION_SECONDS / PARTICLE_COUNT;
 
   const pulseGroup = document.createElementNS(SVG_NS, 'g');
   pulseGroup.setAttribute('class', 'path-pulse');
 
-  const circle = document.createElementNS(SVG_NS, 'circle');
-  circle.setAttribute('r', PULSE_RADIUS);
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const circle = document.createElementNS(SVG_NS, 'circle');
+    circle.setAttribute('r', PULSE_RADIUS);
 
-  if (style?.strokeColor !== undefined) {
-    circle.setAttribute('fill', style.strokeColor);
-  }
+    if (style?.strokeColor !== undefined) {
+      circle.setAttribute('fill', style.strokeColor);
+    }
 
-  const animateMotion = document.createElementNS(SVG_NS, 'animateMotion');
-  animateMotion.setAttribute('dur', PULSE_DURATION);
-  animateMotion.setAttribute('repeatCount', 'indefinite');
-
-  if (activeEndpoint === 'end') {
-    animateMotion.setAttribute('keyPoints', '1;0');
-    animateMotion.setAttribute('keyTimes', '0;1');
+    const animateMotion = document.createElementNS(SVG_NS, 'animateMotion');
+    animateMotion.setAttribute('dur', PULSE_DURATION);
+    animateMotion.setAttribute('repeatCount', 'indefinite');
     animateMotion.setAttribute('calcMode', 'linear');
+    // Offset each particle's start so the points read as a single travelling
+    // stream instead of a single dot. `begin` + indefinite repeat phase-shifts
+    // the loop so the whole path stays populated.
+    animateMotion.setAttribute('begin', `${(i * stagger).toFixed(3)}s`);
+
+    if (activeEndpoint === 'end') {
+      animateMotion.setAttribute('keyPoints', '1;0');
+      animateMotion.setAttribute('keyTimes', '0;1');
+    }
+
+    const mpath = document.createElementNS(SVG_NS, 'mpath');
+    mpath.setAttribute('href', `#${routeId}`);
+
+    animateMotion.appendChild(mpath);
+    circle.appendChild(animateMotion);
+    pulseGroup.appendChild(circle);
   }
-
-  const mpath = document.createElementNS(SVG_NS, 'mpath');
-  mpath.setAttribute('href', `#${routeId}`);
-
-  animateMotion.appendChild(mpath);
-  circle.appendChild(animateMotion);
-  pulseGroup.appendChild(circle);
 
   svgElement.appendChild(pulseGroup);
 }
