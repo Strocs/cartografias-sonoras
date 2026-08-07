@@ -25,30 +25,29 @@ const MAP_01_POINTS: PointEntry[] = [
     point: 1,
     soundCount: 4,
     mark: {
-      title: 'Faro',
+      title: '',
       description: null,
-      location: 'Avenida de Aguirre',
-      position: { x: 83, y: 18 }
+      location: 'Faro Monumental de La Serena',
+      position: { x: 79.05, y: 23 }
     }
   },
   {
     point: 2,
     soundCount: 4,
     mark: {
-      title: 'Frontis Faro',
+      title: '',
       description: null,
-      location: 'Avenida de Aguirre',
-      position: { x: 75, y: 28 }
+      location: 'Fco. de Aguirre con Av. del Mar',
+      position: { x: 75, y: 25 }
     }
   },
   {
     point: 3,
     soundCount: 3,
     mark: {
-      title: 'Vendedores ambulantes',
-      description:
-        'Voces de vendedores ofreciendo productos y el sonido de sus carros moviéndose por las veredas.',
-      location: 'Avenida de Aguirre',
+      title: '',
+      description: null,
+      location: 'INACAP La Serena',
       position: { x: 56, y: 40 }
     }
   },
@@ -56,10 +55,9 @@ const MAP_01_POINTS: PointEntry[] = [
     point: 4,
     soundCount: 3,
     mark: {
-      title: 'Tráfico peatonal',
-      description:
-        'Pasos dispersos, conversaciones breves y el vaivén de la gente transitando por la plaza.',
-      location: 'Avenida de Aguirre',
+      title: '',
+      description: null,
+      location: 'Universidad Central',
       position: { x: 39, y: 57 }
     }
   },
@@ -67,117 +65,108 @@ const MAP_01_POINTS: PointEntry[] = [
     point: 5,
     soundCount: 3,
     mark: {
-      title: 'Palomas',
-      description:
-        'Aleteos y arrullos de palomas concentradas cerca de los bordes de la plaza.',
-      location: 'Avenida de Aguirre',
+      title: '',
+      description: null,
+      location: 'Av. de Aguirre',
       position: { x: 18, y: 82 }
     }
   }
 ];
 
-// Mapa 2 — Plaza de Armas — La Serena (864×1243, portrait)
+// Mapa 2 — Cruz del Tercer Milenio — Coquimbo (1160×912)
 const MAP_02_POINTS: PointEntry[] = [
   {
     point: 1,
     soundCount: 1,
     mark: {
-      title: 'Pescadores',
-      description:
-        'Voces de pescadores descargando la jornada y el golpe seco de las cajas de pescado.',
-      location: 'Avenida de Aguirre',
-      position: { x: 25.0, y: 24.94 }
+      title: '',
+      description: null,
+      location: '',
+      position: { x: 47.5, y: 67 }
     }
   },
   {
     point: 2,
     soundCount: 2,
     mark: {
-      title: 'Cajas registradoras',
-      description:
-        'Sonidos mecánicos y digitales de las cajas registradoras en los puestos del mercado.',
-      location: 'Avenida de Aguirre',
-      position: { x: 58.33, y: 43.68 }
+      title: '',
+      description: null,
+      location: '',
+      position: { x: 53, y: 57 }
     }
   },
   {
     point: 3,
     soundCount: 3,
     mark: {
-      title: 'Conversaciones de clientes',
-      description:
-        'Diálogos animados entre compradores y vendedores regateando precios y eligiendo productos.',
-      location: 'Avenida de Aguirre',
-      position: { x: 41.67, y: 74.82 }
+      title: '',
+      description: null,
+      location: '',
+      position: { x: 36.6, y: 43 }
     }
   },
   {
     point: 4,
     soundCount: 2,
     mark: {
-      title: 'Música del local',
-      description:
-        'Cumbia y boleros que salen de un pequeño radio en uno de los puestos de víveres.',
-      location: 'Avenida de Aguirre',
-      position: { x: 75.0, y: 68.62 }
+      title: '',
+      description: null,
+      location: '',
+      position: { x: 40.3, y: 24.8 }
     }
   },
   {
     point: 5,
     soundCount: 3,
     mark: {
-      title: 'Pasos en pasillos',
-      description:
-        'Eco de pasos sobre el piso húmedo de los pasillos centrales del mercado.',
-      location: 'Avenida de Aguirre',
-      position: { x: 12.5, y: 87.29 }
+      title: '',
+      description: null,
+      location: '',
+      position: { x: 62.7, y: 26.2 }
     }
   }
 ];
 
-// Mapa 3 — Cruz del Tercer Milenio — Coquimbo (1160×912)
+// Mapa 3 — Plaza de Armas — La Serena (864×1243, portrait)
 const MAP_03_POINTS: PointEntry[] = [
   {
     point: 1,
     soundCount: 4,
     mark: {
-      title: 'Olas rompiendo',
-      description:
-        'Oleaje mediano que rompe contra las rocas y la orilla de la playa.',
-      location: 'Avenida de Aguirre',
-      position: { x: 50.0, y: 81.25 }
+      title: '',
+      description: null,
+      location: '',
+      position: { x: 66.75, y: 25.4 }
     }
   },
   {
     point: 2,
     soundCount: 2,
     mark: {
-      title: 'Gaviotas',
-      description: 'Gritos y vuelo de gaviotas sobrevolando la línea de costa.',
-      location: 'Avenida de Aguirre',
-      position: { x: 33.36, y: 37.5 }
+      title: '',
+      description: null,
+      location: '',
+      position: { x: 66.75, y: 37 }
     }
   },
   {
     point: 3,
     soundCount: 2,
     mark: {
-      title: 'Viento en los postes',
-      description:
-        'Viento costero que golpea los postes y cables de la avenida del borde.',
-      location: 'Avenida de Aguirre',
-      position: { x: 79.22, y: 50.0 }
+      title: '',
+      description: null,
+      location: '',
+      position: { x: 47, y: 55.5 }
     }
   },
   {
     point: 4,
     soundCount: 2,
     mark: {
-      title: 'Pasos en la arena',
-      description:
-        'Pasos amortiguados de personas caminando por la arena húmeda cerca del agua.',
-      location: 'Avenida de Aguirre',
-      position: { x: 62.5, y: 25.0 }
+      title: '',
+      description: null,
+      location: '',
+      position: { x: 20, y: 81 }
     }
   }
 ];

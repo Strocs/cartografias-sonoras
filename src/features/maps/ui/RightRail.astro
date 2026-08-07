@@ -24,14 +24,14 @@ const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
       inactiveMaps.map((map) => (
         <a
           href={`/${map.slug}`}
-          class="group border-secondary-sand/60 bg-canvas relative flex h-full flex-1 flex-col overflow-hidden rounded-xl border shadow-lg"
+          class="group border-secondary-sand bg-charcoal relative flex h-full flex-1 flex-col overflow-hidden rounded-xl border shadow-lg"
           data-rail-card
         >
           <div
             class="absolute inset-0 z-10 flex items-center justify-center p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             data-rail-title
           >
-            <span class="text-secondary-sand block text-center text-lg leading-none font-bold tracking-wide uppercase">
+            <span class="font-cormorant block text-center text-lg leading-none font-bold tracking-wide text-white uppercase">
               {map.title}
             </span>
           </div>
@@ -39,7 +39,7 @@ const inactiveMaps = maps.filter((map) => map.slug !== activeSlug);
             map={map}
             loading="eager"
             class="size-full"
-            imageClass="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+            imageClass="size-full object-cover transition-all duration-300 group-hover:scale-105 group-hover:grayscale-0 grayscale-100 group-hover:blur-sm"
             widths={[620]}
             sizes="(min-width: 768px) 9rem, 7rem"
           />

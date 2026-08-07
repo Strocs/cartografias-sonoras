@@ -43,7 +43,7 @@ export const PATHS: Path[] = [
     endMarkId: 105
   },
 
-  // Mapa 2 — Plaza de Armas — La Serena (864×1243, portrait)
+  // Mapa 2 — Cruz del Tercer Milenio — Coquimbo (1160×912)
   {
     id: 2001,
     mapId: 2,
@@ -55,46 +55,44 @@ export const PATHS: Path[] = [
     id: 2002,
     mapId: 2,
     waypoints: [],
-    startMarkId: 203,
-    endMarkId: 204
+    startMarkId: 202,
+    endMarkId: 203
   },
   {
     id: 2003,
     mapId: 2,
     waypoints: [],
-    startMarkId: 205,
-    endMarkId: 201
+    startMarkId: 203,
+    endMarkId: 204
   },
-  // Completes the linear route 205 → 201 → 202 → 203 → 204
   {
     id: 2004,
     mapId: 2,
     waypoints: [],
-    startMarkId: 202,
-    endMarkId: 203
+    startMarkId: 204,
+    endMarkId: 205
   },
 
-  // Mapa 3 — Cruz del Tercer Milenio — Coquimbo (1160×912)
+  // Mapa 3 — Plaza de Armas — La Serena (864×1243, portrait)
   {
     id: 3001,
     mapId: 3,
-    waypoints: [{ x: 52, y: 55 }],
+    waypoints: [],
     startMarkId: 301,
     endMarkId: 302
   },
   {
     id: 3002,
     mapId: 3,
-    waypoints: [{ x: 70, y: 45 }],
-    startMarkId: 303,
-    endMarkId: 304
+    waypoints: [],
+    startMarkId: 302,
+    endMarkId: 303
   },
-  // Completes the linear route 301 → 302 → 303 → 304
   {
     id: 3003,
     mapId: 3,
     waypoints: [],
-    startMarkId: 302,
-    endMarkId: 303
+    startMarkId: 303,
+    endMarkId: 304
   }
 ];

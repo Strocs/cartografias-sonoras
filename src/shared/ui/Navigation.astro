@@ -22,7 +22,7 @@ const navItems = [
     aria-controls="nav-panel"
     aria-expanded="false"
     aria-label="Abrir menú de navegación"
-    class="bg-primary-teal text-canvas hover:bg-primary-navy focus-visible:ring-primary-teal fixed top-4 left-4 z-[1080] flex h-11 w-11 items-center justify-center rounded-lg shadow-lg transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
+    class="bg-primary-teal text-secondary-sand hover:bg-primary-navy focus-visible:ring-primary-teal fixed top-4 left-4 z-[1080] flex h-11 w-11 items-center justify-center rounded-lg shadow-lg transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
   >
     <svg
       aria-hidden="true"
@@ -50,16 +50,18 @@ const navItems = [
   <div
     id="nav-panel"
     data-nav-panel
-    class="border-secondary-sand/60 bg-canvas fixed inset-y-0 left-0 z-[1100] flex w-72 max-w-[85vw] -translate-x-full flex-col rounded-r-xl border shadow-lg transition-transform duration-300 motion-reduce:transition-none md:static md:z-auto md:h-full md:w-auto md:max-w-none md:translate-x-0 md:rounded-xl md:transition-none"
+    class="border-secondary-sand bg-charcoal fixed inset-y-2 left-0 z-1100 flex w-72 max-w-[85vw] -translate-x-full flex-col rounded-r-xl border border-l-0 shadow-lg transition-transform duration-300 motion-reduce:transition-none md:static md:z-auto md:h-full md:w-auto md:max-w-none md:translate-x-0 md:rounded-xl md:border-l md:transition-none"
   >
     <div class="flex items-start justify-between gap-4 p-6 pb-4">
       <a href="/" class="flex flex-col gap-1">
         <span
-          class="text-primary-brown font-serif text-lg leading-none font-black tracking-wide uppercase"
+          class="text-secondary-sand font-cormorant text-xl leading-none font-bold tracking-wide uppercase"
         >
           Cartografías Sensoriales
         </span>
-        <span class="text-secondary-sand text-xs tracking-widest lowercase">
+        <span
+          class="text-secondary-blue/60 text-xs leading-none tracking-widest"
+        >
           Mapeo de Marcas Sonoras
         </span>
       </a>
@@ -67,7 +69,7 @@ const navItems = [
         data-nav-close
         type="button"
         aria-label="Cerrar menú"
-        class="bg-secondary-sand/20 text-primary-navy hover:bg-secondary-sand/30 focus-visible:ring-primary-teal -mt-1 -mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
+        class="bg-primary-teal text-secondary-sand hover:bg-secondary-sand/30 focus-visible:ring-primary-teal -mt-1 -mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
       >
         <svg
           aria-hidden="true"
@@ -99,10 +101,8 @@ const navItems = [
                   href={item.href}
                   aria-current={isActive ? 'page' : undefined}
                   class:list={[
-                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                    isActive
-                      ? 'border-primary-teal bg-primary-teal/5 text-charcoal border-l-4'
-                      : 'text-primary-brown hover:bg-secondary-sand/20 hover:text-charcoal'
+                    'text-secondary-sand flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                    isActive ? 'bg-primary-teal/40' : 'hover:bg-primary-teal/40'
                   ]}
                 >
                   {item.icon === 'home' && (
@@ -180,15 +180,16 @@ const navItems = [
       </ul>
     </nav>
 
-    <footer class="mt-auto p-6">
-      <div class="mb-12">
-        <p class="text-charcoal/50 text-sm">
-          Navega por los mapas sonoros, reproduce los sonidos o la obra
-          compuesta para esta área.
+    <footer class="mt-auto px-4 py-6">
+      <div class="mb-6">
+        <p
+          class="text-secondary-sand/80 font-cormorant text-center leading-tight"
+        >
+          Explora las tres rutas y reproduce los paisajes sonoros.
         </p>
       </div>
-      <div class="border-secondary-sand/20 border-t pt-4">
-        <div class="mx-auto flex w-full max-w-32 flex-col items-center gap-1">
+      <div class="border-secondary-sand/20 border-t">
+        <div class="mx-auto flex w-full flex-col items-center">
           <Picture
             src={anidLogo}
             formats={['avif', 'webp']}
@@ -196,20 +197,22 @@ const navItems = [
             alt="ANID"
             class="aspect-auto w-full"
           />
-          <Picture
-            src={innovaLogo}
-            formats={['avif', 'webp']}
-            fallbackFormat="png"
-            alt="Innova"
-            class="aspect-auto invert"
-          />
-          <Picture
-            src={arqulsLogo}
-            formats={['avif', 'webp']}
-            fallbackFormat="png"
-            alt="ARQULS"
-            class="aspect-auto w-25"
-          />
+          <div class="flex w-full items-center justify-center">
+            <Picture
+              src={innovaLogo}
+              formats={['avif', 'webp']}
+              fallbackFormat="png"
+              alt="Innova"
+              class="aspect-auto max-w-24 invert"
+            />
+            <Picture
+              src={arqulsLogo}
+              formats={['avif', 'webp']}
+              fallbackFormat="png"
+              alt="ARQULS"
+              class="aspect-auto max-w-24"
+            />
+          </div>
         </div>
       </div>
     </footer>

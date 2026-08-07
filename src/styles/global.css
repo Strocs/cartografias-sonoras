@@ -4,7 +4,7 @@
 
 @theme {
   --color-background: #ffffff;
-  --color-canvas: #f5f2ed;
+  --color-canvas: #F4EAD5;
   --color-charcoal: #1a2a3a;
   --color-firebrick: #b02e0c;
 
@@ -14,6 +14,9 @@
 
   --color-secondary-sand: #c2a576;
   --color-secondary-blue: #7686c2;
+
+  --font-inter: var(--font-inter);
+  --font-cormorant: var(--font-cormorant);
 
   --animate-soundwave: soundwave-active 1s ease-in-out infinite;
   --animate-marker-ripple: marker-ripple 2s ease-out infinite;

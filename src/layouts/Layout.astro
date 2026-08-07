@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { ClientRouter } from 'astro:transitions';
 import Navigation from '@shared/ui/Navigation.astro';
+import { Font } from 'astro:assets';
 
 interface Props {
   title?: string;
@@ -20,9 +21,11 @@ const {
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <Font cssVariable="--font-inter" />
+    <Font cssVariable="--font-cormorant" />
     <ClientRouter />
   </head>
-  <body class="bg-primary-teal/20 flex min-h-dvh">
+  <body class="bg-charcoal font-inter flex min-h-dvh">
     <Navigation />
     <slot />
   </body>

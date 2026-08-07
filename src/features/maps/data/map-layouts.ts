@@ -35,7 +35,7 @@ export const mapLayouts: MapLayout[] = [
     slug: 'avenida-de-aguirre-la-serena',
     title: 'Avenida de Aguirre - La Serena',
     soundPieceId: 1,
-    soundPieceEnabled: true,
+    soundPieceEnabled: false,
     layers: [
       {
         id: 'base',
@@ -47,17 +47,16 @@ export const mapLayouts: MapLayout[] = [
         id: 'layer-0',
         frame: { x: 69.35, y: 2.7, width: 19.5, height: 19.5 },
         optional: true,
-        effect: 'parallax',
-        hoverScale: 1.05
+        effect: 'float'
       }
     ]
   },
   {
     id: 2,
-    slug: 'plaza-de-armas-la-serena',
-    title: 'Plaza de Armas - La Serena',
+    slug: 'cruz-del-tercer-milenio-coquimbo',
+    title: 'Cruz del Tercer Milenio - Coquimbo',
     soundPieceId: 2,
-    soundPieceEnabled: true,
+    soundPieceEnabled: false,
     layers: [
       {
         id: 'base',
@@ -67,18 +66,18 @@ export const mapLayouts: MapLayout[] = [
       },
       {
         id: 'layer-0',
-        frame: { x: 0, y: 0, width: 100, height: 100 },
+        frame: { x: 50.6, y: 1.8, width: 24.1, height: 24.1 },
         optional: true,
-        effect: 'parallax'
+        effect: 'float'
       }
     ]
   },
   {
     id: 3,
-    slug: 'cruz-del-tercer-milenio-coquimbo',
-    title: 'Cruz del Tercer Milenio - Coquimbo',
+    slug: 'plaza-de-armas-la-serena',
+    title: 'Plaza de Armas - La Serena',
     soundPieceId: 3,
-    soundPieceEnabled: true,
+    soundPieceEnabled: false,
     layers: [
       {
         id: 'base',
@@ -88,9 +87,21 @@ export const mapLayouts: MapLayout[] = [
       },
       {
         id: 'layer-0',
-        frame: { x: 0, y: 0, width: 100, height: 100 },
+        frame: { x: 58.74, y: 9.3, width: 16, height: 16 },
         optional: true,
-        effect: 'parallax'
+        effect: 'float'
+      },
+      {
+        id: 'layer-0',
+        frame: { x: 65.6, y: 24.8, width: 14.9, height: 14.9 },
+        optional: true,
+        effect: 'float'
+      },
+      {
+        id: 'layer-0',
+        frame: { x: 10.27, y: 64.35, width: 14.9, height: 14.9 },
+        optional: true,
+        effect: 'float'
       }
     ]
   }

@@ -7,9 +7,9 @@ const title = 'Cartografías Sensoriales';
 ---
 
 <Layout title={title}>
-  <main class="flex-1 p-4 md:p-4" transition:animate="fade">
-    <section aria-label="Cartografías" class="">
-      <div class="grid grid-cols-1 gap-4 bg-red-200 md:grid-cols-3">
+  <main class="flex-1 p-4 pl-0" transition:animate="fade">
+    <section aria-label="Cartografías" class="flex h-full">
+      <div class="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
         {
           MAPS_DATA.map((map, index) => {
             const isAboveFold = index < 2;

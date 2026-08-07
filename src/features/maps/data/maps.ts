@@ -30,12 +30,13 @@ const assetsBySlug: Record<string, MapAssets> = {
     preview: ROUTE_1_PREVIEW,
     overlays: { 'layer-0': ROUTE_1_BASE_LAYER_1 }
   },
-  'plaza-de-armas-la-serena': {
+  'cruz-del-tercer-milenio-coquimbo': {
     base: ROUTE_2_BASE,
     preview: ROUTE_2_PREVIEW,
     overlays: { 'layer-0': ROUTE_2_BASE_LAYER_1 }
   },
-  'cruz-del-tercer-milenio-coquimbo': {
+
+  'plaza-de-armas-la-serena': {
     base: ROUTE_3_BASE,
     preview: ROUTE_3_PREVIEW,
     overlays: { 'layer-0': ROUTE_3_BASE_LAYER_1 }
@@ -71,10 +72,7 @@ function bindAssets(layout: MapLayout, assets: MapAssets): Map {
     soundPieceId: layout.soundPieceId,
     soundPieceEnabled: layout.soundPieceEnabled,
     preview: toMapImage(assets.preview),
-    images: [
-      { ...baseLayer, ...toMapImage(assets.base) },
-      ...overlayImages
-    ]
+    images: [{ ...baseLayer, ...toMapImage(assets.base) }, ...overlayImages]
   };
 }
 
