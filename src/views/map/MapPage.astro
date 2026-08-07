@@ -69,11 +69,12 @@ const mapData = {
       />
       <map-view
         map-layers={JSON.stringify(map.images)}
+        map-title={map.title}
         render-context="active"
         id="main-map"
         class="min-h-0 min-w-0 flex-1"
-        min-zoom='{"base":0.9,"md":0.8}'
-        max-zoom='{"base":2.5,"md":3}'
+        min-zoom='{"base":1,"md":0.8}'
+        max-zoom='{"base":3.2,"md":1.5}'
       >
       </map-view>
       <MapControls client:visible mapViewId="main-map" />

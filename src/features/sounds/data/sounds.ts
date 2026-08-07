@@ -28,7 +28,7 @@ const MAP_01_POINTS: PointEntry[] = [
       title: '',
       description: null,
       location: 'Faro Monumental de La Serena',
-      position: { x: 79.05, y: 23 }
+      position: { x: 79.05, y: 16 }
     }
   },
   {
