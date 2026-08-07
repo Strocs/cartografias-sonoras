@@ -3,39 +3,24 @@ import { describe, expect, it } from 'vitest'
 import { MAPS_DATA } from '../../src/features/maps/data/maps'
 import { mapSchema } from '../../src/features/maps/domain'
 import { PATHS } from '../../src/features/paths/data/paths'
-import { pathSchema } from '../../src/features/paths/domain/schema'
 import { SOUND_PIECES } from '../../src/features/sound-pieces/data/sound-pieces'
-import { soundPieceSchema } from '../../src/features/sound-pieces/domain/schema'
 import { MARKS } from '../../src/features/sounds/data/sounds'
-import { markSchema } from '../../src/features/sounds/domain/schema'
+import { datasetSchema } from '../../src/shared/data/dataset-schema'
+
+const DATASET = { maps: MAPS_DATA, marks: MARKS, soundPieces: SOUND_PIECES, paths: PATHS }
 
 describe('Dataset validation', () => {
-  it('validates all maps against the Map schema', () => {
+  it('validates the whole dataset through the dataset schema', () => {
+    expect(() => datasetSchema.parse(DATASET)).not.toThrow()
+  })
+
+  it('defines the base layer first and preview matching the base image size', () => {
     for (const map of MAPS_DATA) {
-      expect(mapSchema.parse(map)).toEqual(map)
       expect(map.images[0]).toMatchObject({ id: 'base', optional: false })
       expect(map.preview).toMatchObject({
         width: map.images[0].width,
         height: map.images[0].height
       })
-    }
-  })
-
-  it('validates all marks against the Mark schema', () => {
-    for (const mark of MARKS) {
-      expect(markSchema.parse(mark)).toEqual(mark)
-    }
-  })
-
-  it('validates all sound pieces against the SoundPiece schema', () => {
-    for (const piece of SOUND_PIECES) {
-      expect(soundPieceSchema.parse(piece)).toEqual(piece)
-    }
-  })
-
-  it('validates all paths against the Path schema', () => {
-    for (const path of PATHS) {
-      expect(pathSchema.parse(path)).toEqual(path)
     }
   })
 
@@ -72,30 +57,11 @@ describe('Dataset validation', () => {
     expect(ids).toContain(304)
   })
 
-  it('keeps every derived sound id unique within its map', () => {
-    for (const map of MAPS_DATA) {
-      const ids = MARKS.filter((m) => m.mapId === map.id).flatMap((m) => m.sounds.map((s) => s.id))
-      expect(new Set(ids).size).toBe(ids.length)
-    }
-  })
-
   it('has exactly N-1 paths per map (one per connected pair of marks)', () => {
     for (const map of MAPS_DATA) {
       const marks = MARKS.filter((m) => m.mapId === map.id)
       const paths = PATHS.filter((p) => p.mapId === map.id)
       expect(paths.length).toBe(marks.length - 1)
-    }
-  })
-
-  it('connects each path to marks that belong to the same map', () => {
-    for (const path of PATHS) {
-      const marks = MARKS.filter((m) => [path.startMarkId, path.endMarkId].includes(m.id))
-
-      expect(marks).toHaveLength(2)
-
-      for (const mark of marks) {
-        expect(mark.mapId).toBe(path.mapId)
-      }
     }
   })
 
@@ -111,13 +77,12 @@ describe('Dataset validation', () => {
     }
   })
 
-  it('has non-empty unique slugs for all maps', () => {
+  it('has non-empty slugs for all maps', () => {
     const slugs = MAPS_DATA.map((m) => m.slug)
     for (const slug of slugs) {
       expect(slug).toBeTruthy()
       expect(typeof slug).toBe('string')
     }
-    expect(new Set(slugs).size).toBe(slugs.length)
   })
 
   it('keeps hoverScale optional per layer: both absent and present forms stay valid', () => {
