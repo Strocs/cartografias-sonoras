@@ -706,6 +706,48 @@ describe('MapView custom element', () => {
     });
   });
 
+  it('re-fits the world only on resize viewport-change reasons, never on gesture frames', async () => {
+    const el = document.createElement('map-view') as MapView;
+    el.setAttribute('map-src', TEST_IMAGE_SRC);
+    wrapper.appendChild(el);
+
+    await waitForReady(el);
+
+    const viewportEl = el.querySelector('.map-viewport') as HTMLElement;
+    const worldEl = el.querySelector('.map-world') as HTMLElement;
+    // Simulate a real layout that changes the world fit: a narrow viewport
+    // (400x600) containing the 800x600 world => fit 0.5, footprint 400x300.
+    Object.defineProperty(viewportEl, 'clientWidth', { value: 400, configurable: true });
+    Object.defineProperty(viewportEl, 'clientHeight', { value: 600, configurable: true });
+    Object.defineProperty(worldEl, 'clientWidth', { value: 800, configurable: true });
+    Object.defineProperty(worldEl, 'clientHeight', { value: 600, configurable: true });
+
+    // A gesture frame (wheel/pinch/drag) must NOT re-read layout: the
+    // four clientWidth/Height reads in _refreshWorldFit would force a
+    // synchronous reflow on every frame.
+    el.querySelector('.map-panzoom')?.dispatchEvent(
+      new CustomEvent('viewport-change', {
+        detail: { state: { scale: 2, x: 10, y: 5 }, reason: 'wheel' }
+      })
+    );
+    expect(engineInstances[0]?.setContent).not.toHaveBeenCalled();
+    expect(engineInstances[0]?.setViewportTransformScaleFactor).not.toHaveBeenCalled();
+
+    // The real resize reason still keeps the engine footprint in sync.
+    el.querySelector('.map-panzoom')?.dispatchEvent(
+      new CustomEvent('viewport-change', {
+        detail: { state: { scale: 1, x: 0, y: 0 }, reason: 'resize' }
+      })
+    );
+    expect(engineInstances[0]?.setContent).toHaveBeenCalledWith({
+      width: 400,
+      height: 300
+    });
+    expect(engineInstances[0]?.setViewportTransformScaleFactor).toHaveBeenCalledWith(
+      0.5
+    );
+  });
+
   it('hands the fitted footprint and matched scale bias to the engine when the fit changes', async () => {
     const el = document.createElement('map-view') as MapView;
     el.setAttribute('map-src', TEST_IMAGE_SRC);

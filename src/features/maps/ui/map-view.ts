@@ -328,13 +328,19 @@ export class MapView extends HTMLElement implements MapViewElement {
 
       this._viewportChangeHandler = (event: Event) => {
         const detail = (event as CustomEvent).detail as
-          { state?: { scale: number; x: number; y: number } } | undefined;
+          | { state?: { scale: number; x: number; y: number }; reason?: string }
+          | undefined;
         const state = detail?.state;
+        const reason = detail?.reason;
         if (state === undefined) return;
 
-        // Re-fit the rendering world when the container resizes (the engine
-        // recomposes and emits a viewport-change on every resize).
-        this._refreshWorldFit();
+        // Re-fit the rendering world only when the container resized: that is
+        // the only event that changes the world-fit, and the layout reads in
+        // _refreshWorldFit would force a synchronous reflow on every gesture
+        // frame if they ran during drag/pinch/wheel.
+        if (reason === 'resize') {
+          this._refreshWorldFit();
+        }
 
         this.dispatchEvent(
           new CustomEvent('viewport-change', {

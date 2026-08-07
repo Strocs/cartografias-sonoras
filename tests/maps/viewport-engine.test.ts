@@ -334,7 +334,6 @@ describe('ViewportEngine corrected interaction semantics', () => {
     const assertObservableFrame = (reason: string): void => {
       const state = engine.getState();
       expect(scene.style.transform).toBe(`translate3d(${state.x}px, ${state.y}px, 0) scale(${state.scale})`);
-      expect(scene.style.getPropertyValue('--viewport-inverse-scale')).toBe(String(1 / state.scale));
       expect(snapshots.at(-1)).toEqual(state);
       expect(events.at(-1)).toEqual({ state, reason });
       expect(events.at(-1)?.state).toEqual(expect.objectContaining({ revision: state.revision, phase: state.phase }));
@@ -449,7 +448,7 @@ describe('ViewportEngine corrected interaction semantics', () => {
     engine.destroy();
   });
 
-  it('writes the transform and inverse-scale onto a transformTarget, leaving the scene identity', () => {
+  it('writes the transform onto a transformTarget, leaving the scene identity', () => {
     const target = document.createElement('div');
     scene.appendChild(target);
     const factor = 0.5;
@@ -464,10 +463,8 @@ describe('ViewportEngine corrected interaction semantics', () => {
 
     expect(target.style.transformOrigin).toBe('0 0');
     expect(target.style.transform).toBe(`translate3d(${state.x}px, ${state.y}px, 0) scale(${visualScale})`);
-    expect(target.style.getPropertyValue('--viewport-inverse-scale')).toBe(String(1 / visualScale));
     // The scene stays a static, untransformed interaction surface.
     expect(scene.style.transform).toBe('');
-    expect(scene.style.getPropertyValue('--viewport-inverse-scale')).toBe(String(1 / visualScale));
     engine.destroy();
   });
 
@@ -489,7 +486,6 @@ describe('ViewportEngine corrected interaction semantics', () => {
     expect(after).toEqual({ ...before, revision: before.revision + 1 });
     const visualScale = after.scale * 1.5;
     expect(target.style.transform).toBe(`translate3d(${after.x}px, ${after.y}px, 0) scale(${visualScale})`);
-    expect(target.style.getPropertyValue('--viewport-inverse-scale')).toBe(String(1 / visualScale));
     engine.destroy();
   });
 

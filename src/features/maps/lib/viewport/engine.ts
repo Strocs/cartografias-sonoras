@@ -70,6 +70,10 @@ export class ViewportEngine {
     this.content = this.config.content;
     this.transformTarget = this.config.transformTarget ?? this.scene;
     this.transformScaleFactor = this.config.transformScaleFactor ?? 1;
+    // The transform target's origin is part of the engine contract (the emitted
+    // translate3d/scale math assumes 0,0). Applied once at construction, never
+    // per frame, so gesture commits write only the transform itself.
+    this.transformTarget.style.transformOrigin = '0 0';
     this.state = this.getFitState();
     this.scene.style.touchAction = 'none';
     this.scene.addEventListener('pointerdown', this.onPointerDown);
@@ -257,7 +261,7 @@ export class ViewportEngine {
   }
   private beginPinch(): void { const values = [...this.pointers.values()]; const [first, second] = values; if (first === undefined || second === undefined) return; const distance = Math.hypot(second.x - first.x, second.y - first.y); if (distance <= 0 || !Number.isFinite(distance)) return; this.gestureConsumed = true; this.pinchHappened = true; this.pinch = { firstPointerId: first.pointerId, secondPointerId: second.pointerId, center: this.toLocalPoint({ x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }), distance, state: { ...this.state } }; }
   private setState(state: ViewportState, phase: ViewportPhase, reason: string): void { this.state = state; this.phase = phase; this.commit(reason); }
-  private commit(reason: string): void { if (this.destroyed) return; this.revision += 1; const target = this.transformTarget; const visualScale = this.state.scale * this.transformScaleFactor; target.style.transformOrigin = '0 0'; target.style.transform = `translate3d(${this.state.x}px, ${this.state.y}px, 0) scale(${visualScale})`; const inverse = String(1 / visualScale); target.style.setProperty('--viewport-inverse-scale', inverse); this.scene.style.setProperty('--viewport-inverse-scale', inverse); const detail: ViewportEventDetail = { state: this.getState(), reason }; for (const subscriber of this.subscribers) subscriber(detail.state); this.scene.dispatchEvent(new CustomEvent<ViewportEventDetail>('viewport-change', { detail })); }
+  private commit(reason: string): void { if (this.destroyed) return; this.revision += 1; const target = this.transformTarget; const visualScale = this.state.scale * this.transformScaleFactor; target.style.transform = `translate3d(${this.state.x}px, ${this.state.y}px, 0) scale(${visualScale})`; const detail: ViewportEventDetail = { state: this.getState(), reason }; for (const subscriber of this.subscribers) subscriber(detail.state); this.scene.dispatchEvent(new CustomEvent<ViewportEventDetail>('viewport-change', { detail })); }
   private focalState(from: ViewportState, focal: ViewportPoint, scale: number): ViewportState { const focalState = projectFocal(from, focal, scale); return projectToStrictTranslation(focalState, computeStrictBounds(this.getViewportSize(), this.getContentSize(), scale)); }
   private strictState(state: ViewportState): ViewportState { const scale = clampScale(state.scale, this.minScale, this.maxScale); return projectToStrictBounds({ ...state, scale }, computeStrictBounds(this.getViewportSize(), this.getContentSize(), scale), this.minScale, this.maxScale); }
   private projectCurrentStrictly(): void { const strict = this.strictState(this.state); if (!statesEqual(strict, this.state)) this.setState(strict, VIEWPORT_PHASE.IDLE, 'interrupt'); }
