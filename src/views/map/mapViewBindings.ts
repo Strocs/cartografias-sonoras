@@ -15,7 +15,7 @@ import type { Mark } from '@features/sounds/domain/types'
 import type { Path } from '@features/paths/domain/types'
 import type { MapViewElement } from '@features/maps/ui/map-view'
 
-import { computePathVisualStates } from './pathStateEngine'
+import { computePathVisualStates } from '@features/paths/services/pathStateEngine'
 
 export interface MapViewBindingOptions {
   mapView: MapViewElement

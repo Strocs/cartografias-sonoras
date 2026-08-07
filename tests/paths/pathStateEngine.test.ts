@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { computePathVisualStates } from '../../src/views/map/pathStateEngine'
+import { computePathVisualStates } from '../../src/features/paths/services/pathStateEngine'
 import { AUDIO_STATUS } from '../../src/shared/lib/audio-engine'
 
 import type { Path } from '../../src/features/paths/domain/types'

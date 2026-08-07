@@ -1,8 +1,7 @@
 import { AUDIO_STATUS, type AudioStatus } from '@shared/lib/audio-engine'
 
-import type { Path, Point } from '@features/paths/domain/types'
-import type { PathVisualState } from '@features/paths/domain/PathVisualState'
-import type { Mark } from '@features/sounds/domain/types'
+import type { Path, PathMarkLike, Point } from '../domain/types'
+import type { PathVisualState } from '../domain/PathVisualState'
 
 export interface ActiveSoundLike {
   status: AudioStatus
@@ -13,7 +12,7 @@ export interface ActiveSoundLike {
  * positions with the intermediate waypoints. Endpoints are derived from
  * `mark.position` at runtime so markers and paths stay aligned.
  */
-function buildFullPoints(path: Path, marksById: Map<number, Mark>): Point[] {
+function buildFullPoints(path: Path, marksById: Map<number, PathMarkLike>): Point[] {
   const startMark = marksById.get(path.startMarkId)
   const endMark = marksById.get(path.endMarkId)
   if (!startMark || !endMark) {
@@ -27,7 +26,7 @@ function buildFullPoints(path: Path, marksById: Map<number, Mark>): Point[] {
  */
 function endpointPlaying(
   markId: number,
-  marksById: Map<number, Mark>,
+  marksById: Map<number, PathMarkLike>,
   activeSounds: Map<number, ActiveSoundLike>
 ): boolean {
   const mark = marksById.get(markId)
@@ -44,7 +43,7 @@ function endpointPlaying(
  */
 export function computePathVisualStates(
   paths: Path[],
-  marksById: Map<number, Mark>,
+  marksById: Map<number, PathMarkLike>,
   activeSounds: Map<number, ActiveSoundLike>
 ): Map<number, PathVisualState> {
   const result = new Map<number, PathVisualState>()
