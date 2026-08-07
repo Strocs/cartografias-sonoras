@@ -15,27 +15,5 @@ test('capture mobile screenshot of the map at fit', async ({ page }) => {
   // Let layout settle (resize observer, world-fit recompute)
   await page.waitForTimeout(1000);
 
-  // Full diagnostic dump
-  const diag = await page.evaluate(() => {
-    const mv  = document.querySelector('map-view#main-map') as HTMLElement;
-    const vp  = mv?.querySelector('.map-viewport')  as HTMLElement;
-    const sc  = mv?.querySelector('.map-panzoom')    as HTMLElement;
-    const w   = mv?.querySelector('.map-world')      as HTMLElement;
-    const img = w?.querySelector('img');
-    const r = (el: Element | null) => el?.getBoundingClientRect();
-    return {
-      mapEl:    r(mv),
-      viewport: r(vp),
-      scene:    r(sc),
-      world:    r(w),
-      image:    r(img),
-      sceneTransform: sc?.style.transform ?? 'N/A',
-      worldTransform: w?.style.transform  ?? 'N/A',
-      zoom: (mv as unknown as { getScale(): number })?.getScale?.(),
-      natural: { w: (mv as unknown as { imageWidth: number })?.imageWidth, h: (mv as unknown as { imageHeight: number })?.imageHeight },
-    };
-  });
-  console.log('MOBILE_DIAG ' + JSON.stringify(diag, null, 2));
-
   await page.screenshot({ path: '/tmp/map-mobile-fit.png', fullPage: false });
 });

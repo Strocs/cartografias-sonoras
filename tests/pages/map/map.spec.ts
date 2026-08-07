@@ -48,11 +48,23 @@ test.describe('Map', () => {
       const layerImageCount = await layerImages.count();
       expect(layerImageCount).toBeGreaterThan(0);
       for (let index = 0; index < layerImageCount; index += 1) {
-        await expect(layerImages.nth(index)).toHaveAttribute('alt', '');
+        // The first layer is the base map: it carries a descriptive alt and
+        // stays in the accessibility tree. Optional overlays are decorative.
+        const isBase = index === 0;
         await expect(layerImages.nth(index)).toHaveAttribute(
-          'aria-hidden',
-          'true'
+          'alt',
+          isBase ? `Mapa de ${fixture.title}` : ''
         );
+        if (isBase) {
+          await expect(layerImages.nth(index)).not.toHaveAttribute(
+            'aria-hidden'
+          );
+        } else {
+          await expect(layerImages.nth(index)).toHaveAttribute(
+            'aria-hidden',
+            'true'
+          );
+        }
       }
     }
   );
@@ -73,9 +85,7 @@ test.describe('Map', () => {
       await homePage.getMapCard(firstMap.title).click();
       await expect(page).toHaveURL(`/${firstMap.slug}`);
       await mapPage.waitForViewportReady();
-      await expect(mapPage.marks).toHaveCount(
-        marksFor(firstMap.id).length
-      );
+      await expect(mapPage.marks).toHaveCount(marksFor(firstMap.id).length);
 
       await mapPage.getRailLink(nextMap.slug).click();
       await expect(page).toHaveURL(`/${nextMap.slug}`);
@@ -362,9 +372,7 @@ test.describe('Map', () => {
         viewportBox.height / image.height
       );
       const mdFactor = 0.8;
-      await expect
-        .poll(() => mapPage.getZoom())
-        .toBeCloseTo(mdFactor * fit, 5);
+      await expect.poll(() => mapPage.getZoom()).toBeCloseTo(mdFactor * fit, 5);
       const bounds = await mapPage.getBounds();
       expect(bounds.image.left).toBeGreaterThanOrEqual(
         bounds.viewport.left - 1
@@ -446,7 +454,17 @@ test.describe('Map', () => {
       for (let wheel = 0; wheel < 12; wheel += 1) {
         await page.mouse.wheel(0, -1200);
       }
-      await expect.poll(() => mapPage.getZoom()).toBeGreaterThan(0.9);
+      // Zoom caps are per-breakpoint factors over the fitted scale (the map
+      // page caps `md` at 1.5×fit), so an absolute ceiling like 0.9 is wrong
+      // for desktop. Assert the wheel zoomed the map beyond the fit baseline
+      // (the map becomes oversized), which is what the drag/clamp checks
+      // afterwards require.
+      const image = await mapPage.getImageSize();
+      const fit = Math.min(
+        viewportBox!.width / image.width,
+        viewportBox!.height / image.height
+      );
+      await expect.poll(() => mapPage.getZoom()).toBeGreaterThan(fit);
 
       await page.mouse.move(center.x, center.y);
       await page.mouse.down();
@@ -491,8 +509,7 @@ test.describe('Map', () => {
         });
         scene?.addEventListener('viewport-change', (event) => {
           const detail = (event as CustomEvent).detail as
-            | { reason?: string }
-            | undefined;
+            { reason?: string } | undefined;
           if (detail?.reason === 'drag') {
             win.__viewportDrags = (win.__viewportDrags ?? 0) + 1;
           }
@@ -514,8 +531,11 @@ test.describe('Map', () => {
       // must have fired. Poll because the drag settles asynchronously.
       await expect
         .poll(() =>
-          page.evaluate(() => (window as Window & { __viewportDrags?: number })
-            .__viewportDrags ?? 0)
+          page.evaluate(
+            () =>
+              (window as Window & { __viewportDrags?: number })
+                .__viewportDrags ?? 0
+          )
         )
         .toBeGreaterThan(0);
 
@@ -716,9 +736,7 @@ test.describe('Map', () => {
         .evaluate((element) => {
           const style = getComputedStyle(element);
           return {
-            progress: Number.parseFloat(
-              style.getPropertyValue('--progress')
-            ),
+            progress: Number.parseFloat(style.getPropertyValue('--progress')),
             width: style.width,
             height: style.height
           };
