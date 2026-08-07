@@ -162,8 +162,12 @@ export class MapPage extends BasePage {
       const viewport = document
         .querySelector('.map-viewport')
         ?.getBoundingClientRect();
+      // The real content box: the world layer (the image footprint). The
+      // `.map-panzoom` interaction surface stays a static, viewport-sized
+      // wrapper — the pan/zoom transform (and its semantic content bounds) live
+      // on the world, so the bounds are measured there.
       const image = document
-        .querySelector('.map-panzoom')
+        .querySelector('.map-world')
         ?.getBoundingClientRect();
       if (viewport === undefined || image === undefined) {
         throw new Error('Map viewport is not ready');

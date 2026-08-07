@@ -15,6 +15,7 @@ import {
   createMarkerLayer
 } from '../lib/layers';
 import { ViewportEngine } from '../lib/viewport/engine';
+import type { ViewportSize } from '../lib/viewport/types';
 import {
   isZoomFactorMap,
   resolveZoomFactor,
@@ -73,6 +74,7 @@ export class MapView extends HTMLElement implements MapViewElement {
   private _container: HTMLDivElement | null = null;
   private _world: HTMLDivElement | null = null;
   private _worldFit = 1;
+  private _naturalSize: ViewportSize | null = null;
   private _visibleImg: HTMLImageElement | null = null;
   private _hiddenImg: HTMLImageElement | null = null;
   private _svgLayer: SVGSVGElement | null = null;
@@ -97,8 +99,7 @@ export class MapView extends HTMLElement implements MapViewElement {
 
   /** Returns the visual scale compensation factor (1 / current zoom). */
   get scaleFactor(): number {
-    const scale = this._engine?.getState().scale ?? 1;
-    return 1 / (this._worldFit * scale);
+    return 1 / this.getScale();
   }
 
   /** Returns the natural width of the decoded map image. */
@@ -111,9 +112,10 @@ export class MapView extends HTMLElement implements MapViewElement {
     return this._visibleImg?.naturalHeight ?? 0;
   }
 
-  /** Returns the current viewport scale. */
+  /** Returns the current viewport scale (worldFit × engine factor). */
   getScale(): number {
-    return this._engine?.getState().scale ?? 1;
+    const scale = this._engine?.getState().scale ?? 1;
+    return this._worldFit * scale;
   }
 
   zoomIn(): void {
@@ -173,8 +175,9 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._container = container;
 
     // The rendering world: it carries the map content at its natural pixel size
-    // and self-fits into the container. The interaction engine transforms the
-    // container above it, never the world or its children.
+    // and is the transform target for the interaction engine. The engine's
+    // transform (translate3d + scale) is written here, while the container
+    // above stays a static, viewport-sized interaction surface.
     const world = document.createElement('div');
     world.className = 'map-world';
     world.style.position = 'absolute';
@@ -232,6 +235,7 @@ export class MapView extends HTMLElement implements MapViewElement {
       if (world === null) return;
       world.style.width = `${naturalWidth}px`;
       world.style.height = `${naturalHeight}px`;
+      this._naturalSize = { width: naturalWidth, height: naturalHeight };
 
       // The world self-fits into the container (contain, never enlarged). The
       // interaction engine above operates in container space independently.
@@ -299,9 +303,21 @@ export class MapView extends HTMLElement implements MapViewElement {
         viewportWidth
       );
 
-      // Container-space interaction: zoom factors are relative to the container
-      // (1x = the world self-fits the container). No image-fit participates here.
+      // Input-surface interaction: zoom factors are relative to the world at
+      // fit (1x = the world self-fits the viewport). The engine receives the
+      // real image footprint (natural × worldFit) as its content so strict pan
+      // bounds reflect the letterbox margins at fit scale instead of zeroing
+      // out, and it centres via its state. The `.map-panzoom` container stays a
+      // static, viewport-sized interaction surface; the engine's transform is
+      // written to the `.map-world` child, folding worldFit into the emitted
+      // scale so the visible scale equals `state.scale × worldFit`.
       this._engine = new ViewportEngine(this._container, {
+        content: {
+          width: naturalWidth * worldFit,
+          height: naturalHeight * worldFit
+        },
+        transformTarget: this._world,
+        transformScaleFactor: worldFit,
         startScale: startFactor,
         minScale: minFactor,
         maxScale: maxFactor,
@@ -509,24 +525,43 @@ export class MapView extends HTMLElement implements MapViewElement {
     );
   }
 
-  /** Centres and fits the world into the container (contain, never enlarged). */
+  /**
+   * Initial placeholder fitting of the world before the engine exists. The
+   * engine constructor's first commit overwrites this with the matching
+   * `translate3d(...) scale(worldFit)` on the same element, so there is no
+   * visible flash. Once the engine owns the world transform, fit changes must
+   * NOT re-apply this (that would double the scale).
+   */
   private _applyWorldFit(world: HTMLDivElement, fit: number): void {
-    const viewportWidth = this._viewport?.clientWidth ?? 0;
-    const viewportHeight = this._viewport?.clientHeight ?? 0;
-    const offsetX = (viewportWidth - world.clientWidth * fit) / 2;
-    const offsetY = (viewportHeight - world.clientHeight * fit) / 2;
-    world.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${fit})`;
+    world.style.transform = `scale(${fit})`;
   }
 
-  /** Re-fits the world when the container resizes; no-op when nothing changed. */
+  /**
+   * Re-fits the world when the container resizes; no-op when nothing changed.
+   * When the fit changes, the engine's content footprint and its emitted scale
+   * bias must follow so the rendered world keeps matching the pan bounds and
+   * centering. The engine owns the world transform, so this never touches the
+   * world's style directly.
+   */
   private _refreshWorldFit(): void {
     const world = this._world;
     if (world === null) return;
     const fit = this._computeWorldFit();
     if (fit !== this._worldFit) {
       this._worldFit = fit;
-      this._applyWorldFit(world, fit);
+      this._engine?.setContent(this._fittedContent());
+      this._engine?.setViewportTransformScaleFactor(fit);
     }
+  }
+
+  /** The engine-facing content footprint: the world at its fitted scale. */
+  private _fittedContent(): ViewportSize | undefined {
+    const natural = this._naturalSize;
+    if (natural === null) return undefined;
+    return {
+      width: natural.width * this._worldFit,
+      height: natural.height * this._worldFit
+    };
   }
 
   private _parseZoomAttributes(): ZoomAttributes {
@@ -615,6 +650,7 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._markerLayer = null;
     this._visibleImg = null;
     this._hiddenImg = null;
+    this._naturalSize = null;
     this._container = null;
     this._world = null;
     this._worldFit = 1;

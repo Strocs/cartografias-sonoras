@@ -9,6 +9,8 @@ const engineInstances = vi.hoisted(
       destroy: ReturnType<typeof vi.fn>;
       getState: ReturnType<typeof vi.fn>;
       setRange: ReturnType<typeof vi.fn>;
+      setContent: ReturnType<typeof vi.fn>;
+      setViewportTransformScaleFactor: ReturnType<typeof vi.fn>;
     }>
 );
 
@@ -20,7 +22,9 @@ vi.mock('../../src/features/maps/lib/viewport/engine', () => ({
       reset: vi.fn(),
       destroy: vi.fn(),
       getState: vi.fn(() => ({ scale: 1, x: 0, y: 0 })),
-      setRange: vi.fn()
+      setRange: vi.fn(),
+      setContent: vi.fn(),
+      setViewportTransformScaleFactor: vi.fn()
     };
     engineInstances.push(instance);
     return instance;
@@ -623,9 +627,14 @@ describe('MapView custom element', () => {
 
     await waitForReady(el);
 
-    // Content is derived from the live viewport (container space), so the
-    // engine is constructed without an explicit content size.
+    // The engine derives its content from the live viewport when omitted; the
+    // world is at its fit scale and the container measures zero in the test
+    // environment, so the fallback fit (1) makes the footprint the natural
+    // image size (800x600).
     expect(ViewportEngineMock).toHaveBeenCalledWith(expect.any(HTMLElement), {
+      content: { width: 800, height: 600 },
+      transformTarget: expect.any(HTMLElement),
+      transformScaleFactor: 1,
       startScale: 1,
       minScale: 0.8,
       maxScale: 3,
@@ -644,6 +653,9 @@ describe('MapView custom element', () => {
     await waitForReady(el);
 
     expect(ViewportEngineMock).toHaveBeenCalledWith(expect.any(HTMLElement), {
+      content: { width: 800, height: 600 },
+      transformTarget: expect.any(HTMLElement),
+      transformScaleFactor: 1,
       startScale: 1.25,
       minScale: 0.75,
       maxScale: 3.5,
@@ -684,10 +696,48 @@ describe('MapView custom element', () => {
 
     // Narrow viewport (< md) => base factors apply.
     expect(ViewportEngineMock).toHaveBeenCalledWith(expect.any(HTMLElement), {
+      content: { width: 800, height: 600 },
+      transformTarget: expect.any(HTMLElement),
+      transformScaleFactor: 1,
       startScale: 1,
       minScale: 0.9,
       maxScale: 2.5,
       zoomStep: 0.3
     });
+  });
+
+  it('hands the fitted footprint and matched scale bias to the engine when the fit changes', async () => {
+    const el = document.createElement('map-view') as MapView;
+    el.setAttribute('map-src', TEST_IMAGE_SRC);
+    wrapper.appendChild(el);
+
+    await waitForReady(el);
+
+    const viewportEl = el.querySelector('.map-viewport') as HTMLElement;
+    const worldEl = el.querySelector('.map-world') as HTMLElement;
+    // Simulate a real layout that changes the world fit: a narrow viewport
+    // (400x600) containing the 800x600 world => fit 0.5, footprint 400x300.
+    Object.defineProperty(viewportEl, 'clientWidth', { value: 400, configurable: true });
+    Object.defineProperty(viewportEl, 'clientHeight', { value: 600, configurable: true });
+    Object.defineProperty(worldEl, 'clientWidth', { value: 800, configurable: true });
+    Object.defineProperty(worldEl, 'clientHeight', { value: 600, configurable: true });
+
+    el.querySelector('.map-panzoom')?.dispatchEvent(
+      new CustomEvent('viewport-change', {
+        detail: { state: { scale: 1, x: 0, y: 0 }, reason: 'resize' }
+      })
+    );
+
+    // The world must not self-translate or re-scale: once the engine owns the
+    // world transform, fit changes flow through the engine (content footprint
+    // plus the emitted scale bias) instead of touching the world's style.
+    expect(worldEl.style.transform).toBe('scale(1)');
+    expect(engineInstances[0]?.setContent).toHaveBeenCalledWith({
+      width: 400,
+      height: 300
+    });
+    expect(engineInstances[0]?.setViewportTransformScaleFactor).toHaveBeenCalledWith(
+      0.5
+    );
   });
 });

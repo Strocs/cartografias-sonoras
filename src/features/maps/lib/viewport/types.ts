@@ -55,6 +55,20 @@ export interface ViewportConfig {
   startScale?: number;
   zoomStep?: number;
   reducedMotion?: boolean;
+  /**
+   * Where the engine writes its computed transform. When omitted the engine
+   * transforms the `scene` itself (the default, backwards compatible). Set this
+   * when the input surface (the scene) must stay statically positioned at the
+   * viewport size while the pan/zoom transform is applied to a separate content
+   * element, e.g. a `.map-world` child.
+   */
+  transformTarget?: HTMLElement;
+  /**
+   * Extra multiplier folded into the emitted `scale(...)`. Lets the engine carry
+   * the content's own fitted scale into the target transform so the visible
+   * scale equals `state.scale × factor` exactly. Defaults to 1.
+   */
+  transformScaleFactor?: number;
 }
 
 export interface ViewportEventDetail {

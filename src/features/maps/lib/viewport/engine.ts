@@ -40,6 +40,9 @@ export class ViewportEngine {
   private readonly subscribers = new Set<ViewportSubscriber>();
   private readonly viewport: HTMLElement;
   private readonly resizeObserver: ResizeObserver | undefined;
+  private content: ViewportSize | undefined;
+  private readonly transformTarget: HTMLElement;
+  private transformScaleFactor: number;
   private minScale: number;
   private maxScale: number;
   private state: ViewportState;
@@ -59,6 +62,9 @@ export class ViewportEngine {
     this.viewport = scene.parentElement;
     this.minScale = this.config.minScale;
     this.maxScale = this.config.maxScale;
+    this.content = this.config.content;
+    this.transformTarget = this.config.transformTarget ?? this.scene;
+    this.transformScaleFactor = this.config.transformScaleFactor ?? 1;
     this.state = this.getFitState();
     this.scene.style.touchAction = 'none';
     this.scene.addEventListener('pointerdown', this.onPointerDown);
@@ -90,6 +96,41 @@ export class ViewportEngine {
     this.maxScale = Math.max(this.minScale, maxScale);
     this.cancelAnimation();
     this.projectCurrentStrictly();
+  }
+  /**
+   * Updates the natural content footprint that the pan bounds and centering
+   * math use, then re-fits the view immediately (same behaviour as resize).
+   * Use it when the render layer changes the fitted content size (for example
+   * a container resize that alters the world fit). Pass `undefined` to return
+   * to container-space mode, where the engine derives content from the live
+   * viewport. Invalid sizes are ignored and reported instead of replacing the
+   * current content. The caller's config object is never mutated.
+   */
+  public setViewportTransformScaleFactor(factor: number): void {
+    if (this.destroyed) return;
+    if (!Number.isFinite(factor) || factor <= 0) {
+      this.emitError('Transform scale factor must be finite and positive');
+      return;
+    }
+    if (factor === this.transformScaleFactor) return;
+    this.transformScaleFactor = factor;
+    this.commit('transform-scale');
+  }
+  public setContent(content: ViewportSize | undefined): void {
+    if (this.destroyed) return;
+    if (
+      content !== undefined &&
+      (!Number.isFinite(content.width) ||
+        !Number.isFinite(content.height) ||
+        content.width <= 0 ||
+        content.height <= 0)
+    ) {
+      this.emitError('Content dimensions must be finite and positive');
+      return;
+    }
+    this.content = content;
+    this.cancelAnimation();
+    this.setState(this.getFitState(), VIEWPORT_PHASE.IDLE, 'content');
   }
   public destroy(): void {
     if (this.destroyed) return;
@@ -186,7 +227,7 @@ export class ViewportEngine {
   }
   private beginPinch(): void { const values = [...this.pointers.values()]; const [first, second] = values; if (first === undefined || second === undefined) return; const distance = Math.hypot(second.x - first.x, second.y - first.y); if (distance <= 0 || !Number.isFinite(distance)) return; this.pinch = { firstPointerId: first.pointerId, secondPointerId: second.pointerId, center: this.toLocalPoint({ x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }), distance, state: { ...this.state } }; }
   private setState(state: ViewportState, phase: ViewportPhase, reason: string): void { this.state = state; this.phase = phase; this.commit(reason); }
-  private commit(reason: string): void { if (this.destroyed) return; this.revision += 1; this.scene.style.transformOrigin = '0 0'; this.scene.style.transform = `translate3d(${this.state.x}px, ${this.state.y}px, 0) scale(${this.state.scale})`; this.scene.style.setProperty('--viewport-inverse-scale', String(1 / this.state.scale)); const detail: ViewportEventDetail = { state: this.getState(), reason }; for (const subscriber of this.subscribers) subscriber(detail.state); this.scene.dispatchEvent(new CustomEvent<ViewportEventDetail>('viewport-change', { detail })); }
+  private commit(reason: string): void { if (this.destroyed) return; this.revision += 1; const target = this.transformTarget; const visualScale = this.state.scale * this.transformScaleFactor; target.style.transformOrigin = '0 0'; target.style.transform = `translate3d(${this.state.x}px, ${this.state.y}px, 0) scale(${visualScale})`; const inverse = String(1 / visualScale); target.style.setProperty('--viewport-inverse-scale', inverse); this.scene.style.setProperty('--viewport-inverse-scale', inverse); const detail: ViewportEventDetail = { state: this.getState(), reason }; for (const subscriber of this.subscribers) subscriber(detail.state); this.scene.dispatchEvent(new CustomEvent<ViewportEventDetail>('viewport-change', { detail })); }
   private focalState(from: ViewportState, focal: ViewportPoint, scale: number): ViewportState { const focalState = projectFocal(from, focal, scale); return projectToStrictTranslation(focalState, computeStrictBounds(this.getViewportSize(), this.getContentSize(), scale)); }
   private strictState(state: ViewportState): ViewportState { const scale = clampScale(state.scale, this.minScale, this.maxScale); return projectToStrictBounds({ ...state, scale }, computeStrictBounds(this.getViewportSize(), this.getContentSize(), scale), this.minScale, this.maxScale); }
   private projectCurrentStrictly(): void { const strict = this.strictState(this.state); if (!statesEqual(strict, this.state)) this.setState(strict, VIEWPORT_PHASE.IDLE, 'interrupt'); }
@@ -219,7 +260,7 @@ export class ViewportEngine {
    * fills the viewport) omits `content`, so the engine derives it from the live
    * viewport on every operation — always fresh across resizes.
    */
-  private getContentSize(): ViewportSize { return this.config.content ?? this.getViewportSize(); }
+  private getContentSize(): ViewportSize { return this.content ?? this.getViewportSize(); }
   private assertConfig(): void { if (this.config.content !== undefined && (!Number.isFinite(this.config.content.width) || !Number.isFinite(this.config.content.height) || this.config.content.width <= 0 || this.config.content.height <= 0)) throw new Error('Content dimensions must be finite and positive'); clampScale(this.config.minScale, this.config.minScale, this.config.maxScale); }
   private emitError(message: string): void { this.scene.dispatchEvent(new CustomEvent('viewport-error', { detail: { message } })); }
 }

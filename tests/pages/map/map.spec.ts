@@ -182,6 +182,11 @@ test.describe('Map', () => {
             '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"/>'
           );
         const view = document.createElement('map-view');
+        // The engine derives its viewport size from the live host, so a bare
+        // element appended to <body> needs explicit dimensions (the real page
+        // provides them via the flex layout of .map-wrapper).
+        view.style.width = '400px';
+        view.style.height = '300px';
         view.setAttribute('reduced-motion', 'true');
         view.setAttribute(
           'map-layers',
@@ -393,12 +398,14 @@ test.describe('Map', () => {
       await expect.poll(() => mapPage.getZoom()).toBeGreaterThan(initialZoom);
       const alignment = await page.evaluate(() => {
         const scene = document.querySelector('.map-panzoom');
+        const world = document.querySelector('.map-world');
         const image = scene?.querySelector('img');
         const mark = document.querySelector('[data-testid="sound-mark"]');
         const path = document.querySelector('.path-base');
         const svg = path?.closest('svg');
         return {
           sceneTransform: scene?.getAttribute('style') ?? '',
+          worldTransform: world?.getAttribute('style') ?? '',
           sharedSceneContainment: [
             image,
             mark?.parentElement,
@@ -413,7 +420,10 @@ test.describe('Map', () => {
           )
         };
       });
-      expect(alignment.sceneTransform).toContain('translate3d');
+      // The static interaction surface stays untransformed; the pan/zoom
+      // transform (and thus the zoomed alignment) now lives on the world.
+      expect(alignment.sceneTransform).not.toContain('translate3d');
+      expect(alignment.worldTransform).toContain('translate3d');
       expect(alignment.sharedSceneContainment).toBe(true);
     }
   );

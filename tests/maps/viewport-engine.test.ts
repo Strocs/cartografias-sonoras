@@ -133,6 +133,51 @@ describe('ViewportEngine corrected interaction semantics', () => {
     engine.destroy();
   });
 
+  it('re-fits and derives strict pan bounds from an updated content size via setContent', () => {
+    const engine = new ViewportEngine(scene, config);
+    // Content (800x600) smaller than viewport (400x300): fit scale is 4/3 and
+    // the Y axis gains a reachable letterbox range instead of zero bounds.
+    engine.setContent({ width: 300, height: 200 });
+    const initial = engine.getState();
+    expect(initial.scale).toBeCloseTo(4 / 3);
+    expect(initial.x).toBe(0);
+    expect(initial.y).toBeCloseTo((rect.height - 200 * (4 / 3)) / 2);
+    const bounds = computeStrictBounds(
+      { width: rect.width, height: rect.height },
+      { width: 300, height: 200 },
+      initial.scale
+    );
+    expect(bounds.minY).toBe(0);
+    expect(bounds.maxY).toBeCloseTo(rect.height - 200 * (4 / 3));
+
+    // A drag inside the reachable range maps exactly (no elastic resistance)…
+    scene.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, clientX: 100, clientY: 150 }));
+    scene.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 100, clientY: 140 }));
+    expect(engine.getState().y).toBeCloseTo(initial.y - 10);
+    // Already strict: release settles immediately without scheduling frames.
+    scene.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 100, clientY: 140 }));
+    expect(engine.getState()).toEqual(expect.objectContaining({ phase: 'idle', y: initial.y - 10 }));
+
+    // Dragging past the top margin resists elastically and snaps to the edge
+    // (y = 0, previously unreachable with zero bounds).
+    scene.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, clientX: 100, clientY: 140 }));
+    scene.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }));
+    expect(engine.getState().y).toBeLessThan(0);
+    expect(engine.getState().y).toBeGreaterThan(-48);
+    scene.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }));
+    runPendingFrame(0);
+    runPendingFrame(180);
+    expect(engine.getState()).toEqual(expect.objectContaining({ phase: 'idle', y: bounds.minY }));
+
+    // Invalid content is ignored and reported, keeping the previous content.
+    const error = vi.fn();
+    scene.addEventListener('viewport-error', (event) => error((event as CustomEvent).detail?.message));
+    engine.setContent({ width: 0, height: 200 });
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('finite and positive'));
+    expect(engine.getState().scale).toBeCloseTo(4 / 3);
+    engine.destroy();
+  });
+
   it('resists active overscroll, snaps strictly, and publishes neither drag coast nor inertial reasons after release', () => {
     const engine = new ViewportEngine(scene, config);
     engine.zoomIn();
@@ -336,5 +381,59 @@ describe('ViewportEngine corrected interaction semantics', () => {
     expectStrict(reduced.getState());
     expect(reduced.getState().phase).toBe('idle');
     reduced.destroy();
+  });
+
+  it('writes the transform and inverse-scale onto a transformTarget, leaving the scene identity', () => {
+    const target = document.createElement('div');
+    scene.appendChild(target);
+    const factor = 0.5;
+    const engine = new ViewportEngine(scene, {
+      ...config,
+      transformTarget: target,
+      transformScaleFactor: factor,
+      startScale: 1
+    });
+    const state = engine.getState();
+    const visualScale = state.scale * factor;
+
+    expect(target.style.transformOrigin).toBe('0 0');
+    expect(target.style.transform).toBe(`translate3d(${state.x}px, ${state.y}px, 0) scale(${visualScale})`);
+    expect(target.style.getPropertyValue('--viewport-inverse-scale')).toBe(String(1 / visualScale));
+    // The scene stays a static, untransformed interaction surface.
+    expect(scene.style.transform).toBe('');
+    expect(scene.style.getPropertyValue('--viewport-inverse-scale')).toBe(String(1 / visualScale));
+    engine.destroy();
+  });
+
+  it('updates the emitted scale via setViewportTransformScaleFactor without re-fitting x/y', () => {
+    const target = document.createElement('div');
+    scene.appendChild(target);
+    const engine = new ViewportEngine(scene, {
+      ...config,
+      transformTarget: target,
+      transformScaleFactor: 1,
+      startScale: 1
+    });
+    const before = engine.getState();
+    expect(target.style.transform).toBe(`translate3d(${before.x}px, ${before.y}px, 0) scale(${before.scale})`);
+
+    engine.setViewportTransformScaleFactor(1.5);
+    const after = engine.getState();
+    // The state is untouched: setViewportTransformScaleFactor must not re-fit.
+    expect(after).toEqual({ ...before, revision: before.revision + 1 });
+    const visualScale = after.scale * 1.5;
+    expect(target.style.transform).toBe(`translate3d(${after.x}px, ${after.y}px, 0) scale(${visualScale})`);
+    expect(target.style.getPropertyValue('--viewport-inverse-scale')).toBe(String(1 / visualScale));
+    engine.destroy();
+  });
+
+  it('rejects a non-finite or non-positive setViewportTransformScaleFactor and keeps the current bias', () => {
+    const engine = new ViewportEngine(scene, { ...config, transformScaleFactor: 2 });
+    const error = vi.fn();
+    scene.addEventListener('viewport-error', (event) => error((event as CustomEvent).detail?.message));
+    engine.setViewportTransformScaleFactor(0);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('finite and positive'));
+    expect(scene.style.transform).toContain('scale(' + String((engine.getState().scale * 2)));
+    engine.destroy();
   });
 });
