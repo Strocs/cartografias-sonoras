@@ -7,7 +7,7 @@ export {
   type AudioStore,
   type AudioTransitions,
   type PieceState,
-  type SoundState,
-} from './types';
-export { audioStore, audioTransitions, useAudioStore } from './store';
-export { AudioPool } from './ui/AudioPool';
+  type SoundState
+} from './types'
+export { audioStore, audioTransitions, useAudioStore } from './store'
+export { AudioPool } from './ui/AudioPool'

@@ -1,25 +1,25 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import MapPage from '../views/map/MapPage.astro';
-import { MAPS_DATA } from '../features/maps/data/maps';
-import { MARKS } from '../features/sounds/data/sounds';
-import { PATHS } from '../features/paths/data/paths';
-import { SOUND_PIECES } from '../features/sound-pieces/data/sound-pieces';
+import Layout from '../layouts/Layout.astro'
+import MapPage from '../views/map/MapPage.astro'
+import { MAPS_DATA } from '../features/maps/data/maps'
+import { MARKS } from '../features/sounds/data/sounds'
+import { PATHS } from '../features/paths/data/paths'
+import { SOUND_PIECES } from '../features/sound-pieces/data/sound-pieces'
 
 export function getStaticPaths() {
-  return MAPS_DATA.map((map) => ({ params: { slug: map.slug } }));
+  return MAPS_DATA.map((map) => ({ params: { slug: map.slug } }))
 }
 
-const { slug } = Astro.params;
-const map = MAPS_DATA.find((m) => m.slug === slug);
+const { slug } = Astro.params
+const map = MAPS_DATA.find((m) => m.slug === slug)
 
 if (!map) {
-  return new Response('Not found', { status: 404 });
+  return new Response('Not found', { status: 404 })
 }
 
-const marks = MARKS.filter((mark) => mark.mapId === map.id);
-const paths = PATHS.filter((path) => path.mapId === map.id);
-const soundPiece = SOUND_PIECES.find((piece) => piece.mapId === map.id) ?? null;
+const marks = MARKS.filter((mark) => mark.mapId === map.id)
+const paths = PATHS.filter((path) => path.mapId === map.id)
+const soundPiece = SOUND_PIECES.find((piece) => piece.mapId === map.id) ?? null
 ---
 
 <Layout title={map.title}>

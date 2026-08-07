@@ -1,4 +1,4 @@
-import type { SoundPiece } from '../domain/types';
+import type { SoundPiece } from '../domain/types'
 
 export const SOUND_PIECES: SoundPiece[] = [
   {
@@ -28,4 +28,4 @@ export const SOUND_PIECES: SoundPiece[] = [
       'Obra inspirada en el borde costero, donde el oleaje, las gaviotas y el viento construyen una narrativa sonora sobre el encuentro entre la ciudad y el mar.',
     audioUrl: null
   }
-];
+]

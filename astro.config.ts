@@ -1,6 +1,6 @@
-import tailwindcss from '@tailwindcss/vite';
-import { defineConfig, fontProviders } from 'astro/config';
-import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite'
+import { defineConfig, fontProviders } from 'astro/config'
+import react from '@astrojs/react'
 
 export default defineConfig({
   site: 'https://cartografias-sonoras.example.com',
@@ -30,4 +30,4 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()]
   }
-});
+})

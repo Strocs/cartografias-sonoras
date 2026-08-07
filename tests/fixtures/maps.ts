@@ -6,20 +6,18 @@
  * can load them without a PNG/WebP transform. Any change to slugs or titles
  * flows into the suite automatically.
  */
-import { mapLayouts } from '../../src/features/maps/data/map-layouts';
+import { mapLayouts } from '../../src/features/maps/data/map-layouts'
 
 export interface MapFixture {
-  id: number;
-  slug: string;
-  title: string;
-  soundPieceEnabled: boolean;
+  id: number
+  slug: string
+  title: string
+  soundPieceEnabled: boolean
 }
 
-export const mapFixtures: MapFixture[] = mapLayouts.map(
-  ({ id, slug, title, soundPieceEnabled }) => ({
-    id,
-    slug,
-    title,
-    soundPieceEnabled
-  })
-);
+export const mapFixtures: MapFixture[] = mapLayouts.map(({ id, slug, title, soundPieceEnabled }) => ({
+  id,
+  slug,
+  title,
+  soundPieceEnabled
+}))

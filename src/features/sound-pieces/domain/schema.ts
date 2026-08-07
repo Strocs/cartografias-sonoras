@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
 export const soundPieceSchema = z.object(
   {
@@ -10,4 +10,4 @@ export const soundPieceSchema = z.object(
     audioUrl: z.url().nullable()
   },
   { error: 'Invalid sound piece' }
-);
+)

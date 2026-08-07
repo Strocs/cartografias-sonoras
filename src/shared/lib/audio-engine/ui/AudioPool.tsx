@@ -1,232 +1,208 @@
-'use client';
+'use client'
 
-import { useRef } from 'react';
+import { useRef } from 'react'
 
-import { useMountEffect } from '@shared/hooks/useMountEffect';
-import { AUDIO_STATUS, audioStore, audioTransitions, useAudioStore } from '../';
-import type { AudioElementId, AudioEngineState, AudioStatus } from '../types';
+import { useMountEffect } from '@shared/hooks/useMountEffect'
+import { AUDIO_STATUS, audioStore, audioTransitions, useAudioStore } from '../'
+import type { AudioElementId, AudioEngineState, AudioStatus } from '../types'
 
 /** A sound from a mark: audio is always present. */
 interface AudioPoolSound {
-  id: number;
-  audioUrl: string;
+  id: number
+  audioUrl: string
 }
 
 /** A background sound piece: audio may be absent (null = not played). */
 interface AudioPoolPiece {
-  id: number;
-  audioUrl: string | null;
+  id: number
+  audioUrl: string | null
 }
 
 interface AudioPoolProps {
-  sounds: AudioPoolSound[];
-  soundPiece?: AudioPoolPiece | null;
+  sounds: AudioPoolSound[]
+  soundPiece?: AudioPoolPiece | null
 }
 
-const ACTIVE_ELEMENT_STATUSES = new Set<AudioStatus>([
-  AUDIO_STATUS.LOADING,
-  AUDIO_STATUS.PLAYING,
-  AUDIO_STATUS.PAUSED
-]);
+const ACTIVE_ELEMENT_STATUSES = new Set<AudioStatus>([AUDIO_STATUS.LOADING, AUDIO_STATUS.PLAYING, AUDIO_STATUS.PAUSED])
 
 function selectActiveSoundIds(state: AudioEngineState): string {
-  const ids: number[] = [];
+  const ids: number[] = []
   state.activeSounds.forEach((sound, id) => {
     if (ACTIVE_ELEMENT_STATUSES.has(sound.status)) {
-      ids.push(id);
+      ids.push(id)
     }
-  });
-  return ids.sort((a, b) => a - b).join(',');
+  })
+  return ids.sort((a, b) => a - b).join(',')
 }
 
 function selectPieceActive(state: AudioEngineState): boolean {
-  return (
-    state.activePieceId !== null &&
-    ACTIVE_ELEMENT_STATUSES.has(state.piece.status)
-  );
+  return state.activePieceId !== null && ACTIVE_ELEMENT_STATUSES.has(state.piece.status)
 }
 
-function findSoundUrl(
-  sounds: AudioPoolSound[],
-  soundId: number
-): string | undefined {
-  return sounds.find((sound) => sound.id === soundId)?.audioUrl;
+function findSoundUrl(sounds: AudioPoolSound[], soundId: number): string | undefined {
+  return sounds.find((sound) => sound.id === soundId)?.audioUrl
 }
 
 export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
-  const audioRefs = useRef(new Map<AudioElementId, HTMLAudioElement>());
-  const prevStatuses = useRef(new Map<AudioElementId, AudioStatus>());
-  const prevVolume = useRef<number>(1);
-  const prevMuted = useRef<boolean>(false);
+  const audioRefs = useRef(new Map<AudioElementId, HTMLAudioElement>())
+  const prevStatuses = useRef(new Map<AudioElementId, AudioStatus>())
+  const prevVolume = useRef<number>(1)
+  const prevMuted = useRef<boolean>(false)
 
-  const activeSoundIdsStr = useAudioStore(selectActiveSoundIds);
-  const activeSoundIds: number[] = activeSoundIdsStr
-    ? activeSoundIdsStr.split(',').map(Number)
-    : [];
-  const pieceActive = useAudioStore(selectPieceActive);
+  const activeSoundIdsStr = useAudioStore(selectActiveSoundIds)
+  const activeSoundIds: number[] = activeSoundIdsStr ? activeSoundIdsStr.split(',').map(Number) : []
+  const pieceActive = useAudioStore(selectPieceActive)
 
-  const syncAudioElement = (
-    id: AudioElementId,
-    audio: HTMLAudioElement,
-    state: AudioEngineState
-  ): void => {
-    const status =
-      state.activeSounds.get(id)?.status ??
-      (state.activePieceId === id ? state.piece.status : undefined);
+  const syncAudioElement = (id: AudioElementId, audio: HTMLAudioElement, state: AudioEngineState): void => {
+    const status = state.activeSounds.get(id)?.status ?? (state.activePieceId === id ? state.piece.status : undefined)
 
     if (status === undefined) {
-      return;
+      return
     }
 
-    const prevStatus = prevStatuses.current.get(id);
+    const prevStatus = prevStatuses.current.get(id)
     if (prevStatus !== status) {
       if (status === AUDIO_STATUS.LOADING) {
-        audio.load();
-        void audio.play();
+        audio.load()
+        void audio.play()
       } else if (status === AUDIO_STATUS.PLAYING) {
-        void audio.play();
+        void audio.play()
       } else if (status === AUDIO_STATUS.PAUSED) {
-        audio.pause();
+        audio.pause()
       }
-      prevStatuses.current.set(id, status);
+      prevStatuses.current.set(id, status)
     }
-  };
+  }
 
   const applyGlobalVolume = (state: AudioEngineState): void => {
-    if (
-      state.volume === prevVolume.current &&
-      state.muted === prevMuted.current
-    ) {
-      return;
+    if (state.volume === prevVolume.current && state.muted === prevMuted.current) {
+      return
     }
     audioRefs.current.forEach((audio) => {
-      audio.volume = state.volume;
-      audio.muted = state.muted;
-    });
-    prevVolume.current = state.volume;
-    prevMuted.current = state.muted;
-  };
+      audio.volume = state.volume
+      audio.muted = state.muted
+    })
+    prevVolume.current = state.volume
+    prevMuted.current = state.muted
+  }
 
   const applyPendingSeeks = (state: AudioEngineState): void => {
     state._pendingSeeks.forEach((time, id) => {
-      const audio = audioRefs.current.get(id);
+      const audio = audioRefs.current.get(id)
       if (audio) {
-        audio.currentTime = time;
-        audioTransitions.seekSound(id, time);
+        audio.currentTime = time
+        audioTransitions.seekSound(id, time)
       }
-    });
+    })
 
     if (state._pendingPieceSeek !== null && state.activePieceId !== null) {
-      const pieceAudio = audioRefs.current.get(state.activePieceId);
+      const pieceAudio = audioRefs.current.get(state.activePieceId)
       if (pieceAudio) {
-        const time = state._pendingPieceSeek;
-        pieceAudio.currentTime = time;
-        audioTransitions.seekPiece(time);
+        const time = state._pendingPieceSeek
+        pieceAudio.currentTime = time
+        audioTransitions.seekPiece(time)
       }
     }
-  };
+  }
 
   const syncAllActiveAudio = (): void => {
-    const state = audioStore.getState();
+    const state = audioStore.getState()
 
-    applyGlobalVolume(state);
-    applyPendingSeeks(state);
+    applyGlobalVolume(state)
+    applyPendingSeeks(state)
 
     state.activeSounds.forEach((sound, id) => {
-      const audio = audioRefs.current.get(id);
+      const audio = audioRefs.current.get(id)
       if (audio) {
-        syncAudioElement(id, audio, state);
+        syncAudioElement(id, audio, state)
       }
-    });
+    })
 
     if (state.activePieceId !== null) {
-      const pieceAudio = audioRefs.current.get(state.activePieceId);
+      const pieceAudio = audioRefs.current.get(state.activePieceId)
       if (pieceAudio) {
-        syncAudioElement(state.activePieceId, pieceAudio, state);
+        syncAudioElement(state.activePieceId, pieceAudio, state)
       }
     }
 
     // Clean up status entries for IDs that are no longer active.
-    const activeIds = new Set<AudioElementId>();
-    state.activeSounds.forEach((_, id) => activeIds.add(id));
+    const activeIds = new Set<AudioElementId>()
+    state.activeSounds.forEach((_, id) => activeIds.add(id))
     if (state.activePieceId !== null) {
-      activeIds.add(state.activePieceId);
+      activeIds.add(state.activePieceId)
     }
     prevStatuses.current.forEach((_, id) => {
       if (!activeIds.has(id)) {
-        prevStatuses.current.delete(id);
+        prevStatuses.current.delete(id)
       }
-    });
-  };
+    })
+  }
 
   useMountEffect(() => {
     if (!soundPiece && audioStore.getState().activePieceId !== null) {
-      audioTransitions.stopPiece();
+      audioTransitions.stopPiece()
     }
-    syncAllActiveAudio();
-    const unsubscribe = audioStore.subscribe(syncAllActiveAudio);
-    return unsubscribe;
-  });
+    syncAllActiveAudio()
+    const unsubscribe = audioStore.subscribe(syncAllActiveAudio)
+    return unsubscribe
+  })
 
-  const registerAudio =
-    (id: AudioElementId) => (element: HTMLAudioElement | null) => {
-      if (element === null) {
-        audioRefs.current.delete(id);
-        prevStatuses.current.delete(id);
-        return;
-      }
+  const registerAudio = (id: AudioElementId) => (element: HTMLAudioElement | null) => {
+    if (element === null) {
+      audioRefs.current.delete(id)
+      prevStatuses.current.delete(id)
+      return
+    }
 
-      element.volume = prevVolume.current;
-      element.muted = prevMuted.current;
-      audioRefs.current.set(id, element);
-      syncAudioElement(id, element, audioStore.getState());
-    };
+    element.volume = prevVolume.current
+    element.muted = prevMuted.current
+    audioRefs.current.set(id, element)
+    syncAudioElement(id, element, audioStore.getState())
+  }
 
   const handleLoadedMetadata =
-    (id: AudioElementId, isPiece: boolean) =>
-    (event: React.SyntheticEvent<HTMLAudioElement>) => {
-      const audio = event.currentTarget;
+    (id: AudioElementId, isPiece: boolean) => (event: React.SyntheticEvent<HTMLAudioElement>) => {
+      const audio = event.currentTarget
       if (isPiece) {
-        audioTransitions.pieceLoaded(audio.duration);
+        audioTransitions.pieceLoaded(audio.duration)
       } else {
-        audioTransitions.soundLoaded(id, audio.duration);
+        audioTransitions.soundLoaded(id, audio.duration)
       }
-    };
+    }
 
   const handleTimeUpdate =
-    (id: AudioElementId, isPiece: boolean) =>
-    (event: React.SyntheticEvent<HTMLAudioElement>) => {
-      const audio = event.currentTarget;
+    (id: AudioElementId, isPiece: boolean) => (event: React.SyntheticEvent<HTMLAudioElement>) => {
+      const audio = event.currentTarget
       if (isPiece) {
-        audioTransitions.pieceTimeUpdated(audio.currentTime);
+        audioTransitions.pieceTimeUpdated(audio.currentTime)
       } else {
-        audioTransitions.soundTimeUpdated(id, audio.currentTime);
+        audioTransitions.soundTimeUpdated(id, audio.currentTime)
       }
-    };
+    }
 
   const handleEnded = (id: AudioElementId, isPiece: boolean) => () => {
     if (isPiece) {
-      audioTransitions.pieceEnded();
+      audioTransitions.pieceEnded()
     } else {
-      audioTransitions.soundEnded(id);
+      audioTransitions.soundEnded(id)
     }
-  };
+  }
 
   const handleError = (id: AudioElementId, isPiece: boolean) => () => {
-    const message = isPiece ? 'piece-audio-error' : 'sound-audio-error';
+    const message = isPiece ? 'piece-audio-error' : 'sound-audio-error'
     if (isPiece) {
-      audioTransitions.pieceError(message);
+      audioTransitions.pieceError(message)
     } else {
-      audioTransitions.soundError(id, message);
+      audioTransitions.soundError(id, message)
     }
-  };
+  }
 
   return (
     <div aria-hidden="true" className="sr-only">
       {activeSoundIds.map((soundId) => {
-        const src = findSoundUrl(sounds, soundId);
+        const src = findSoundUrl(sounds, soundId)
         if (!src) {
-          return null;
+          return null
         }
         return (
           <audio
@@ -239,7 +215,7 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
             onEnded={handleEnded(soundId, false)}
             onError={handleError(soundId, false)}
           />
-        );
+        )
       })}
       {pieceActive && soundPiece?.audioUrl && (
         <audio
@@ -254,5 +230,5 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
         />
       )}
     </div>
-  );
+  )
 }

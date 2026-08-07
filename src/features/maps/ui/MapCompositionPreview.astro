@@ -1,17 +1,17 @@
 ---
-import { Image } from 'astro:assets';
+import { Image } from 'astro:assets'
 
-import type { Map } from '../domain/types';
+import type { Map } from '../domain/types'
 
 interface Props {
-  map: Map;
-  loading?: 'eager' | 'lazy';
-  class?: string;
-  imageClass?: string;
+  map: Map
+  loading?: 'eager' | 'lazy'
+  class?: string
+  imageClass?: string
   /** Responsive candidate widths for the generated `srcset`. */
-  widths?: number[];
+  widths?: number[]
   /** The container's rendered width, so the browser picks the right candidate. */
-  sizes?: string;
+  sizes?: string
 }
 
 const {
@@ -21,9 +21,9 @@ const {
   imageClass = '',
   widths = [640, 960, 1280, 1600],
   sizes = '100vw'
-} = Astro.props;
+} = Astro.props
 
-const labelId = `map-composition-label-${map.slug}`;
+const labelId = `map-composition-label-${map.slug}`
 ---
 
 <figure

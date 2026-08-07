@@ -1,6 +1,6 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test'
 
-const PREVIEW_URL = 'http://127.0.0.1:4322';
+const PREVIEW_URL = 'http://127.0.0.1:4322'
 
 export default defineConfig({
   testDir: 'tests',
@@ -37,4 +37,4 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 120_000
   }
-});
+})

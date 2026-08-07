@@ -1,37 +1,30 @@
 ---
-import RightRail from '../../features/maps/ui/RightRail.astro';
-import MapCompositionPreview from '../../features/maps/ui/MapCompositionPreview.astro';
-import { AudioPool } from '../../shared/lib/audio-engine';
-import { AudioBottomPlayer } from '../../features/sound-pieces/ui/AudioBottomPlayer.tsx';
-import { MapControls } from '../../features/maps/ui/MapControls.tsx';
+import RightRail from '../../features/maps/ui/RightRail.astro'
+import MapCompositionPreview from '../../features/maps/ui/MapCompositionPreview.astro'
+import { AudioPool } from '../../shared/lib/audio-engine'
+import { AudioBottomPlayer } from '../../features/sound-pieces/ui/AudioBottomPlayer.tsx'
+import { MapControls } from '../../features/maps/ui/MapControls.tsx'
 
-import '../../features/sounds/ui/mark-styles.css';
-import '../../features/sounds/ui/sound-button-styles.css';
-import '../../features/paths/styles/path-styles.css';
-import '../../features/maps/styles/map-layer-styles.css';
+import '../../features/sounds/ui/mark-styles.css'
+import '../../features/sounds/ui/sound-button-styles.css'
+import '../../features/paths/styles/path-styles.css'
+import '../../features/maps/styles/map-layer-styles.css'
 
-import type { Map } from '../../features/maps/domain/types';
-import type { Mark } from '../../features/sounds/domain/types';
-import type { Path } from '../../features/paths/domain/types';
-import type { SoundPiece } from '../../features/sound-pieces/domain/types';
+import type { Map } from '../../features/maps/domain/types'
+import type { Mark } from '../../features/sounds/domain/types'
+import type { Path } from '../../features/paths/domain/types'
+import type { SoundPiece } from '../../features/sound-pieces/domain/types'
 
 interface Props {
-  map: Map;
-  maps: Map[];
-  marks: Mark[];
-  paths: Path[];
-  soundPiece?: SoundPiece | null;
-  soundPieceEnabled?: boolean;
+  map: Map
+  maps: Map[]
+  marks: Mark[]
+  paths: Path[]
+  soundPiece?: SoundPiece | null
+  soundPieceEnabled?: boolean
 }
 
-const {
-  map,
-  maps,
-  marks,
-  paths,
-  soundPiece,
-  soundPieceEnabled = true
-} = Astro.props;
+const { map, maps, marks, paths, soundPiece, soundPieceEnabled = true } = Astro.props
 
 // The audio pool consumes a flat list of sound ids→urls only; each mark embeds
 // its sounds, so flatten them here.
@@ -40,44 +33,42 @@ const audioPoolSounds = marks.flatMap((mark) =>
     id: sound.id,
     audioUrl: sound.audioUrl
   }))
-);
+)
 
-const audioPoolPiece =
-  soundPieceEnabled && soundPiece
-    ? { id: soundPiece.id, audioUrl: soundPiece.audioUrl }
-    : null;
+const audioPoolPiece = soundPieceEnabled && soundPiece ? { id: soundPiece.id, audioUrl: soundPiece.audioUrl } : null
 
 const mapData = {
   marks,
   paths,
   imgWidth: map.images[0].width,
   imgHeight: map.images[0].height
-};
+}
 ---
 
-<main
-  class="relative max-h-dvh min-w-0 flex-1 overflow-hidden"
-  transition:animate="fade"
->
+<main class="relative max-h-dvh min-w-0 flex-1 overflow-hidden" transition:animate="fade">
   <div class="relative flex size-full">
-    <div class="map-wrapper relative flex min-h-0 min-w-0 flex-1 flex-col">
-      <MapCompositionPreview
-        map={map}
-        loading="eager"
-        class="absolute inset-0 z-10 size-full"
-        imageClass="size-full object-contain"
-      />
-      <map-view
-        map-layers={JSON.stringify(map.images)}
-        map-title={map.title}
-        render-context="active"
-        id="main-map"
-        class="min-h-0 min-w-0 flex-1"
-        min-zoom='{"base":1,"md":0.8}'
-        max-zoom='{"base":3.2,"md":1.5}'
+    <div class="map-wrapper relative flex min-h-0 min-w-0 flex-1 flex-col md:pointer-events-none">
+      <div
+        class="map-layer relative z-0 flex min-h-0 min-w-0 flex-1 flex-col md:pointer-events-auto md:fixed md:inset-0"
       >
-      </map-view>
-      <MapControls client:visible mapViewId="main-map" />
+        <MapCompositionPreview
+          map={map}
+          loading="eager"
+          class="absolute inset-0 z-10 size-full"
+          imageClass="size-full object-contain"
+        />
+        <map-view
+          id="main-map"
+          map-layers={JSON.stringify(map.images)}
+          map-title={map.title}
+          render-context="active"
+          class="min-h-0 min-w-0 flex-1"
+          min-zoom='{"base":1,"md":0.8}'
+          max-zoom='{"base":3.2,"md":1.5}'
+        >
+        </map-view>
+      </div>
+      <MapControls client:visible mapViewId="main-map" className="md:pointer-events-auto" />
     </div>
     <RightRail maps={maps} activeSlug={map.slug} class="shrink-0" />
   </div>
@@ -94,11 +85,7 @@ const mapData = {
     {
       soundPieceEnabled && (
         <div class="pointer-events-auto w-full max-w-2xl md:w-auto">
-          <AudioBottomPlayer
-            client:idle
-            soundPiece={soundPiece}
-            enabled={soundPieceEnabled}
-          />
+          <AudioBottomPlayer client:idle soundPiece={soundPiece} enabled={soundPieceEnabled} />
         </div>
       )
     }
@@ -107,17 +94,13 @@ const mapData = {
   <AudioPool client:idle sounds={audioPoolSounds} soundPiece={audioPoolPiece} />
 </main>
 
-<script
-  type="application/json"
-  id="map-data"
-  set:html={JSON.stringify(mapData)}
-/>
+<script type="application/json" id="map-data" set:html={JSON.stringify(mapData)} />
 
 <script>
-  import '@features/maps/ui/map-view';
-  import { bindMapPage } from '@views/map/mapPageController';
+  import '@features/maps/ui/map-view'
+  import { bindMapPage } from '@views/map/mapPageController'
 
-  document.addEventListener('astro:page-load', bindMapPage);
+  document.addEventListener('astro:page-load', bindMapPage)
 </script>
 
 <style is:inline>

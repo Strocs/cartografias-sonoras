@@ -1,1 +1,1 @@
-export { relativeToPixel, pixelToRelative } from './adapter';
+export { relativeToPixel, pixelToRelative } from './adapter'

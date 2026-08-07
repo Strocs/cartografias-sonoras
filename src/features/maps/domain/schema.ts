@@ -1,7 +1,7 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { normalizeMapInput } from './normalize';
-import { LAYER_EFFECT } from './types';
+import { normalizeMapInput } from './normalize'
+import { LAYER_EFFECT } from './types'
 
 export const mapImageSchema = z.object(
   {
@@ -13,23 +13,19 @@ export const mapImageSchema = z.object(
       .custom<import('astro').ImageMetadata>(
         (value) =>
           value === undefined ||
-          (typeof value === 'object' &&
-            value !== null &&
-            'src' in value &&
-            'width' in value &&
-            'height' in value)
+          (typeof value === 'object' && value !== null && 'src' in value && 'width' in value && 'height' in value)
       )
       .optional()
   },
   { error: 'Invalid map image' }
-);
+)
 
 export const normalizedFrameSchema = z.object({
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
   width: z.number().positive().max(100),
   height: z.number().positive().max(100)
-});
+})
 
 export const mapLayerSchema = mapImageSchema.extend({
   id: z.string().min(1),
@@ -39,7 +35,7 @@ export const mapLayerSchema = mapImageSchema.extend({
   hoverScale: z.number().positive().optional(),
   className: z.string().min(1).optional(),
   pointerEvents: z.boolean().optional()
-});
+})
 
 export const mapSchema = z.preprocess(
   normalizeMapInput,
@@ -55,4 +51,4 @@ export const mapSchema = z.preprocess(
     },
     { error: 'Invalid map' }
   )
-);
+)

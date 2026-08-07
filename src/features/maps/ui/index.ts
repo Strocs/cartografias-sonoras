@@ -1,2 +1,2 @@
-export { MapControls } from './MapControls';
-export type { MapControlsProps } from './MapControls';
+export { MapControls } from './MapControls'
+export type { MapControlsProps } from './MapControls'

@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { getViteConfig } from 'astro/config';
+import { getViteConfig } from 'astro/config'
 
 export default getViteConfig({
   test: {
@@ -14,8 +14,8 @@ export default getViteConfig({
         branches: 70,
         functions: 70,
         lines: 70,
-        statements: 70,
-      },
-    },
-  },
-});
+        statements: 70
+      }
+    }
+  }
+})

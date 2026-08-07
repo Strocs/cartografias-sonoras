@@ -1,97 +1,82 @@
-'use client';
+'use client'
 
-import { cn } from '@shared/utils/cn';
-import { VolumeControl } from '@shared/ui/VolumeControl';
-import {
-  AUDIO_STATUS,
-  useAudioStore,
-  type AudioEngineState,
-  type AudioStatus
-} from '@shared/lib/audio-engine';
+import { cn } from '@shared/utils/cn'
+import { VolumeControl } from '@shared/ui/VolumeControl'
+import { AUDIO_STATUS, useAudioStore, type AudioEngineState, type AudioStatus } from '@shared/lib/audio-engine'
 
-import type { SoundPiece } from '../domain/types';
+import type { SoundPiece } from '../domain/types'
 
 export interface AudioBottomPlayerProps {
-  soundPiece?: SoundPiece | null;
-  enabled?: boolean;
+  soundPiece?: SoundPiece | null
+  enabled?: boolean
 }
 
-const ACTIVE_STATUSES = new Set<AudioStatus>([
-  AUDIO_STATUS.LOADING,
-  AUDIO_STATUS.PLAYING,
-  AUDIO_STATUS.PAUSED
-]);
+const ACTIVE_STATUSES = new Set<AudioStatus>([AUDIO_STATUS.LOADING, AUDIO_STATUS.PLAYING, AUDIO_STATUS.PAUSED])
 
 // Primitive selectors — Object.is comparison works natively, no useShallow needed.
 
 function selectIsPieceMode(state: AudioEngineState): boolean {
-  return (
-    state.activePieceId !== null && ACTIVE_STATUSES.has(state.piece.status)
-  );
+  return state.activePieceId !== null && ACTIVE_STATUSES.has(state.piece.status)
 }
 
 function selectIsPiecePlaying(state: AudioEngineState): boolean {
-  return state.piece.status === AUDIO_STATUS.PLAYING;
+  return state.piece.status === AUDIO_STATUS.PLAYING
 }
 
-export function AudioBottomPlayer({
-  soundPiece,
-  enabled = true
-}: AudioBottomPlayerProps) {
-  const isPieceMode = useAudioStore(selectIsPieceMode);
-  const isPiecePlaying = useAudioStore(selectIsPiecePlaying);
-  const pieceCurrentTime = useAudioStore((s) => s.piece.currentTime);
-  const pieceDuration = useAudioStore((s) => s.piece.duration);
-  const volume = useAudioStore((s) => s.volume);
-  const muted = useAudioStore((s) => s.muted);
+export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPlayerProps) {
+  const isPieceMode = useAudioStore(selectIsPieceMode)
+  const isPiecePlaying = useAudioStore(selectIsPiecePlaying)
+  const pieceCurrentTime = useAudioStore((s) => s.piece.currentTime)
+  const pieceDuration = useAudioStore((s) => s.piece.duration)
+  const volume = useAudioStore((s) => s.volume)
+  const muted = useAudioStore((s) => s.muted)
 
-  const playPiece = useAudioStore((s) => s.playPiece);
-  const pausePiece = useAudioStore((s) => s.pausePiece);
-  const resumePiece = useAudioStore((s) => s.resumePiece);
-  const seekPiece = useAudioStore((s) => s.seekPiece);
-  const setVolume = useAudioStore((s) => s.setVolume);
-  const toggleMute = useAudioStore((s) => s.toggleMute);
+  const playPiece = useAudioStore((s) => s.playPiece)
+  const pausePiece = useAudioStore((s) => s.pausePiece)
+  const resumePiece = useAudioStore((s) => s.resumePiece)
+  const seekPiece = useAudioStore((s) => s.seekPiece)
+  const setVolume = useAudioStore((s) => s.setVolume)
+  const toggleMute = useAudioStore((s) => s.toggleMute)
 
   if (!enabled) {
-    return null;
+    return null
   }
 
-  const isIdle = !isPieceMode;
+  const isIdle = !isPieceMode
 
-  const progress =
-    pieceDuration <= 0 ? 0 : Math.min(1, Math.max(0, pieceCurrentTime / pieceDuration));
+  const progress = pieceDuration <= 0 ? 0 : Math.min(1, Math.max(0, pieceCurrentTime / pieceDuration))
 
   const handlePlayPause = () => {
     if (isIdle && soundPiece) {
-      playPiece(soundPiece.id, soundPiece.mapId);
-      return;
+      playPiece(soundPiece.id, soundPiece.mapId)
+      return
     }
 
     if (isPiecePlaying) {
-      pausePiece();
+      pausePiece()
     } else {
-      resumePiece();
+      resumePiece()
     }
-  };
+  }
 
   const handleScrub = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (pieceDuration <= 0) return;
-    const time = (Number(event.target.value) / 100) * pieceDuration;
-    seekPiece(time);
-  };
+    if (pieceDuration <= 0) return
+    const time = (Number(event.target.value) / 100) * pieceDuration
+    seekPiece(time)
+  }
 
   const handleVolume = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setVolume(Math.min(1, Math.max(0, Number(event.target.value) / 100)));
-  };
+    setVolume(Math.min(1, Math.max(0, Number(event.target.value) / 100)))
+  }
 
-  const title = soundPiece?.title ?? 'Obra sonora';
-  const subtitle = soundPiece?.author ?? '';
+  const title = soundPiece?.title ?? 'Obra sonora'
+  const subtitle = soundPiece?.author ?? ''
 
   return (
     <div
       className={cn(
-        'w-full animate-slide-up rounded-3xl shadow-lg',
-        'max-w-2xl border border-charcoal bg-primary-teal text-white shadow-2xl'
+        'animate-slide-up w-full rounded-3xl shadow-lg',
+        'border-charcoal bg-primary-teal max-w-2xl border text-white shadow-2xl'
       )}
       data-testid="audio-bottom-player"
       data-mode={isIdle ? 'idle' : 'piece'}
@@ -102,7 +87,7 @@ export function AudioBottomPlayer({
           onClick={handlePlayPause}
           className={cn(
             'flex shrink-0 items-center justify-center rounded-full',
-            'size-10 bg-white text-primary-teal transition-transform',
+            'text-primary-teal size-10 bg-white transition-transform',
             'hover:scale-105 active:scale-95',
             'focus:ring-2 focus:ring-white/50 focus:outline-none'
           )}
@@ -117,41 +102,27 @@ export function AudioBottomPlayer({
             {title}
           </span>
           {subtitle && (
-            <span className="block max-w-[140px] truncate text-xs text-white/70 md:max-w-[200px]">
-              {subtitle}
-            </span>
+            <span className="block max-w-[140px] truncate text-xs text-white/70 md:max-w-[200px]">{subtitle}</span>
           )}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <Scrubber
-            progress={progress}
-            disabled={isIdle}
-            onChange={handleScrub}
-          />
-          <TimeDisplay
-            currentTime={pieceCurrentTime}
-            duration={pieceDuration}
-          />
+          <Scrubber progress={progress} disabled={isIdle} onChange={handleScrub} />
+          <TimeDisplay currentTime={pieceCurrentTime} duration={pieceDuration} />
         </div>
 
         <WaveVisualizer active={isPiecePlaying} />
 
-        <VolumeControl
-          volume={volume}
-          muted={muted}
-          onToggleMute={toggleMute}
-          onVolumeChange={handleVolume}
-        />
+        <VolumeControl volume={volume} muted={muted} onToggleMute={toggleMute} onVolumeChange={handleVolume} />
       </div>
     </div>
-  );
+  )
 }
 
 interface ScrubberProps {
-  progress: number;
-  disabled: boolean;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  progress: number
+  disabled: boolean
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
 }
 
 function Scrubber({ progress, disabled, onChange }: ScrubberProps) {
@@ -166,40 +137,37 @@ function Scrubber({ progress, disabled, onChange }: ScrubberProps) {
       disabled={disabled}
       className={cn(
         'h-1.5 w-full cursor-pointer appearance-none rounded-full',
-        'bg-white/20 accent-secondary-sand',
+        'accent-secondary-sand bg-white/20',
         disabled && 'cursor-default opacity-60'
       )}
       aria-label="Progreso de reproducción"
       data-testid="bottom-scrubber"
     />
-  );
+  )
 }
 
 interface TimeDisplayProps {
-  currentTime: number;
-  duration: number;
+  currentTime: number
+  duration: number
 }
 
 function TimeDisplay({ currentTime, duration }: TimeDisplayProps) {
   return (
-    <span
-      className="self-end text-xs text-white/80 tabular-nums"
-      data-testid="bottom-time"
-    >
+    <span className="self-end text-xs text-white/80 tabular-nums" data-testid="bottom-time">
       {formatTime(currentTime)} / {formatTime(duration)}
     </span>
-  );
+  )
 }
 
 function formatTime(seconds: number): string {
-  const safe = Number.isFinite(seconds) && seconds >= 0 ? seconds : 0;
-  const minutes = Math.floor(safe / 60);
-  const secs = Math.floor(safe % 60);
-  return `${minutes}:${String(secs).padStart(2, '0')}`;
+  const safe = Number.isFinite(seconds) && seconds >= 0 ? seconds : 0
+  const minutes = Math.floor(safe / 60)
+  const secs = Math.floor(safe % 60)
+  return `${minutes}:${String(secs).padStart(2, '0')}`
 }
 
 interface WaveVisualizerProps {
-  active: boolean;
+  active: boolean
 }
 
 function WaveVisualizer({ active }: WaveVisualizerProps) {
@@ -213,10 +181,7 @@ function WaveVisualizer({ active }: WaveVisualizerProps) {
       {Array.from({ length: 5 }).map((_, index) => (
         <span
           key={index}
-          className={cn(
-            'w-1 origin-bottom rounded-full bg-secondary-sand',
-            'h-4 animate-soundwave'
-          )}
+          className={cn('bg-secondary-sand w-1 origin-bottom rounded-full', 'animate-soundwave h-4')}
           style={{
             animationDelay: `${index * 100}ms`,
             animationPlayState: active ? 'running' : 'paused'
@@ -224,7 +189,7 @@ function WaveVisualizer({ active }: WaveVisualizerProps) {
         />
       ))}
     </div>
-  );
+  )
 }
 
 function PlayIcon() {
@@ -232,7 +197,7 @@ function PlayIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
       <path d="M8 5v14l11-7z" />
     </svg>
-  );
+  )
 }
 
 function PauseIcon() {
@@ -240,5 +205,5 @@ function PauseIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
       <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
     </svg>
-  );
+  )
 }

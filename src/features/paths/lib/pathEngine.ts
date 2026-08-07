@@ -1,6 +1,6 @@
-import { relativeToPixel } from '@shared/lib/coordinates';
+import { relativeToPixel } from '@shared/lib/coordinates'
 
-import type { Point } from '../domain/types';
+import type { Point } from '../domain/types'
 
 /**
  * Builds a straight-segment SVG `d` attribute from percentage-based points.
@@ -9,23 +9,19 @@ import type { Point } from '../domain/types';
  * `M x0 y0 L x1 y1 L x2 y2 ...`. Returns an empty string for fewer than two
  * points.
  */
-export function buildPolylineD(
-  points: Point[],
-  width: number,
-  height: number
-): string {
+export function buildPolylineD(points: Point[], width: number, height: number): string {
   if (points.length < 2) {
-    return '';
+    return ''
   }
 
-  const commands: string[] = [];
+  const commands: string[] = []
 
   for (let i = 0; i < points.length; i++) {
-    const { x, y } = relativeToPixel(points[i], width, height);
-    commands.push(i === 0 ? 'M' : 'L', `${x}`, `${y}`);
+    const { x, y } = relativeToPixel(points[i], width, height)
+    commands.push(i === 0 ? 'M' : 'L', `${x}`, `${y}`)
   }
 
-  return commands.join(' ');
+  return commands.join(' ')
 }
 
 /**
@@ -46,20 +42,20 @@ export function buildPolylineD(
  */
 export function smoothPoints(points: Point[], density = 3): Point[] {
   if (points.length < 3) {
-    return points;
+    return points
   }
 
-  const result: Point[] = [points[0]];
+  const result: Point[] = [points[0]]
 
   for (let i = 1; i < points.length - 1; i++) {
-    const p0 = points[i - 1];
-    const p1 = points[i];
-    const p2 = points[i + 1];
+    const p0 = points[i - 1]
+    const p1 = points[i]
+    const p2 = points[i + 1]
 
     for (let t = 1; t <= density; t++) {
-      const s = t / density;
-      const s2 = s * s;
-      const s3 = s2 * s;
+      const s = t / density
+      const s2 = s * s
+      const s3 = s2 * s
 
       // Catmull–Rom basis (tension = 0.5).  Generates a smooth curve
       // that passes through every control point.
@@ -68,35 +64,25 @@ export function smoothPoints(points: Point[], density = 3): Point[] {
           0.5 *
           (2 * p1.x +
             (-p0.x + p2.x) * s +
-            (2 * p0.x - 5 * p1.x + 4 * p2.x - (points[i + 2]?.x ?? p2.x)) *
-              s2 +
-            (-p0.x +
-              3 * p1.x -
-              3 * p2.x +
-              (points[i + 2]?.x ?? p2.x)) *
-              s3),
+            (2 * p0.x - 5 * p1.x + 4 * p2.x - (points[i + 2]?.x ?? p2.x)) * s2 +
+            (-p0.x + 3 * p1.x - 3 * p2.x + (points[i + 2]?.x ?? p2.x)) * s3),
         y:
           0.5 *
           (2 * p1.y +
             (-p0.y + p2.y) * s +
-            (2 * p0.y - 5 * p1.y + 4 * p2.y - (points[i + 2]?.y ?? p2.y)) *
-              s2 +
-            (-p0.y +
-              3 * p1.y -
-              3 * p2.y +
-              (points[i + 2]?.y ?? p2.y)) *
-              s3),
-      });
+            (2 * p0.y - 5 * p1.y + 4 * p2.y - (points[i + 2]?.y ?? p2.y)) * s2 +
+            (-p0.y + 3 * p1.y - 3 * p2.y + (points[i + 2]?.y ?? p2.y)) * s3)
+      })
     }
   }
 
-  result.push(points[points.length - 1]);
-  return result;
+  result.push(points[points.length - 1])
+  return result
 }
 
 /**
  * Returns a reversed copy of the point array without mutating the original.
  */
 export function reversePoints(points: Point[]): Point[] {
-  return [...points].reverse();
+  return [...points].reverse()
 }

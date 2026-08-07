@@ -10,13 +10,12 @@
     "preview": "astro preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "node scripts/run-e2e.mjs",
+    "test:e2e": "playwright test --project=chromium",
     "lint": "eslint .",
-    "format": "prettier .",
+    "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "astro": "astro",
-    "test:perf": "playwright test --project=lighthouse",
-    "gen:audio": "node scripts/generate-placeholder-audio.mjs"
+    "test:perf": "playwright test --project=lighthouse"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.1",

@@ -1,22 +1,22 @@
-import type { Mark, Sound } from '../domain/types';
+import type { Mark, Sound } from '../domain/types'
 
 const getSoundUrl = (mapId: number, point: number, soundNumber: number) => {
-  return `https://mapasonoro.frijolmagico.cl/1/sonidos/Ruta_${mapId}_Punto_${point}_Sonido_${soundNumber}_Binaural_norm.wav`;
-};
+  return `https://mapasonoro.frijolmagico.cl/1/sonidos/Ruta_${mapId}_Punto_${point}_Sonido_${soundNumber}_Binaural_norm.wav`
+}
 
 // Per map, one point per map grid. Each entry carries the point metadata (title,
 // description, location, position) and the per-point sound count. The first
 // sound of each point keeps the legacy flat id (mapId*100+point); sounds 2..k get
 // derived dataset-unique ids (mapId*100 + point*10 + soundIdx).
 interface PointEntry {
-  point: number;
-  soundCount: number;
+  point: number
+  soundCount: number
   mark: {
-    title: string;
-    description: string | null;
-    location: string;
-    position: { x: number; y: number };
-  };
+    title: string
+    description: string | null
+    location: string
+    position: { x: number; y: number }
+  }
 }
 
 // Mapa 1 — Avenida de Aguirre — La Serena (2289×1636)
@@ -71,7 +71,7 @@ const MAP_01_POINTS: PointEntry[] = [
       position: { x: 18, y: 82 }
     }
   }
-];
+]
 
 // Mapa 2 — Cruz del Tercer Milenio — Coquimbo (1160×912)
 const MAP_02_POINTS: PointEntry[] = [
@@ -125,7 +125,7 @@ const MAP_02_POINTS: PointEntry[] = [
       position: { x: 62.7, y: 26.2 }
     }
   }
-];
+]
 
 // Mapa 3 — Plaza de Armas — La Serena (864×1243, portrait)
 const MAP_03_POINTS: PointEntry[] = [
@@ -169,31 +169,26 @@ const MAP_03_POINTS: PointEntry[] = [
       position: { x: 20, y: 81 }
     }
   }
-];
+]
 
 /** Derives a sound id: legacy mark id for the first sound, deterministic overwise. */
-const soundIdFor = (
-  mapId: number,
-  point: number,
-  soundIdx: number,
-  legacyMarkId: number
-): number =>
-  soundIdx === 1 ? legacyMarkId : mapId * 100 + point * 10 + soundIdx;
+const soundIdFor = (mapId: number, point: number, soundIdx: number, legacyMarkId: number): number =>
+  soundIdx === 1 ? legacyMarkId : mapId * 100 + point * 10 + soundIdx
 
 function buildMark(mapId: number, entry: PointEntry): Mark {
-  const legacyMarkId = mapId * 100 + entry.point;
-  const firstSound = entry.mark;
+  const legacyMarkId = mapId * 100 + entry.point
+  const firstSound = entry.mark
 
   const sounds: Sound[] = Array.from({ length: entry.soundCount }, (_, i) => {
-    const soundIdx = i + 1;
+    const soundIdx = i + 1
     return {
       id: soundIdFor(mapId, entry.point, soundIdx, legacyMarkId),
       title: firstSound.title,
       description: firstSound.description,
       location: firstSound.location,
       audioUrl: getSoundUrl(mapId, entry.point, soundIdx)
-    };
-  });
+    }
+  })
 
   return {
     id: legacyMarkId,
@@ -203,15 +198,15 @@ function buildMark(mapId: number, entry: PointEntry): Mark {
     position: firstSound.position,
     location: firstSound.location,
     sounds
-  };
+  }
 }
 
 function buildMarks(mapId: number, points: PointEntry[]): Mark[] {
-  return points.map((entry) => buildMark(mapId, entry));
+  return points.map((entry) => buildMark(mapId, entry))
 }
 
 export const MARKS: Mark[] = [
   ...buildMarks(1, MAP_01_POINTS),
   ...buildMarks(2, MAP_02_POINTS),
   ...buildMarks(3, MAP_03_POINTS)
-];
+]

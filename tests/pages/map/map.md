@@ -12,11 +12,13 @@
 **Description/Objective:** Verify the prerendered labelled preview remains the only accessible composition while the live layers take over.
 
 ### Flow Steps:
+
 1. Open a map route.
 2. Confirm one labelled supplied preview is available before waiting for readiness.
 3. Wait for the live map and compare fixture layer order and base geometry.
 
 ### Expected Result:
+
 - Preview and live layers have one accessible map entity and decorative child images.
 - The base layer is full-frame and ordered first.
 
@@ -27,6 +29,7 @@
 **Description/Objective:** Exercise ClientRouter rebinding, base fallback, optional degraded settlement, keyboard markers, and reduced-motion policy.
 
 ### Expected Result:
+
 - Navigation creates only the destination markers.
 - Base errors retain the preview and announce an alert; optional errors allow degraded readiness.
 - Keyboard markers work and reduced motion does not activate declared effects.

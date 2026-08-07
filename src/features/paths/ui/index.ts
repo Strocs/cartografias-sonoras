@@ -1,1 +1,1 @@
-export { renderPaths, clearPaths } from './pathRenderer';
+export { renderPaths, clearPaths } from './pathRenderer'

@@ -24,26 +24,26 @@
  * (`SOUND_VISIBLE_SIZE`) so adjacent visible discs just touch by default.
  */
 
-import { SOUND_VISIBLE_SIZE } from './soundButton';
+import { SOUND_VISIBLE_SIZE } from './soundButton'
 
 /** The Mark's decorative head size; CSS receives this same value. */
-export const MARK_SIZE = 30;
+export const MARK_SIZE = 30
 
 /** The Mark's decorative head radius, derived from its shared size. */
-export const MARK_RADIUS = MARK_SIZE / 2;
+export const MARK_RADIUS = MARK_SIZE / 2
 
 /**
  * Accepted disc overlap (px): the sound disc slightly overlaps the mark disc.
  * Its negated value is the default head gap, so the default fan radius keeps
  * the historical mark-to-sound distance while using a positive gap.
  */
-export const SOUND_FAN_OVERLAP = -4;
+export const SOUND_FAN_OVERLAP = -4
 
 export interface FanRadiusInput {
-  markRadius?: number;
-  soundRadius?: number;
+  markRadius?: number
+  soundRadius?: number
   /** Perpendicular gap (px) between the mark head edge and the sound disc edge. */
-  headGap?: number;
+  headGap?: number
 }
 
 /** Explicit relationship between mark/sound disc sizes and the fan radius. */
@@ -51,7 +51,7 @@ export const FAN_RADIUS_DEFAULTS: Required<FanRadiusInput> = {
   markRadius: MARK_RADIUS,
   soundRadius: 16,
   headGap: -SOUND_FAN_OVERLAP
-};
+}
 
 /**
  * Computes the ALWAYS-VISIBLE fan radius from the mark head radius, the sound
@@ -62,37 +62,37 @@ export function computeFanRadius(input: FanRadiusInput = {}): number {
   const { markRadius, soundRadius, headGap } = {
     ...FAN_RADIUS_DEFAULTS,
     ...input
-  };
-  return markRadius + soundRadius + headGap;
+  }
+  return markRadius + soundRadius + headGap
 }
 
 export interface FanGeometryOptions {
-  radius?: number;
+  radius?: number
   /**
    * Angular step (degrees) between adjacent sound slots. When provided it wins
    * over `soundGap`; otherwise the step is derived from `soundGap`.
    */
-  stepDeg?: number;
+  stepDeg?: number
   /**
    * Desired chord distance (px) between adjacent sound centers, converted to
    * the angular step at the fan radius. Defaults to the visible sound diameter
    * (`SOUND_VISIBLE_SIZE`) — adjacent visible discs just touch by default.
    */
-  soundGap?: number;
+  soundGap?: number
 }
 
 export interface FanSlot {
-  dx: number;
-  dy: number;
+  dx: number
+  dy: number
 }
 
 export const FAN_GEOMETRY_DEFAULTS: Readonly<{
-  radius: number;
-  soundGap: number;
+  radius: number
+  soundGap: number
 }> = {
   radius: computeFanRadius(),
   soundGap: SOUND_VISIBLE_SIZE
-};
+}
 
 /**
  * Converts a desired CHORD distance (straight-line gap between adjacent sound
@@ -104,13 +104,13 @@ export const FAN_GEOMETRY_DEFAULTS: Readonly<{
  * 180° instead of producing NaN. The radius is untouched by this conversion.
  */
 export function computeFanStepDeg(radius: number, soundGap: number): number {
-  const safeRadius = radius > 0 ? radius : Number.EPSILON;
-  const ratio = Math.min(1, Math.max(0, soundGap / 2 / safeRadius));
-  return (2 * Math.asin(ratio) * 180) / Math.PI;
+  const safeRadius = radius > 0 ? radius : Number.EPSILON
+  const ratio = Math.min(1, Math.max(0, soundGap / 2 / safeRadius))
+  return (2 * Math.asin(ratio) * 180) / Math.PI
 }
 
 /** Layouts in the dataset never exceed four sounds per mark. */
-export const FAN_LAYOUT_CAP = 5;
+export const FAN_LAYOUT_CAP = 5
 
 /**
  * Computes the fan slot offsets for `count` sounds.
@@ -126,30 +126,22 @@ export const FAN_LAYOUT_CAP = 5;
  *
  * @throws when `count` is below one.
  */
-export function computeFanSlots(
-  count: number,
-  options: FanGeometryOptions = {}
-): FanSlot[] {
+export function computeFanSlots(count: number, options: FanGeometryOptions = {}): FanSlot[] {
   if (count < 1) {
-    throw new RangeError('Fan layout needs at least one slot');
+    throw new RangeError('Fan layout needs at least one slot')
   }
 
-  const radius = options.radius ?? FAN_GEOMETRY_DEFAULTS.radius;
-  const stepDeg =
-    options.stepDeg ??
-    computeFanStepDeg(
-      radius,
-      options.soundGap ?? FAN_GEOMETRY_DEFAULTS.soundGap
-    );
+  const radius = options.radius ?? FAN_GEOMETRY_DEFAULTS.radius
+  const stepDeg = options.stepDeg ?? computeFanStepDeg(radius, options.soundGap ?? FAN_GEOMETRY_DEFAULTS.soundGap)
 
-  const slots: FanSlot[] = [];
+  const slots: FanSlot[] = []
   for (let i = 0; i < count; i++) {
-    const k = i - (count - 1) / 2;
-    const theta = ((-90 + k * stepDeg) * Math.PI) / 180;
+    const k = i - (count - 1) / 2
+    const theta = ((-90 + k * stepDeg) * Math.PI) / 180
     slots.push({
       dx: radius * Math.cos(theta),
       dy: radius * Math.sin(theta)
-    });
+    })
   }
-  return slots;
+  return slots
 }

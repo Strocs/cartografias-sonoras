@@ -1,11 +1,11 @@
-import { AUDIO_STATUS, type AudioStatus } from '@shared/lib/audio-engine';
+import { AUDIO_STATUS, type AudioStatus } from '@shared/lib/audio-engine'
 
-import type { Path, Point } from '@features/paths/domain/types';
-import type { PathVisualState } from '@features/paths/domain/PathVisualState';
-import type { Mark } from '@features/sounds/domain/types';
+import type { Path, Point } from '@features/paths/domain/types'
+import type { PathVisualState } from '@features/paths/domain/PathVisualState'
+import type { Mark } from '@features/sounds/domain/types'
 
 export interface ActiveSoundLike {
-  status: AudioStatus;
+  status: AudioStatus
 }
 
 /**
@@ -14,12 +14,12 @@ export interface ActiveSoundLike {
  * `mark.position` at runtime so markers and paths stay aligned.
  */
 function buildFullPoints(path: Path, marksById: Map<number, Mark>): Point[] {
-  const startMark = marksById.get(path.startMarkId);
-  const endMark = marksById.get(path.endMarkId);
+  const startMark = marksById.get(path.startMarkId)
+  const endMark = marksById.get(path.endMarkId)
   if (!startMark || !endMark) {
-    return [];
+    return []
   }
-  return [startMark.position, ...path.waypoints, endMark.position];
+  return [startMark.position, ...path.waypoints, endMark.position]
 }
 
 /**
@@ -30,11 +30,9 @@ function endpointPlaying(
   marksById: Map<number, Mark>,
   activeSounds: Map<number, ActiveSoundLike>
 ): boolean {
-  const mark = marksById.get(markId);
-  if (mark === undefined) return false;
-  return mark.sounds.some(
-    (sound) => activeSounds.get(sound.id)?.status === AUDIO_STATUS.PLAYING
-  );
+  const mark = marksById.get(markId)
+  if (mark === undefined) return false
+  return mark.sounds.some((sound) => activeSounds.get(sound.id)?.status === AUDIO_STATUS.PLAYING)
 }
 
 /**
@@ -49,39 +47,35 @@ export function computePathVisualStates(
   marksById: Map<number, Mark>,
   activeSounds: Map<number, ActiveSoundLike>
 ): Map<number, PathVisualState> {
-  const result = new Map<number, PathVisualState>();
+  const result = new Map<number, PathVisualState>()
 
   for (const path of paths) {
-    const aPlaying = endpointPlaying(
-      path.startMarkId,
-      marksById,
-      activeSounds
-    );
-    const bPlaying = endpointPlaying(path.endMarkId, marksById, activeSounds);
+    const aPlaying = endpointPlaying(path.startMarkId, marksById, activeSounds)
+    const bPlaying = endpointPlaying(path.endMarkId, marksById, activeSounds)
 
-    const points = buildFullPoints(path, marksById);
-    if (points.length < 2) continue;
+    const points = buildFullPoints(path, marksById)
+    if (points.length < 2) continue
 
     if (aPlaying && bPlaying) {
-      result.set(path.id, { pathId: path.id, points, variant: 'both' });
+      result.set(path.id, { pathId: path.id, points, variant: 'both' })
     } else if (aPlaying) {
       result.set(path.id, {
         pathId: path.id,
         points,
         variant: 'single',
         activeEndpoint: 'start'
-      });
+      })
     } else if (bPlaying) {
       result.set(path.id, {
         pathId: path.id,
         points,
         variant: 'single',
         activeEndpoint: 'end'
-      });
+      })
     } else {
-      result.set(path.id, { pathId: path.id, points, variant: 'idle' });
+      result.set(path.id, { pathId: path.id, points, variant: 'idle' })
     }
   }
 
-  return result;
+  return result
 }

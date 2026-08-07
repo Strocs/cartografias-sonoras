@@ -1,15 +1,15 @@
-import type { Path } from './types';
+import type { Path } from './types'
 
 export function checkPathInvariants(path: Path): void {
   if (path.mapId === null || path.mapId === undefined) {
-    throw new Error('Path must belong to a map');
+    throw new Error('Path must belong to a map')
   }
 
   if (path.startMarkId === path.endMarkId) {
-    throw new Error('Path must connect to two different marks');
+    throw new Error('Path must connect to two different marks')
   }
 
-  checkWaypointInvariants(path);
+  checkWaypointInvariants(path)
 }
 
 /**
@@ -19,22 +19,12 @@ export function checkPathInvariants(path: Path): void {
  */
 export function checkWaypointInvariants(path: Path): void {
   for (const waypoint of path.waypoints) {
-    if (
-      !Number.isFinite(waypoint.x) ||
-      !Number.isFinite(waypoint.y)
-    ) {
-      throw new Error('Waypoint coordinates must be finite');
+    if (!Number.isFinite(waypoint.x) || !Number.isFinite(waypoint.y)) {
+      throw new Error('Waypoint coordinates must be finite')
     }
 
-    if (
-      waypoint.x < 0 ||
-      waypoint.x > 100 ||
-      waypoint.y < 0 ||
-      waypoint.y > 100
-    ) {
-      throw new Error(
-        'Waypoint must be within 0–100 (percentage of map dimensions)'
-      );
+    if (waypoint.x < 0 || waypoint.x > 100 || waypoint.y < 0 || waypoint.y > 100) {
+      throw new Error('Waypoint must be within 0–100 (percentage of map dimensions)')
     }
   }
 }

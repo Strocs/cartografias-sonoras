@@ -1,4 +1,4 @@
-import type { Path } from '../domain/types';
+import type { Path } from '../domain/types'
 
 // Waypoints are intermediate points between start and end marks.
 // Endpoints are derived from the mark positions at runtime.
@@ -95,4 +95,4 @@ export const PATHS: Path[] = [
     startMarkId: 303,
     endMarkId: 304
   }
-];
+]

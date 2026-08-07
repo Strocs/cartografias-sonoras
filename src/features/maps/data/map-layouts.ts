@@ -1,4 +1,4 @@
-import type { LayerEffectIntent, NormalizedFrame } from '../domain/types';
+import type { LayerEffectIntent, NormalizedFrame } from '../domain/types'
 
 /**
  * Pure map composition declarations, free of any image-asset imports.
@@ -10,23 +10,23 @@ import type { LayerEffectIntent, NormalizedFrame } from '../domain/types';
  * declarations to the imported WebP assets.
  */
 export interface MapLayoutLayer {
-  id: string;
+  id: string
   /** Normalized 0-100 frame relative to the base image. */
-  frame: Required<NormalizedFrame>;
-  optional: boolean;
-  effect: LayerEffectIntent;
+  frame: Required<NormalizedFrame>
+  optional: boolean
+  effect: LayerEffectIntent
   /** Hover scale factor for non-base layers; absent layers stay static. */
-  hoverScale?: number;
+  hoverScale?: number
 }
 
 export interface MapLayout {
-  id: number;
-  slug: string;
-  title: string;
-  soundPieceId: number;
+  id: number
+  slug: string
+  title: string
+  soundPieceId: number
   /** Whether the map route renders the bottom sound-piece player. */
-  soundPieceEnabled: boolean;
-  layers: readonly [MapLayoutLayer, ...MapLayoutLayer[]];
+  soundPieceEnabled: boolean
+  layers: readonly [MapLayoutLayer, ...MapLayoutLayer[]]
 }
 
 export const mapLayouts: MapLayout[] = [
@@ -105,4 +105,4 @@ export const mapLayouts: MapLayout[] = [
       }
     ]
   }
-];
+]

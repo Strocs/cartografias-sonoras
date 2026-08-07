@@ -67,8 +67,7 @@
   z-index: 2;
 
   background:
-    conic-gradient(var(--color-primary-brown, #8b5a2b) var(--progress),
-      transparent var(--progress)),
+    conic-gradient(var(--color-primary-brown, #8b5a2b) var(--progress), transparent var(--progress)),
     rgba(255, 255, 255, 0.25);
   background-origin: border-box;
   background-clip: padding-box;

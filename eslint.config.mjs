@@ -1,8 +1,8 @@
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import { defineConfig } from 'eslint/config';
-import astro from 'eslint-plugin-astro';
-import tailwindcss from 'eslint-plugin-tailwindcss';
+import js from '@eslint/js'
+import tseslint, { parser as tsParser } from 'typescript-eslint'
+import { defineConfig } from 'eslint/config'
+import astro from 'eslint-plugin-astro'
+import tailwindcss from 'eslint-plugin-tailwindcss'
 
 export default defineConfig([
   {
@@ -21,6 +21,9 @@ export default defineConfig([
       tailwindcss: {
         cssConfigPath: 'src/styles/global.css'
       }
+    },
+    languageOptions: {
+      parserOptions: { parser: tsParser, extraFileExtensions: ['.astro'] }
     }
   },
   // Panzoom isolation: only features/maps may import Panzoom directly.
@@ -55,13 +58,11 @@ export default defineConfig([
           patterns: [
             {
               group: ['@features/*'],
-              message:
-                'Features cannot import from other features. Use @shared instead.'
+              message: 'Features cannot import from other features. Use @shared instead.'
             },
             {
               group: ['../sounds/**', '../paths/**', '../sound-pieces/**'],
-              message:
-                'Features cannot import from sibling features via relative paths. Use @shared instead.'
+              message: 'Features cannot import from sibling features via relative paths. Use @shared instead.'
             }
           ]
         }
@@ -81,13 +82,11 @@ export default defineConfig([
           patterns: [
             {
               group: ['@features/*'],
-              message:
-                'Features cannot import from other features. Use @shared instead.'
+              message: 'Features cannot import from other features. Use @shared instead.'
             },
             {
               group: ['../sounds/**', '../paths/**', '../sound-pieces/**'],
-              message:
-                'Features cannot import from sibling features via relative paths. Use @shared instead.'
+              message: 'Features cannot import from sibling features via relative paths. Use @shared instead.'
             },
             {
               group: ['@panzoom/panzoom'],
@@ -99,4 +98,4 @@ export default defineConfig([
       ]
     }
   }
-]);
+])

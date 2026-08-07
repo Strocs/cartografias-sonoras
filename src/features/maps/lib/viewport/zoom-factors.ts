@@ -21,18 +21,18 @@ export const ZOOM_BREAKPOINTS = [
   { name: 'lg', width: 1024 },
   { name: 'xl', width: 1280 },
   { name: '2xl', width: 1536 }
-] as const satisfies readonly { name: string; width: number }[];
+] as const satisfies readonly { name: string; width: number }[]
 
-export type ZoomBreakpointName = (typeof ZOOM_BREAKPOINTS)[number]['name'];
+export type ZoomBreakpointName = (typeof ZOOM_BREAKPOINTS)[number]['name']
 
-export type ZoomFactorMap = Partial<Record<ZoomBreakpointName, number>>;
+export type ZoomFactorMap = Partial<Record<ZoomBreakpointName, number>>
 
 /** A zoom factor is either a plain number or a breakpoint-keyed map. */
-export type ZoomFactorInput = number | ZoomFactorMap;
+export type ZoomFactorInput = number | ZoomFactorMap
 
 /** A zoom factor is either a plain number or a breakpoint-keyed map. */
 export function isZoomFactorMap(value: unknown): value is ZoomFactorMap {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 /**
@@ -40,11 +40,11 @@ export function isZoomFactorMap(value: unknown): value is ZoomFactorMap {
  * (the largest declared breakpoint whose min-width is satisfied).
  */
 export function activeBreakpointName(width: number): ZoomBreakpointName {
-  let active: ZoomBreakpointName = 'base';
+  let active: ZoomBreakpointName = 'base'
   for (const bp of ZOOM_BREAKPOINTS) {
-    if (width >= bp.width) active = bp.name as ZoomBreakpointName;
+    if (width >= bp.width) active = bp.name as ZoomBreakpointName
   }
-  return active;
+  return active
 }
 
 /**
@@ -53,24 +53,18 @@ export function activeBreakpointName(width: number): ZoomBreakpointName {
  * Plain numbers pass through untouched. Maps are resolved to the factor of the
  * active (or nearest narrower) declared breakpoint, defaulting to `1`.
  */
-export function resolveZoomFactor(
-  value: ZoomFactorInput | undefined,
-  width: number,
-  fallback = 1
-): number {
-  if (typeof value === 'number') return value;
-  if (!isZoomFactorMap(value)) return fallback;
+export function resolveZoomFactor(value: ZoomFactorInput | undefined, width: number, fallback = 1): number {
+  if (typeof value === 'number') return value
+  if (!isZoomFactorMap(value)) return fallback
 
-  const activeIndex = ZOOM_BREAKPOINTS.findIndex(
-    (bp) => bp.name === activeBreakpointName(width)
-  );
-  if (activeIndex < 0) return fallback;
+  const activeIndex = ZOOM_BREAKPOINTS.findIndex((bp) => bp.name === activeBreakpointName(width))
+  if (activeIndex < 0) return fallback
 
   // Walk downward from the active breakpoint looking for a declared factor.
   for (let i = activeIndex; i >= 0; i -= 1) {
-    const name = ZOOM_BREAKPOINTS[i].name as ZoomBreakpointName;
-    const declared = value[name];
-    if (typeof declared === 'number') return declared;
+    const name = ZOOM_BREAKPOINTS[i].name as ZoomBreakpointName
+    const declared = value[name]
+    if (typeof declared === 'number') return declared
   }
-  return fallback;
+  return fallback
 }

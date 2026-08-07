@@ -1,5 +1,5 @@
-import { playAudit } from 'playwright-lighthouse';
-import { lighthouseTest } from './lighthouse-fixture';
+import { playAudit } from 'playwright-lighthouse'
+import { lighthouseTest } from './lighthouse-fixture'
 
 /**
  * Lighthouse thresholds for static content pages.
@@ -11,8 +11,8 @@ const STATIC_THRESHOLDS = {
   performance: 95,
   accessibility: 95,
   'best-practices': 95,
-  seo: 95,
-};
+  seo: 95
+}
 
 /**
  * Relaxed thresholds for interactive map pages.
@@ -25,18 +25,18 @@ const MAP_THRESHOLDS = {
   performance: 80,
   accessibility: 95,
   'best-practices': 95,
-  seo: 95,
-};
+  seo: 95
+}
 
 /**
  * Report output directory (relative to project root).
  */
-const REPORT_DIR = 'test-results/lighthouse';
+const REPORT_DIR = 'test-results/lighthouse'
 
 lighthouseTest.describe('Lighthouse audits', () => {
   lighthouseTest('home page', { tag: ['@perf', '@critical'] }, async ({ page, port }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
 
     await playAudit({
       page,
@@ -45,14 +45,14 @@ lighthouseTest.describe('Lighthouse audits', () => {
       reports: {
         formats: { html: true, json: true },
         name: 'home',
-        directory: REPORT_DIR,
-      },
-    });
-  });
+        directory: REPORT_DIR
+      }
+    })
+  })
 
   lighthouseTest('proyecto page', { tag: ['@perf'] }, async ({ page, port }) => {
-    await page.goto('/proyecto');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/proyecto')
+    await page.waitForLoadState('networkidle')
 
     await playAudit({
       page,
@@ -61,14 +61,14 @@ lighthouseTest.describe('Lighthouse audits', () => {
       reports: {
         formats: { html: true },
         name: 'proyecto',
-        directory: REPORT_DIR,
-      },
-    });
-  });
+        directory: REPORT_DIR
+      }
+    })
+  })
 
   lighthouseTest('equipo page', { tag: ['@perf'] }, async ({ page, port }) => {
-    await page.goto('/equipo');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/equipo')
+    await page.waitForLoadState('networkidle')
 
     await playAudit({
       page,
@@ -77,14 +77,14 @@ lighthouseTest.describe('Lighthouse audits', () => {
       reports: {
         formats: { html: true },
         name: 'equipo',
-        directory: REPORT_DIR,
-      },
-    });
-  });
+        directory: REPORT_DIR
+      }
+    })
+  })
 
   lighthouseTest('datos page', { tag: ['@perf'] }, async ({ page, port }) => {
-    await page.goto('/datos');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/datos')
+    await page.waitForLoadState('networkidle')
 
     await playAudit({
       page,
@@ -93,14 +93,14 @@ lighthouseTest.describe('Lighthouse audits', () => {
       reports: {
         formats: { html: true },
         name: 'datos',
-        directory: REPORT_DIR,
-      },
-    });
-  });
+        directory: REPORT_DIR
+      }
+    })
+  })
 
   lighthouseTest('map page', { tag: ['@perf', '@map'] }, async ({ page, port }) => {
-    await page.goto('/avenida-de-aguirre-la-serena');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/avenida-de-aguirre-la-serena')
+    await page.waitForLoadState('networkidle')
 
     await playAudit({
       page,
@@ -109,8 +109,8 @@ lighthouseTest.describe('Lighthouse audits', () => {
       reports: {
         formats: { html: true },
         name: 'map',
-        directory: REPORT_DIR,
-      },
-    });
-  });
-});
+        directory: REPORT_DIR
+      }
+    })
+  })
+})

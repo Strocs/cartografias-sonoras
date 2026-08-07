@@ -1,1 +1,1 @@
-export { SOUND_PIECES } from './sound-pieces';
+export { SOUND_PIECES } from './sound-pieces'

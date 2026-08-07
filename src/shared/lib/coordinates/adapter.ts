@@ -11,8 +11,8 @@ export function relativeToPixel(
 ): { x: number; y: number } {
   return {
     x: Math.round((pos.x / 100) * width),
-    y: Math.round((pos.y / 100) * height),
-  };
+    y: Math.round((pos.y / 100) * height)
+  }
 }
 
 /**
@@ -26,6 +26,6 @@ export function pixelToRelative(
 ): { x: number; y: number } {
   return {
     x: (pos.x / width) * 100,
-    y: (pos.y / height) * 100,
-  };
+    y: (pos.y / height) * 100
+  }
 }

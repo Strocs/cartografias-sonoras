@@ -1,29 +1,29 @@
-import { buildPolylineD } from '../lib/pathEngine';
+import { buildPolylineD } from '../lib/pathEngine'
 
-import type { PathVisualState } from '../domain/PathVisualState';
+import type { PathVisualState } from '../domain/PathVisualState'
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
+const SVG_NS = 'http://www.w3.org/2000/svg'
 /** Number of luminous points that travel along a `single` path's geometry. */
-const PARTICLE_COUNT = 8;
-const PULSE_DURATION_SECONDS = 3;
+const PARTICLE_COUNT = 8
+const PULSE_DURATION_SECONDS = 3
 /** Full loop duration for one particle; each particle repeats this cycle. */
-const PULSE_DURATION = `${PULSE_DURATION_SECONDS}s`;
-const PULSE_RADIUS = '8';
-const PATH_CLASS_BASE = 'path-base';
+const PULSE_DURATION = `${PULSE_DURATION_SECONDS}s`
+const PULSE_RADIUS = '8'
+const PATH_CLASS_BASE = 'path-base'
 
 /** Maps a PathVisualState variant to the legacy CSS class used by the React PathOverlay. */
 const VARIANT_LEGACY_CLASS: Record<PathVisualState['variant'], string> = {
   idle: 'path-idle',
   single: 'path-single',
   both: 'path-both'
-};
+}
 
 /** Maps a PathVisualState variant to the BEM-style CSS class used by pathRenderer. */
 const VARIANT_BEM_CLASS: Record<PathVisualState['variant'], string> = {
   idle: 'path--idle',
   single: 'path--single',
   both: 'path--both'
-};
+}
 
 /**
  * Renders or updates SVG `<path>` elements for the supplied visual states.
@@ -38,75 +38,67 @@ export function renderPaths(
   imgWidth: number,
   imgHeight: number
 ): void {
-  const existingPaths = new Map<number, SVGPathElement>();
+  const existingPaths = new Map<number, SVGPathElement>()
   for (const pathEl of svgElement.querySelectorAll('path[data-path-id]')) {
-    const id = Number(pathEl.getAttribute('data-path-id'));
+    const id = Number(pathEl.getAttribute('data-path-id'))
     if (!Number.isNaN(id)) {
-      existingPaths.set(id, pathEl as SVGPathElement);
+      existingPaths.set(id, pathEl as SVGPathElement)
     }
   }
 
   // Remove all pulse groups before re-rendering; they are cheap to recreate and
   // this avoids stale animations when a path changes variant.
   for (const pulse of svgElement.querySelectorAll('.path-pulse')) {
-    pulse.remove();
+    pulse.remove()
   }
 
-  const activeIds = new Set<number>();
+  const activeIds = new Set<number>()
 
   for (const state of pathStates) {
-    if (state.points.length < 2) continue;
+    if (state.points.length < 2) continue
 
-    activeIds.add(state.pathId);
+    activeIds.add(state.pathId)
 
-    const d = buildPolylineD(state.points, imgWidth, imgHeight);
-    if (d === '') continue;
+    const d = buildPolylineD(state.points, imgWidth, imgHeight)
+    if (d === '') continue
 
-    const pathEl = existingPaths.get(state.pathId) ?? createPathElement();
+    const pathEl = existingPaths.get(state.pathId) ?? createPathElement()
     if (pathEl.parentNode !== svgElement) {
-      svgElement.appendChild(pathEl);
+      svgElement.appendChild(pathEl)
     }
 
-    const legacyClass = VARIANT_LEGACY_CLASS[state.variant];
-    const bemClass = VARIANT_BEM_CLASS[state.variant];
-    pathEl.setAttribute('d', d);
-    pathEl.setAttribute('data-testid', 'map-path');
-    pathEl.setAttribute('data-path-id', String(state.pathId));
+    const legacyClass = VARIANT_LEGACY_CLASS[state.variant]
+    const bemClass = VARIANT_BEM_CLASS[state.variant]
+    pathEl.setAttribute('d', d)
+    pathEl.setAttribute('data-testid', 'map-path')
+    pathEl.setAttribute('data-path-id', String(state.pathId))
     // Real `id` so <animateMotion>/<mpath> can reference this path. It is kept
     // in sync with `path-{id}` referenced in the pulse group; `data-path-id`
     // remains the unique selector for diff/reuse logic.
-    pathEl.setAttribute('id', `path-${state.pathId}`);
-    pathEl.setAttribute('vector-effect', 'non-scaling-stroke');
-    pathEl.setAttribute(
-      'class',
-      `${PATH_CLASS_BASE} ${legacyClass} ${bemClass}`
-    );
+    pathEl.setAttribute('id', `path-${state.pathId}`)
+    pathEl.setAttribute('vector-effect', 'non-scaling-stroke')
+    pathEl.setAttribute('class', `${PATH_CLASS_BASE} ${legacyClass} ${bemClass}`)
 
     // Remove inline overrides so CSS classes take effect, then re-apply any
     // explicit style config if present.
-    pathEl.removeAttribute('stroke');
-    pathEl.removeAttribute('stroke-opacity');
-    pathEl.removeAttribute('stroke-width');
-    pathEl.removeAttribute('fill');
+    pathEl.removeAttribute('stroke')
+    pathEl.removeAttribute('stroke-opacity')
+    pathEl.removeAttribute('stroke-width')
+    pathEl.removeAttribute('fill')
 
     if (state.style !== undefined) {
-      applyPathStyle(pathEl, state.style);
+      applyPathStyle(pathEl, state.style)
     }
 
     if (state.variant === 'single') {
-      createPulseGroup(
-        svgElement,
-        state.pathId,
-        state.activeEndpoint,
-        state.style
-      );
+      createPulseGroup(svgElement, state.pathId, state.activeEndpoint, state.style)
     }
   }
 
   // Drop paths that are no longer present in the visual state list.
   for (const [id, pathEl] of existingPaths) {
     if (!activeIds.has(id)) {
-      pathEl.remove();
+      pathEl.remove()
     }
   }
 }
@@ -114,29 +106,26 @@ export function renderPaths(
 /** Removes every path and pulse element from the SVG layer. */
 export function clearPaths(svgElement: SVGSVGElement): void {
   for (const pathEl of svgElement.querySelectorAll('path[data-path-id]')) {
-    pathEl.remove();
+    pathEl.remove()
   }
   for (const pulse of svgElement.querySelectorAll('.path-pulse')) {
-    pulse.remove();
+    pulse.remove()
   }
 }
 
 function createPathElement(): SVGPathElement {
-  return document.createElementNS(SVG_NS, 'path');
+  return document.createElementNS(SVG_NS, 'path')
 }
 
-function applyPathStyle(
-  pathEl: SVGPathElement,
-  style: NonNullable<PathVisualState['style']>
-): void {
+function applyPathStyle(pathEl: SVGPathElement, style: NonNullable<PathVisualState['style']>): void {
   if (style.strokeColor !== undefined) {
-    pathEl.setAttribute('stroke', style.strokeColor);
+    pathEl.setAttribute('stroke', style.strokeColor)
   }
   if (style.strokeWidth !== undefined) {
-    pathEl.setAttribute('stroke-width', String(style.strokeWidth));
+    pathEl.setAttribute('stroke-width', String(style.strokeWidth))
   }
   if (style.dashArray !== undefined) {
-    pathEl.setAttribute('stroke-dasharray', style.dashArray);
+    pathEl.setAttribute('stroke-dasharray', style.dashArray)
   }
 }
 
@@ -146,41 +135,41 @@ function createPulseGroup(
   activeEndpoint: 'start' | 'end',
   style?: PathVisualState['style']
 ): void {
-  const routeId = `path-${pathId}`;
-  const stagger = PULSE_DURATION_SECONDS / PARTICLE_COUNT;
+  const routeId = `path-${pathId}`
+  const stagger = PULSE_DURATION_SECONDS / PARTICLE_COUNT
 
-  const pulseGroup = document.createElementNS(SVG_NS, 'g');
-  pulseGroup.setAttribute('class', 'path-pulse');
+  const pulseGroup = document.createElementNS(SVG_NS, 'g')
+  pulseGroup.setAttribute('class', 'path-pulse')
 
   for (let i = 0; i < PARTICLE_COUNT; i++) {
-    const circle = document.createElementNS(SVG_NS, 'circle');
-    circle.setAttribute('r', PULSE_RADIUS);
+    const circle = document.createElementNS(SVG_NS, 'circle')
+    circle.setAttribute('r', PULSE_RADIUS)
 
     if (style?.strokeColor !== undefined) {
-      circle.setAttribute('fill', style.strokeColor);
+      circle.setAttribute('fill', style.strokeColor)
     }
 
-    const animateMotion = document.createElementNS(SVG_NS, 'animateMotion');
-    animateMotion.setAttribute('dur', PULSE_DURATION);
-    animateMotion.setAttribute('repeatCount', 'indefinite');
-    animateMotion.setAttribute('calcMode', 'linear');
+    const animateMotion = document.createElementNS(SVG_NS, 'animateMotion')
+    animateMotion.setAttribute('dur', PULSE_DURATION)
+    animateMotion.setAttribute('repeatCount', 'indefinite')
+    animateMotion.setAttribute('calcMode', 'linear')
     // Offset each particle's start so the points read as a single travelling
     // stream instead of a single dot. `begin` + indefinite repeat phase-shifts
     // the loop so the whole path stays populated.
-    animateMotion.setAttribute('begin', `${(i * stagger).toFixed(3)}s`);
+    animateMotion.setAttribute('begin', `${(i * stagger).toFixed(3)}s`)
 
     if (activeEndpoint === 'end') {
-      animateMotion.setAttribute('keyPoints', '1;0');
-      animateMotion.setAttribute('keyTimes', '0;1');
+      animateMotion.setAttribute('keyPoints', '1;0')
+      animateMotion.setAttribute('keyTimes', '0;1')
     }
 
-    const mpath = document.createElementNS(SVG_NS, 'mpath');
-    mpath.setAttribute('href', `#${routeId}`);
+    const mpath = document.createElementNS(SVG_NS, 'mpath')
+    mpath.setAttribute('href', `#${routeId}`)
 
-    animateMotion.appendChild(mpath);
-    circle.appendChild(animateMotion);
-    pulseGroup.appendChild(circle);
+    animateMotion.appendChild(mpath)
+    circle.appendChild(animateMotion)
+    pulseGroup.appendChild(circle)
   }
 
-  svgElement.appendChild(pulseGroup);
+  svgElement.appendChild(pulseGroup)
 }

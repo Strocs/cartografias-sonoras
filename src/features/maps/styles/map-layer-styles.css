@@ -15,7 +15,7 @@
 
 /* ── Layer animation timing ─────────────────────────────────────── */
 
-.map-layer>img[data-layer-effect] {
+.map-layer > img[data-layer-effect] {
   animation-duration: 5s;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
@@ -35,7 +35,7 @@
 /* ── Reduced motion ─────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .map-layer>img[data-layer-effect] {
+  .map-layer > img[data-layer-effect] {
     animation: none;
   }
 
@@ -49,7 +49,6 @@
 /* ── Keyframes ──────────────────────────────────────────────────── */
 
 @keyframes map-layer-float {
-
   0%,
   100% {
     transform: translateY(0);
@@ -61,7 +60,6 @@
 }
 
 @keyframes map-layer-parallax {
-
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(1.06);

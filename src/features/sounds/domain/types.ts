@@ -1,6 +1,6 @@
 export interface Position {
-  x: number;
-  y: number;
+  x: number
+  y: number
 }
 
 /**
@@ -10,12 +10,12 @@ export interface Position {
  * map may host many sounds, so geometry only needs to be expressed once.
  */
 export interface Sound {
-  id: number;
-  title: string;
-  description: string | null;
-  location: string;
-  audioUrl: string;
-  geoReferenceUrl?: string;
+  id: number
+  title: string
+  description: string | null
+  location: string
+  audioUrl: string
+  geoReferenceUrl?: string
 }
 
 /**
@@ -23,11 +23,11 @@ export interface Sound {
  * position drives both rendering and path endpoints.
  */
 export interface Mark {
-  id: number;
-  mapId: number;
-  title: string;
-  description: string | null;
-  position: Position;
-  location: string;
-  sounds: Sound[];
+  id: number
+  mapId: number
+  title: string
+  description: string | null
+  position: Position
+  location: string
+  sounds: Sound[]
 }

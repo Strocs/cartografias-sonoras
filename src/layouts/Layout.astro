@@ -1,18 +1,15 @@
 ---
-import '../styles/global.css';
-import { ClientRouter } from 'astro:transitions';
-import Navigation from '@shared/ui/Navigation.astro';
-import { Font } from 'astro:assets';
+import '../styles/global.css'
+import { ClientRouter } from 'astro:transitions'
+import Navigation from '@shared/ui/Navigation.astro'
+import { Font } from 'astro:assets'
 
 interface Props {
-  title?: string;
-  description?: string;
+  title?: string
+  description?: string
 }
 
-const {
-  title = 'Cartografías Sensoriales',
-  description = 'Plataforma de mapeo de marcas sonoras'
-} = Astro.props;
+const { title = 'Cartografías Sensoriales', description = 'Plataforma de mapeo de marcas sonoras' } = Astro.props
 ---
 
 <html lang="es">

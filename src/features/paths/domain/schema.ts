@@ -1,12 +1,12 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
 export const pointSchema = z.object(
   {
     x: z.number().finite().min(0).max(100),
-    y: z.number().finite().min(0).max(100),
+    y: z.number().finite().min(0).max(100)
   },
   { error: 'Invalid point' }
-);
+)
 
 export const pathSchema = z.object(
   {
@@ -14,7 +14,7 @@ export const pathSchema = z.object(
     mapId: z.number().int().positive(),
     waypoints: z.array(pointSchema),
     startMarkId: z.number().int().positive(),
-    endMarkId: z.number().int().positive(),
+    endMarkId: z.number().int().positive()
   },
   { error: 'Invalid path' }
-);
+)

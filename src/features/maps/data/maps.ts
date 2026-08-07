@@ -1,22 +1,22 @@
-import type { Map, MapImage, MapLayer } from '../domain/types';
-import { mapLayouts, type MapLayout } from './map-layouts';
+import type { Map, MapImage, MapLayer } from '../domain/types'
+import { mapLayouts, type MapLayout } from './map-layouts'
 
-import ROUTE_1_BASE from '@assets/maps/route_1/base.webp';
-import ROUTE_1_PREVIEW from '@assets/maps/route_1/preview.webp';
-import ROUTE_1_BASE_LAYER_1 from '@assets/maps/route_1/layers/icon.webp';
-import ROUTE_2_BASE from '@assets/maps/route_2/base.webp';
-import ROUTE_2_PREVIEW from '@assets/maps/route_2/preview.webp';
-import ROUTE_2_BASE_LAYER_1 from '@assets/maps/route_2/layers/icon.webp';
-import ROUTE_3_BASE from '@assets/maps/route_3/base.webp';
-import ROUTE_3_PREVIEW from '@assets/maps/route_3/preview.webp';
-import ROUTE_3_BASE_LAYER_1 from '@assets/maps/route_3/layers/icon.webp';
+import ROUTE_1_BASE from '@assets/maps/route_1/base.webp'
+import ROUTE_1_PREVIEW from '@assets/maps/route_1/preview.webp'
+import ROUTE_1_BASE_LAYER_1 from '@assets/maps/route_1/layers/icon.webp'
+import ROUTE_2_BASE from '@assets/maps/route_2/base.webp'
+import ROUTE_2_PREVIEW from '@assets/maps/route_2/preview.webp'
+import ROUTE_2_BASE_LAYER_1 from '@assets/maps/route_2/layers/icon.webp'
+import ROUTE_3_BASE from '@assets/maps/route_3/base.webp'
+import ROUTE_3_PREVIEW from '@assets/maps/route_3/preview.webp'
+import ROUTE_3_BASE_LAYER_1 from '@assets/maps/route_3/layers/icon.webp'
 
-type AstroImage = import('astro').ImageMetadata;
+type AstroImage = import('astro').ImageMetadata
 
 interface MapAssets {
-  base: AstroImage;
-  preview: AstroImage;
-  overlays: Record<string, AstroImage>;
+  base: AstroImage
+  preview: AstroImage
+  overlays: Record<string, AstroImage>
 }
 
 /**
@@ -45,7 +45,7 @@ const assetsBySlug: Record<string, MapAssets> = {
       'layer-2': ROUTE_3_BASE_LAYER_1
     }
   }
-};
+}
 
 function toMapImage(image: AstroImage): MapImage {
   return {
@@ -54,20 +54,18 @@ function toMapImage(image: AstroImage): MapImage {
     height: image.height,
     format: image.format,
     asset: image
-  };
+  }
 }
 
 function bindAssets(layout: MapLayout, assets: MapAssets): Map {
-  const [baseLayer, ...overlayLayers] = layout.layers;
+  const [baseLayer, ...overlayLayers] = layout.layers
   const overlayImages: MapLayer[] = overlayLayers.map((layer) => {
-    const asset = assets.overlays[layer.id];
+    const asset = assets.overlays[layer.id]
     if (!asset) {
-      throw new Error(
-        `No overlay asset bound for layout "${layout.slug}" layer "${layer.id}"`
-      );
+      throw new Error(`No overlay asset bound for layout "${layout.slug}" layer "${layer.id}"`)
     }
-    return { ...layer, ...toMapImage(asset) };
-  });
+    return { ...layer, ...toMapImage(asset) }
+  })
 
   return {
     id: layout.id,
@@ -77,13 +75,13 @@ function bindAssets(layout: MapLayout, assets: MapAssets): Map {
     soundPieceEnabled: layout.soundPieceEnabled,
     preview: toMapImage(assets.preview),
     images: [{ ...baseLayer, ...toMapImage(assets.base) }, ...overlayImages]
-  };
+  }
 }
 
 export const MAPS_DATA: Map[] = mapLayouts.map((layout) => {
-  const assets = assetsBySlug[layout.slug];
+  const assets = assetsBySlug[layout.slug]
   if (!assets) {
-    throw new Error(`No assets bound for map layout "${layout.slug}"`);
+    throw new Error(`No assets bound for map layout "${layout.slug}"`)
   }
-  return bindAssets(layout, assets);
-});
+  return bindAssets(layout, assets)
+})

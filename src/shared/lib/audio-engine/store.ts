@@ -1,6 +1,6 @@
-import { useStore } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
-import { createStore } from 'zustand/vanilla';
+import { useStore } from 'zustand'
+import { subscribeWithSelector } from 'zustand/middleware'
+import { createStore } from 'zustand/vanilla'
 
 import {
   applyPieceSeek as applyPieceSeekEngine,
@@ -28,8 +28,8 @@ import {
   stopPiece as stopPieceEngine,
   stopSound as stopSoundEngine,
   toggleMute as toggleMuteEngine
-} from './engine';
-import type { AudioStore, AudioTransitions } from './types';
+} from './engine'
+import type { AudioStore, AudioTransitions } from './types'
 
 // Framework-agnostic vanilla store instance.
 // subscribeWithSelector gives vanilla code `subscribe(selector, listener)`.
@@ -38,114 +38,111 @@ export const audioStore = createStore<AudioStore>()(
     ...createInitialState(),
 
     playSound: (soundId, mapId) => {
-      set((state) => playSoundEngine(state, soundId, mapId));
+      set((state) => playSoundEngine(state, soundId, mapId))
     },
 
     pauseSound: (soundId) => {
-      set((state) => pauseSoundEngine(state, soundId));
+      set((state) => pauseSoundEngine(state, soundId))
     },
 
     resumeSound: (soundId) => {
-      set((state) => resumeSoundEngine(state, soundId));
+      set((state) => resumeSoundEngine(state, soundId))
     },
 
     stopSound: (soundId) => {
-      set((state) => stopSoundEngine(state, soundId));
+      set((state) => stopSoundEngine(state, soundId))
     },
 
     stopAllSounds: () => {
-      set((state) => stopAllSoundsEngine(state));
+      set((state) => stopAllSoundsEngine(state))
     },
 
     pauseAllSounds: () => {
-      set((state) => pauseAllSoundsEngine(state));
+      set((state) => pauseAllSoundsEngine(state))
     },
 
     playPiece: (pieceId, mapId) => {
-      set((state) => playPieceEngine(state, pieceId, mapId));
+      set((state) => playPieceEngine(state, pieceId, mapId))
     },
 
     pausePiece: () => {
-      set((state) => pausePieceEngine(state));
+      set((state) => pausePieceEngine(state))
     },
 
     resumePiece: () => {
-      set((state) => resumePieceEngine(state));
+      set((state) => resumePieceEngine(state))
     },
 
     stopPiece: () => {
-      set((state) => stopPieceEngine(state));
+      set((state) => stopPieceEngine(state))
     },
 
     seekPiece: (time) => {
-      set((state) => pendingPieceSeekEngine(state, time));
+      set((state) => pendingPieceSeekEngine(state, time))
     },
 
     seekSound: (soundId, time) => {
-      set((state) => pendingSeekEngine(state, soundId, time));
+      set((state) => pendingSeekEngine(state, soundId, time))
     },
 
     setVolume: (volume) => {
-      set((state) => setVolumeEngine(state, volume));
+      set((state) => setVolumeEngine(state, volume))
     },
 
     toggleMute: () => {
-      set((state) => toggleMuteEngine(state));
+      set((state) => toggleMuteEngine(state))
     }
   }))
-);
+)
 
 // React hook wrapper for consuming the vanilla store in components.
-export const useAudioStore = <T,>(selector: (state: AudioStore) => T): T =>
-  useStore(audioStore, selector);
+export const useAudioStore = <T>(selector: (state: AudioStore) => T): T => useStore(audioStore, selector)
 
 // Internal transition actions used by audio element event handlers.
 // Kept outside the public AudioActions interface to keep the API focused,
 // but exposed through the store for event wiring.
 export const audioTransitions: AudioTransitions = {
   soundLoaded: (soundId: number, duration: number) => {
-    audioStore.setState((state) => soundLoadedEngine(state, soundId, duration));
+    audioStore.setState((state) => soundLoadedEngine(state, soundId, duration))
   },
 
   soundEnded: (soundId: number) => {
-    audioStore.setState((state) => soundEndedEngine(state, soundId));
+    audioStore.setState((state) => soundEndedEngine(state, soundId))
   },
 
   soundError: (soundId: number, error: string) => {
-    audioStore.setState((state) => soundErrorEngine(state, soundId, error));
+    audioStore.setState((state) => soundErrorEngine(state, soundId, error))
   },
 
   seekSound: (soundId: number, time: number) => {
-    audioStore.setState((state) => seekSoundEngine(state, soundId, time));
+    audioStore.setState((state) => seekSoundEngine(state, soundId, time))
   },
 
   soundTimeUpdated: (soundId: number, time: number) => {
-    audioStore.setState((state) =>
-      soundTimeUpdatedEngine(state, soundId, time)
-    );
+    audioStore.setState((state) => soundTimeUpdatedEngine(state, soundId, time))
   },
 
   pieceLoaded: (duration: number) => {
-    audioStore.setState((state) => pieceLoadedEngine(state, duration));
+    audioStore.setState((state) => pieceLoadedEngine(state, duration))
   },
 
   pieceEnded: () => {
-    audioStore.setState((state) => pieceEndedEngine(state));
+    audioStore.setState((state) => pieceEndedEngine(state))
   },
 
   pieceError: (error: string) => {
-    audioStore.setState((state) => pieceErrorEngine(state, error));
+    audioStore.setState((state) => pieceErrorEngine(state, error))
   },
 
   pieceTimeUpdated: (time: number) => {
-    audioStore.setState((state) => pieceTimeUpdatedEngine(state, time));
+    audioStore.setState((state) => pieceTimeUpdatedEngine(state, time))
   },
 
   seekPiece: (time: number) => {
-    audioStore.setState((state) => applyPieceSeekEngine(state, time));
+    audioStore.setState((state) => applyPieceSeekEngine(state, time))
   },
 
   stopPiece: () => {
-    audioStore.setState((state) => stopPieceEngine(state));
+    audioStore.setState((state) => stopPieceEngine(state))
   }
-};
+}

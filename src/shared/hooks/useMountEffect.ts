@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from 'react'
 
 /**
  * Runs an effect once on mount and cleans up on unmount.
@@ -8,10 +8,8 @@ import { useEffect } from 'react';
  * third-party widgets, browser API subscriptions) where no other React
  * primitive fits.
  */
-export function useMountEffect(
-  effect: () => void | (() => void)
-): void {
+export function useMountEffect(effect: () => void | (() => void)): void {
   // Intentionally empty dependency array: this hook is reserved for one-time
   // external system setup on mount, not for reactive synchronization.
-  useEffect(effect, []);
+  useEffect(effect, [])
 }

@@ -1,9 +1,9 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import MapCard from '../features/maps/ui/MapCard.astro';
-import { MAPS_DATA } from '../features/maps/data/maps';
+import Layout from '../layouts/Layout.astro'
+import MapCard from '../features/maps/ui/MapCard.astro'
+import { MAPS_DATA } from '../features/maps/data/maps'
 
-const title = 'Cartografías Sensoriales';
+const title = 'Cartografías Sensoriales'
 ---
 
 <Layout title={title}>
@@ -12,10 +12,8 @@ const title = 'Cartografías Sensoriales';
       <div class="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
         {
           MAPS_DATA.map((map, index) => {
-            const isAboveFold = index < 2;
-            return (
-              <MapCard map={map} loading={isAboveFold ? 'eager' : 'lazy'} />
-            );
+            const isAboveFold = index < 2
+            return <MapCard map={map} loading={isAboveFold ? 'eager' : 'lazy'} />
           })
         }
       </div>

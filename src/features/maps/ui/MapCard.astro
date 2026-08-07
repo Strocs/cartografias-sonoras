@@ -1,14 +1,14 @@
 ---
-import MapCompositionPreview from './MapCompositionPreview.astro';
+import MapCompositionPreview from './MapCompositionPreview.astro'
 
-import type { Map } from '../domain/types';
+import type { Map } from '../domain/types'
 
 interface Props {
-  map: Map;
-  loading?: 'eager' | 'lazy';
+  map: Map
+  loading?: 'eager' | 'lazy'
 }
 
-const { map, loading = 'lazy' } = Astro.props;
+const { map, loading = 'lazy' } = Astro.props
 ---
 
 <a
