@@ -47,7 +47,7 @@ export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPla
   const progress = pieceDuration <= 0 ? 0 : Math.min(1, Math.max(0, pieceCurrentTime / pieceDuration))
 
   const handlePlayPause = () => {
-    if (isIdle && soundPiece) {
+    if (isIdle && soundPiece?.audioUrl) {
       playPiece(soundPiece.id, soundPiece.mapId)
       return
     }

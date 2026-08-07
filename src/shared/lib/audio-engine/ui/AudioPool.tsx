@@ -23,6 +23,11 @@ interface AudioPoolProps {
   soundPiece?: AudioPoolPiece | null
 }
 
+/** True when the current piece cannot render an <audio> source, so any LOADING on it must be cleared. */
+function pieceHasNoSource(soundPiece: AudioPoolProps['soundPiece']): boolean {
+  return !soundPiece || !soundPiece.audioUrl
+}
+
 const ACTIVE_ELEMENT_STATUSES = new Set<AudioStatus>([AUDIO_STATUS.LOADING, AUDIO_STATUS.PLAYING, AUDIO_STATUS.PAUSED])
 
 function selectActiveSoundIds(state: AudioEngineState): string {
@@ -119,6 +124,12 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
     })
 
     if (state.activePieceId !== null) {
+      // A piece without a url never mounts an <audio> element, so a LOADING
+      // status for one must be cleared to IDLE instead of hanging.
+      if (state.piece.status === AUDIO_STATUS.LOADING && pieceHasNoSource(soundPiece)) {
+        audioTransitions.stopPiece()
+        return
+      }
       const pieceAudio = audioRefs.current.get(state.activePieceId)
       if (pieceAudio) {
         syncAudioElement(state.activePieceId, pieceAudio, state)
@@ -139,7 +150,9 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
   }
 
   useMountEffect(() => {
-    if (!soundPiece && audioStore.getState().activePieceId !== null) {
+    // On mount, stop a stale active piece that has no audio element: either the
+    // soundPiece prop is absent or the piece is configured without a url.
+    if (pieceHasNoSource(soundPiece) && audioStore.getState().activePieceId !== null) {
       audioTransitions.stopPiece()
     }
     syncAllActiveAudio()

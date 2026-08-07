@@ -238,4 +238,27 @@ describe('AudioPool subscription', () => {
     expect(container.querySelectorAll('audio')).toHaveLength(1)
     expect(audioStore.getState().activeSounds.get(1)?.status).toBe(AUDIO_STATUS.LOADING)
   })
+
+  it('clears a piece without a url that entered LOADING', () => {
+    const { container } = render(<AudioPool sounds={SOUNDS} soundPiece={{ id: 100, audioUrl: null }} />)
+
+    act(() => {
+      audioStore.getState().playPiece(100, 10)
+    })
+
+    expect(audioStore.getState().activePieceId).toBeNull()
+    expect(audioStore.getState().piece.status).toBe(AUDIO_STATUS.IDLE)
+    expect(container.querySelectorAll('audio')).toHaveLength(0)
+  })
+
+  it('stops a stale active piece without a url on mount', () => {
+    act(() => {
+      audioStore.getState().playPiece(100, 1)
+    })
+
+    const { container } = render(<AudioPool sounds={SOUNDS} soundPiece={{ id: 100, audioUrl: null }} />)
+
+    expect(audioStore.getState().activePieceId).toBeNull()
+    expect(container.querySelectorAll('audio')).toHaveLength(0)
+  })
 })
