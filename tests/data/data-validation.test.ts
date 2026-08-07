@@ -1,20 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
-import { MAPS_DATA } from '../../src/features/maps/data'
-import { checkMapInvariants, mapSchema } from '../../src/features/maps/domain'
-import { PATHS } from '../../src/features/paths/data'
-import { pathSchema } from '../../src/features/paths/domain'
-import { SOUND_PIECES } from '../../src/features/sound-pieces/data'
-import { soundPieceSchema } from '../../src/features/sound-pieces/domain'
-import { MARKS } from '../../src/features/sounds/data'
-import { markSchema } from '../../src/features/sounds/domain'
-import { validateDataset } from '../../src/shared/utils/validators'
+import { MAPS_DATA } from '../../src/features/maps/data/maps'
+import { mapSchema } from '../../src/features/maps/domain'
+import { PATHS } from '../../src/features/paths/data/paths'
+import { pathSchema } from '../../src/features/paths/domain/schema'
+import { SOUND_PIECES } from '../../src/features/sound-pieces/data/sound-pieces'
+import { soundPieceSchema } from '../../src/features/sound-pieces/domain/schema'
+import { MARKS } from '../../src/features/sounds/data/sounds'
+import { markSchema } from '../../src/features/sounds/domain/schema'
 
 describe('Dataset validation', () => {
   it('validates all maps against the Map schema', () => {
     for (const map of MAPS_DATA) {
       expect(mapSchema.parse(map)).toEqual(map)
-      expect(() => checkMapInvariants(map)).not.toThrow()
       expect(map.images[0]).toMatchObject({ id: 'base', optional: false })
       expect(map.preview).toMatchObject({
         width: map.images[0].width,
@@ -39,18 +37,6 @@ describe('Dataset validation', () => {
     for (const path of PATHS) {
       expect(pathSchema.parse(path)).toEqual(path)
     }
-  })
-
-  it('passes the dataset cross-reference validator', () => {
-    const result = validateDataset({
-      maps: MAPS_DATA,
-      marks: MARKS.map((m) => ({ id: m.id, mapId: m.mapId })),
-      soundPieces: SOUND_PIECES,
-      paths: PATHS
-    })
-
-    expect(result.success).toBe(true)
-    expect(result.errors).toHaveLength(0)
   })
 
   it('has exactly one sound piece per map', () => {

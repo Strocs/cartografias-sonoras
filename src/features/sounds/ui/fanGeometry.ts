@@ -109,9 +109,6 @@ export function computeFanStepDeg(radius: number, soundGap: number): number {
   return (2 * Math.asin(ratio) * 180) / Math.PI
 }
 
-/** Layouts in the dataset never exceed four sounds per mark. */
-export const FAN_LAYOUT_CAP = 5
-
 /**
  * Computes the fan slot offsets for `count` sounds.
  *
