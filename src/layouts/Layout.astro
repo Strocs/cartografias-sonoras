@@ -1,15 +1,22 @@
 ---
 import '../styles/global.css'
 import { ClientRouter } from 'astro:transitions'
-import Navigation from '@shared/ui/Navigation.astro'
+import Background from '@shared/ui/Background.astro'
+import Sidebar from '@shared/ui/navigation/Sidebar.astro'
 import { Font } from 'astro:assets'
 
 interface Props {
   title?: string
   description?: string
+  class?: string
 }
 
-const { title = 'Cartografías Sensoriales', description = 'Plataforma de mapeo de marcas sonoras' } = Astro.props
+const {
+  title = 'Cartografías Sensoriales',
+  description = 'Plataforma de mapeo de marcas sonoras',
+  class: bodyClass = ''
+} = Astro.props
+const path = Astro.url.pathname
 ---
 
 <html lang="es">
@@ -22,8 +29,9 @@ const { title = 'Cartografías Sensoriales', description = 'Plataforma de mapeo 
     <Font cssVariable="--font-cormorant" />
     <ClientRouter />
   </head>
-  <body class="bg-charcoal font-inter flex min-h-dvh">
-    <Navigation />
+  <body class=`bg-charcoal font-inter relative flex min-h-dvh z-0 ${bodyClass}`>
+    <Background />
+    {path === '/' ? null : <Sidebar />}
     <slot />
   </body>
 </html>

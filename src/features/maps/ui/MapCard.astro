@@ -13,11 +13,11 @@ const { map, loading = 'lazy' } = Astro.props
 
 <a
   href={`/${map.slug}`}
-  class="group border-secondary-sand bg-charcoal relative block h-full overflow-hidden rounded-xl border-2 shadow-lg"
+  class="group border-secondary-sand bg-charcoal relative block h-full max-h-48 overflow-hidden rounded-xl border md:max-h-64"
   data-testid="map-card"
 >
   <h2
-    class="text-secondary-sand absolute top-4 right-0 left-0 z-10 mx-auto block px-4 text-center text-4xl font-bold"
+    class="text-canvas absolute right-0 bottom-4 left-0 z-10 mx-auto block px-4 text-center text-3xl font-bold md:text-4xl"
     transition:name={`map-title-${map.slug}`}
   >
     {map.title}
@@ -26,7 +26,7 @@ const { map, loading = 'lazy' } = Astro.props
     map={map}
     loading={loading}
     class="h-full w-full"
-    imageClass="h-full w-full object-contain transition-transform duration-600 group-hover:scale-140"
+    imageClass="h-full w-full object-cover transition-transform duration-600 group-hover:scale-140"
     widths={[360, 540, 720, 960]}
     sizes="(min-width: 768px) 33vw, 92vw"
   />

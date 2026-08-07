@@ -3,20 +3,168 @@ import Layout from '../layouts/Layout.astro'
 import MapCard from '../features/maps/ui/MapCard.astro'
 import { MAPS_DATA } from '../features/maps/data/maps'
 
+import anidLogo from '@assets/logos/anid.png'
+import innovaLogo from '@assets/logos/innova.png'
+import arqulsLogo from '@assets/logos/arquls.png'
+import { Picture } from 'astro:assets'
+
 const title = 'Cartografías Sensoriales'
+
+const currentPath = Astro.url.pathname
+
+const navItems = [
+  { href: '/', label: 'Inicio', icon: 'home' },
+  { href: '/proyecto', label: 'Proyecto', icon: 'document' },
+  { href: '/datos', label: 'Datos', icon: 'map' },
+  { href: '/equipo', label: 'Equipo', icon: 'people' }
+] as const
 ---
 
-<Layout title={title}>
-  <main class="flex-1 p-4 pl-0" transition:animate="fade">
-    <section aria-label="Cartografías" class="flex h-full">
-      <div class="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
+<Layout title={title} class="flex-col justify-between gap-6">
+  <header class="container mx-auto flex flex-col items-center gap-1 px-4 pt-20">
+    <h1
+      class="text-secondary-sand font-cormorant max-w-2xl text-center text-4xl leading-none tracking-wide uppercase md:text-6xl"
+    >
+      Cartografías Sensoriales
+    </h1>
+    <span class="text-canvas font-inter mx-auto text-center leading-none font-extralight tracking-widest">
+      Mapeo de Marcas Sonoras en la Región de Coquimbo
+    </span>
+    <nav class="mx-auto pt-6">
+      <ul class="flex flex-wrap items-center justify-center gap-4">
         {
-          MAPS_DATA.map((map, index) => {
-            const isAboveFold = index < 2
-            return <MapCard map={map} loading={isAboveFold ? 'eager' : 'lazy'} />
+          navItems.map((item) => {
+            const isActive = currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href))
+
+            return (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  class:list={[
+                    'text-secondary-sand flex items-center gap-3 rounded-md px-3 py-2 text-lg transition-colors',
+                    isActive ? 'bg-primary-teal/40' : 'hover:bg-primary-teal/40'
+                  ]}
+                >
+                  {item.icon === 'home' && (
+                    <svg
+                      aria-hidden="true"
+                      class="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                  )}
+                  {item.icon === 'document' && (
+                    <svg
+                      aria-hidden="true"
+                      class="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                  )}
+                  {item.icon === 'map' && (
+                    <svg
+                      aria-hidden="true"
+                      class="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polygon points="1 6 1 22 8 18 16 22 21 18 21 2 16 6 8 2 1 6" />
+                      <line x1="8" y1="2" x2="8" y2="18" />
+                      <line x1="16" y1="6" x2="16" y2="22" />
+                    </svg>
+                  )}
+                  {item.icon === 'people' && (
+                    <svg
+                      aria-hidden="true"
+                      class="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  )}
+                  <span>{item.label}</span>
+                </a>
+              </li>
+            )
+          })
+        }
+      </ul>
+    </nav>
+  </header>
+  <main class="container mx-auto space-y-4 p-4" transition:animate="fade">
+    <h3 class="text-secondary-sand text-center font-light">
+      Explora las rutas y sus paisajes sonoros
+      <span class="text-secondary-sand/80 block text-sm font-light">Se recomienda el uso de audífonos</span>
+    </h3>
+    <section aria-label="Cartografías">
+      <div class="mx-auto grid grid-cols-1 gap-4 md:grid-cols-3">
+        {
+          MAPS_DATA.map((map) => {
+            return <MapCard map={map} loading="eager" />
           })
         }
       </div>
     </section>
   </main>
+  <footer class="mx-auto px-4 pb-12">
+    <span class="text-secondary-sand mx-auto block text-center text-sm font-light">Financian: </span>
+    <div class="border-secondary-sand/20">
+      <div class="mx-auto flex w-full flex-wrap items-center justify-center gap-6 pt-6">
+        <Picture
+          src={anidLogo}
+          formats={['avif', 'webp']}
+          fallbackFormat="png"
+          alt="Logo de la Agencia Nacional de Investigación y Desarrollo (ANID)"
+          loading="eager"
+          class="aspect-auto max-h-18 w-full"
+        />
+        <Picture
+          src={innovaLogo}
+          formats={['avif', 'webp']}
+          fallbackFormat="png"
+          alt="Logo de Innova USerena"
+          loading="eager"
+          class="aspect-auto max-h-18 w-full"
+        />
+        <Picture
+          src={arqulsLogo}
+          formats={['avif', 'webp']}
+          fallbackFormat="png"
+          alt="Logo de la Escuela de Arquitectura de la Universidad de La Serena"
+          loading="eager"
+          class="aspect-auto max-h-24 w-full"
+        />
+      </div>
+    </div>
+  </footer>
 </Layout>
