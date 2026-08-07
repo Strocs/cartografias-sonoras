@@ -17,6 +17,7 @@ export default defineConfig({
       name: 'Inter',
       cssVariable: '--font-inter',
       subsets: ['latin'],
+      weights: [200, 400, 700],
       display: 'swap'
     },
     {
@@ -24,6 +25,7 @@ export default defineConfig({
       name: 'Cormorant Garamond',
       cssVariable: '--font-cormorant',
       subsets: ['latin'],
+      weights: [400, 700],
       display: 'swap'
     }
   ],
