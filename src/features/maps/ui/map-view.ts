@@ -36,6 +36,7 @@ export interface MapViewElement extends HTMLElement {
 
 const MAP_SRC_ATTR = 'map-src';
 const MAP_LAYERS_ATTR = 'map-layers';
+const MAP_TITLE_ATTR = 'map-title';
 const RENDER_CONTEXT_ATTR = 'render-context';
 const REDUCED_MOTION_ATTR = 'reduced-motion';
 const MIN_ZOOM_ATTR = 'min-zoom';
@@ -82,6 +83,7 @@ export class MapView extends HTMLElement implements MapViewElement {
   private _viewportChangeHandler: ((event: Event) => void) | null = null;
   private _zoomResizeObserver: ResizeObserver | null = null;
   private _zoomAttributes: ZoomAttributes = {};
+  private _mapTitle: string | null = null;
 
   connectedCallback() {
     this._setStatus(COMPOSITION_STATUS.INITIALIZING);
@@ -89,6 +91,7 @@ export class MapView extends HTMLElement implements MapViewElement {
     const layers = this._readLayers();
     const zoomAttributes = this._parseZoomAttributes();
     this._zoomAttributes = zoomAttributes;
+    this._mapTitle = this.getAttribute(MAP_TITLE_ATTR);
     this._buildDom();
     void this._initialize(layers, zoomAttributes, ++this._lifecycle);
   }
@@ -152,6 +155,8 @@ export class MapView extends HTMLElement implements MapViewElement {
     hiddenImg.style.opacity = '0';
     hiddenImg.style.pointerEvents = 'none';
     hiddenImg.decoding = 'async';
+    // Invisible decode probe: never announced, so its alt is explicitly empty.
+    hiddenImg.alt = '';
     this.appendChild(hiddenImg);
     this._hiddenImg = hiddenImg;
 
@@ -247,7 +252,8 @@ export class MapView extends HTMLElement implements MapViewElement {
         world,
         decodedBase,
         decodedBase,
-        false
+        false,
+        this._mapTitle === null ? undefined : `Mapa de ${this._mapTitle}`
       );
 
       const settled = await Promise.all(
@@ -379,10 +385,14 @@ export class MapView extends HTMLElement implements MapViewElement {
    * uses a breakpoint map.
    */
   private _watchZoomBreakpoints(attributes: ZoomAttributes): void {
-    const usesBreakpoints = [attributes.minScale, attributes.maxScale, attributes.startScale]
-      .some(isZoomFactorMap);
+    const usesBreakpoints = [
+      attributes.minScale,
+      attributes.maxScale,
+      attributes.startScale
+    ].some(isZoomFactorMap);
     if (!usesBreakpoints) return;
-    if (typeof ResizeObserver === 'undefined' || this._viewport === null) return;
+    if (typeof ResizeObserver === 'undefined' || this._viewport === null)
+      return;
 
     this._zoomResizeObserver = new ResizeObserver(() => this._syncZoomRange());
     this._zoomResizeObserver.observe(this._viewport);
@@ -580,9 +590,7 @@ export class MapView extends HTMLElement implements MapViewElement {
     return attributes;
   }
 
-  private _parseZoomFactorAttribute(
-    name: string
-  ): ZoomFactorInput | undefined {
+  private _parseZoomFactorAttribute(name: string): ZoomFactorInput | undefined {
     const rawValue = this.getAttribute(name);
     if (rawValue === null) return undefined;
 
@@ -606,7 +614,11 @@ export class MapView extends HTMLElement implements MapViewElement {
     if (isZoomFactorMap(parsed)) {
       const map: Record<string, unknown> = parsed;
       for (const [bp, value] of Object.entries(map)) {
-        if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        if (
+          typeof value !== 'number' ||
+          !Number.isFinite(value) ||
+          value <= 0
+        ) {
           throw new Error(
             `<map-view> "${name}" breakpoint "${bp}" must be a finite positive number; received "${String(value)}"`
           );

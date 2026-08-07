@@ -243,6 +243,26 @@ describe('MapView custom element', () => {
     );
   });
 
+  it('gives the base image a descriptive alt and keeps overlays decorative', async () => {
+    const el = document.createElement('map-view') as MapView;
+    setLayers(el);
+    el.setAttribute('map-title', 'Plaza de Armas - La Serena');
+    wrapper.appendChild(el);
+
+    await waitForReady(el);
+
+    const baseImg = el.querySelector('[data-map-layer="base"] img');
+    expect(baseImg).not.toBeNull();
+    expect(baseImg?.getAttribute('alt')).toBe(
+      'Mapa de Plaza de Armas - La Serena'
+    );
+    expect(baseImg?.getAttribute('aria-hidden')).toBeNull();
+
+    const overlayImg = el.querySelector('[data-map-layer="overlay"] img');
+    expect(overlayImg?.getAttribute('alt')).toBe('');
+    expect(overlayImg?.getAttribute('aria-hidden')).toBe('true');
+  });
+
   it('emits ready after the base and all optional layers settle', async () => {
     const el = document.createElement('map-view') as MapView;
     setLayers(el);
@@ -685,10 +705,7 @@ describe('MapView custom element', () => {
     // In the test environment the fit scale is 1; simulate a mobile width by
     // setting the wrapper to a narrow viewport and check the resolved range.
     wrapper.style.width = '375px';
-    el.setAttribute(
-      'min-zoom',
-      '{"base":0.9,"md":0.8}'
-    );
+    el.setAttribute('min-zoom', '{"base":0.9,"md":0.8}');
     el.setAttribute('max-zoom', '{"base":2.5,"md":3}');
     wrapper.appendChild(el);
 
@@ -717,10 +734,22 @@ describe('MapView custom element', () => {
     const worldEl = el.querySelector('.map-world') as HTMLElement;
     // Simulate a real layout that changes the world fit: a narrow viewport
     // (400x600) containing the 800x600 world => fit 0.5, footprint 400x300.
-    Object.defineProperty(viewportEl, 'clientWidth', { value: 400, configurable: true });
-    Object.defineProperty(viewportEl, 'clientHeight', { value: 600, configurable: true });
-    Object.defineProperty(worldEl, 'clientWidth', { value: 800, configurable: true });
-    Object.defineProperty(worldEl, 'clientHeight', { value: 600, configurable: true });
+    Object.defineProperty(viewportEl, 'clientWidth', {
+      value: 400,
+      configurable: true
+    });
+    Object.defineProperty(viewportEl, 'clientHeight', {
+      value: 600,
+      configurable: true
+    });
+    Object.defineProperty(worldEl, 'clientWidth', {
+      value: 800,
+      configurable: true
+    });
+    Object.defineProperty(worldEl, 'clientHeight', {
+      value: 600,
+      configurable: true
+    });
 
     // A gesture frame (wheel/pinch/drag) must NOT re-read layout: the
     // four clientWidth/Height reads in _refreshWorldFit would force a
@@ -731,7 +760,9 @@ describe('MapView custom element', () => {
       })
     );
     expect(engineInstances[0]?.setContent).not.toHaveBeenCalled();
-    expect(engineInstances[0]?.setViewportTransformScaleFactor).not.toHaveBeenCalled();
+    expect(
+      engineInstances[0]?.setViewportTransformScaleFactor
+    ).not.toHaveBeenCalled();
 
     // The real resize reason still keeps the engine footprint in sync.
     el.querySelector('.map-panzoom')?.dispatchEvent(
@@ -743,9 +774,9 @@ describe('MapView custom element', () => {
       width: 400,
       height: 300
     });
-    expect(engineInstances[0]?.setViewportTransformScaleFactor).toHaveBeenCalledWith(
-      0.5
-    );
+    expect(
+      engineInstances[0]?.setViewportTransformScaleFactor
+    ).toHaveBeenCalledWith(0.5);
   });
 
   it('hands the fitted footprint and matched scale bias to the engine when the fit changes', async () => {
@@ -759,10 +790,22 @@ describe('MapView custom element', () => {
     const worldEl = el.querySelector('.map-world') as HTMLElement;
     // Simulate a real layout that changes the world fit: a narrow viewport
     // (400x600) containing the 800x600 world => fit 0.5, footprint 400x300.
-    Object.defineProperty(viewportEl, 'clientWidth', { value: 400, configurable: true });
-    Object.defineProperty(viewportEl, 'clientHeight', { value: 600, configurable: true });
-    Object.defineProperty(worldEl, 'clientWidth', { value: 800, configurable: true });
-    Object.defineProperty(worldEl, 'clientHeight', { value: 600, configurable: true });
+    Object.defineProperty(viewportEl, 'clientWidth', {
+      value: 400,
+      configurable: true
+    });
+    Object.defineProperty(viewportEl, 'clientHeight', {
+      value: 600,
+      configurable: true
+    });
+    Object.defineProperty(worldEl, 'clientWidth', {
+      value: 800,
+      configurable: true
+    });
+    Object.defineProperty(worldEl, 'clientHeight', {
+      value: 600,
+      configurable: true
+    });
 
     el.querySelector('.map-panzoom')?.dispatchEvent(
       new CustomEvent('viewport-change', {
@@ -778,8 +821,8 @@ describe('MapView custom element', () => {
       width: 400,
       height: 300
     });
-    expect(engineInstances[0]?.setViewportTransformScaleFactor).toHaveBeenCalledWith(
-      0.5
-    );
+    expect(
+      engineInstances[0]?.setViewportTransformScaleFactor
+    ).toHaveBeenCalledWith(0.5);
   });
 });

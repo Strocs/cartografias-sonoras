@@ -45,11 +45,20 @@ export function createMarkerLayer(container: HTMLElement): HTMLDivElement {
   return markerLayer;
 }
 
+/**
+ * Creates the `<img>` for a map layer.
+ *
+ * The base image carries a descriptive `altText` (the map title) and stays in
+ * the accessibility tree. Optional overlay layers are decorative — their image
+ * gets an empty `alt` plus `aria-hidden` unless a caller explicitly passes
+ * meaningful text.
+ */
 export function createImageLayer(
   container: HTMLElement,
   layer: MapLayer,
   base: MapImage,
-  effectActive: boolean
+  effectActive: boolean,
+  altText?: string
 ): HTMLImageElement {
   const geometry = resolveLayerGeometry(layer, base);
   const wrapper = document.createElement('div');
@@ -75,8 +84,10 @@ export function createImageLayer(
 
   const image = document.createElement('img');
   image.src = layer.src;
-  image.alt = '';
-  image.setAttribute('aria-hidden', 'true');
+  image.alt = altText ?? '';
+  if (altText === undefined) {
+    image.setAttribute('aria-hidden', 'true');
+  }
   image.decoding = 'async';
   image.draggable = false;
   image.style.display = 'block';
