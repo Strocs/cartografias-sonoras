@@ -39,7 +39,11 @@ const assetsBySlug: Record<string, MapAssets> = {
   'plaza-de-armas-la-serena': {
     base: ROUTE_3_BASE,
     preview: ROUTE_3_PREVIEW,
-    overlays: { 'layer-0': ROUTE_3_BASE_LAYER_1 }
+    overlays: {
+      'layer-0': ROUTE_3_BASE_LAYER_1,
+      'layer-1': ROUTE_3_BASE_LAYER_1,
+      'layer-2': ROUTE_3_BASE_LAYER_1
+    }
   }
 };
 

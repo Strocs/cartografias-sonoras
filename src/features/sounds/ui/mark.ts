@@ -100,10 +100,14 @@ export function createMark(
   tooltip.className = 'sound-mark__tooltip';
   tooltip.setAttribute('role', 'tooltip');
 
-  const tooltipTitle = document.createElement('p');
-  tooltipTitle.className = 'sound-mark__tooltip-title';
-  tooltipTitle.textContent = mark.title;
-  tooltip.appendChild(tooltipTitle);
+  // The title is optional: when absent (legacy/placeholder marks) its element
+  // is omitted entirely instead of rendering an empty <p>.
+  if (mark.title) {
+    const tooltipTitle = document.createElement('p');
+    tooltipTitle.className = 'sound-mark__tooltip-title';
+    tooltipTitle.textContent = mark.title;
+    tooltip.appendChild(tooltipTitle);
+  }
 
   if (mark.location) {
     const tooltipLocation = document.createElement('p');

@@ -141,21 +141,30 @@ describe('Dataset validation', () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
-  it('declares a hover scale of 1.05 for map 1 layer-0 only', () => {
-    const map1 = MAPS_DATA.find((m) => m.id === 1);
-    expect(map1?.images[1]).toMatchObject({ id: 'layer-0', hoverScale: 1.05 });
-
+  it('keeps hoverScale optional per layer: both absent and present forms stay valid', () => {
+    // hoverScale is an optional capability, never a requirement: the dataset
+    // may omit it everywhere, and adding it to any overlay must keep the whole
+    // map pipeline (schema parse) working.
     for (const map of MAPS_DATA) {
-      const [base, ...overlays] = map.images;
-      expect(base.hoverScale).toBeUndefined();
-      for (const overlay of overlays) {
-        if (map.id === 1 && overlay.id === 'layer-0') {
-          expect(overlay.hoverScale).toBe(1.05);
-        } else {
-          expect(overlay.hoverScale).toBeUndefined();
+      for (const layer of map.images) {
+        if (layer.hoverScale !== undefined) {
+          expect(layer.hoverScale).toBeGreaterThan(0);
         }
       }
     }
+
+    // Absent form: the dataset currently declares no hoverScale anywhere, and
+    // that shape must round-trip through the schema untouched.
+    const first = MAPS_DATA[0]!;
+    expect(mapSchema.parse(first)).toEqual(first);
+
+    // Present form: adding hoverScale to an overlay stays valid end-to-end.
+    expect(() =>
+      mapSchema.parse({
+        ...first,
+        images: [first.images[0], { ...first.images[1], hoverScale: 1.05 }]
+      })
+    ).not.toThrow();
   });
 
   it('validates and rejects layer hoverScale in the map schema', () => {

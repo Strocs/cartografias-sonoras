@@ -92,13 +92,13 @@ export const mapLayouts: MapLayout[] = [
         effect: 'float'
       },
       {
-        id: 'layer-0',
+        id: 'layer-1',
         frame: { x: 65.6, y: 24.8, width: 14.9, height: 14.9 },
         optional: true,
         effect: 'float'
       },
       {
-        id: 'layer-0',
+        id: 'layer-2',
         frame: { x: 10.27, y: 64.35, width: 14.9, height: 14.9 },
         optional: true,
         effect: 'float'

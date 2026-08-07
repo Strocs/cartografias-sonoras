@@ -11,7 +11,7 @@ export const positionSchema = z.object(
 export const soundSchema = z.object(
   {
     id: z.number().int().positive().finite(),
-    title: z.string().min(1),
+    title: z.string().optional(),
     description: z.string().min(1).nullable(),
     location: z.string(),
     audioUrl: z.string().min(1).refine((value) => /^https?:\/\//.test(value), {
@@ -32,7 +32,7 @@ export const markSchema = z.object(
   {
     id: z.number().int().positive().finite(),
     mapId: z.number().int().positive().finite(),
-    title: z.string().min(1),
+    title: z.string().optional(),
     description: z.string().min(1).nullable(),
     position: positionSchema,
     location: z.string(),
