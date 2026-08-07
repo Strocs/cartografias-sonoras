@@ -34,6 +34,9 @@ interface WheelTransitionRecord { stage: WheelStage; transition: ViewportTransit
 function isFinitePoint(point: ViewportPoint): boolean { return Number.isFinite(point.x) && Number.isFinite(point.y); }
 function statesEqual(first: ViewportState, second: ViewportState): boolean { return first.x === second.x && first.y === second.y && first.scale === second.scale; }
 
+/** Plain tap with running jitter under this distance (px) still counts as a tap. */
+const GESTURE_TAP_MAX_DISTANCE_PX = 8;
+
 export class ViewportEngine {
   private readonly scheduler = createFrameScheduler();
   private readonly pointers = new Map<number, PointerSample>();
@@ -51,6 +54,8 @@ export class ViewportEngine {
   private ready = false;
   private drag: DragGesture | undefined;
   private pinch: PinchGesture | undefined;
+  private gestureConsumed = false;
+  private pinchHappened = false;
   private animation: AnimationRecord | undefined;
   private wheel: WheelTransitionRecord | undefined;
   private destroyed = false;
@@ -137,18 +142,34 @@ export class ViewportEngine {
     this.destroyed = true; this.cancelAnimation(); this.resizeObserver?.disconnect();
     for (const pointer of this.pointers.values()) this.releasePointer(pointer.pointerId);
     this.pointers.clear(); this.subscribers.clear();
+    this.gestureConsumed = false; this.pinchHappened = false;
     this.scene.removeEventListener('pointerdown', this.onPointerDown); this.scene.removeEventListener('pointermove', this.onPointerMove); this.scene.removeEventListener('pointerup', this.onPointerRelease); this.scene.removeEventListener('pointercancel', this.onPointerRelease); this.scene.removeEventListener('lostpointercapture', this.onPointerRelease); this.scene.removeEventListener('wheel', this.onWheel); this.removeWindowPointerFallback(); this.phase = VIEWPORT_PHASE.DESTROYED;
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
-    if (this.destroyed || (event.pointerType === 'mouse' && event.button !== 0) || !this.isFiniteEventPoint(event) || this.isInteractiveTarget(event.target)) return;
+    if (this.destroyed || (event.pointerType === 'mouse' && event.button !== 0) || !this.isFiniteEventPoint(event)) return;
+    const interactive = this.isInteractiveTarget(event.target);
     this.cancelAnimation(); this.projectCurrentStrictly();
-    const pointer = this.toPointer(event); this.pointers.set(event.pointerId, pointer);
-    try { this.scene.setPointerCapture(event.pointerId); } catch { this.addWindowPointerFallback(); }
+    const pointer = this.toPointer(event);
+    const isNewSession = this.pointers.size === 0;
+    this.pointers.set(event.pointerId, pointer);
+    if (isNewSession) {
+      this.gestureConsumed = false;
+      this.pinchHappened = false;
+    }
+    if (interactive) {
+      // Tap-to-play preservation: never cancel pointerdown (that suppresses the
+      // compatibility click for touch/pen) and never capture (that retargets
+      // pointerup away from the button, breaking the click target). The window
+      // fallback keeps tracking if the pointer leaves the scene during a drag.
+      this.addWindowPointerFallback();
+    } else {
+      try { this.scene.setPointerCapture(event.pointerId); } catch { this.addWindowPointerFallback(); }
+      event.preventDefault();
+    }
     this.drag = { pointer, state: { ...this.state } };
     if (this.pointers.size === 2) this.beginPinch();
     this.phase = this.pointers.size > 1 ? VIEWPORT_PHASE.PINCHING : VIEWPORT_PHASE.DRAGGING;
-    event.preventDefault();
   };
 
   private readonly onPointerMove = (event: PointerEvent): void => {
@@ -160,12 +181,21 @@ export class ViewportEngine {
     const requested = { x: this.drag.state.x + event.clientX - this.drag.pointer.x, y: this.drag.state.y + event.clientY - this.drag.pointer.y, scale: this.drag.state.scale };
     const bounds = computeStrictBounds(this.getViewportSize(), this.getContentSize(), requested.scale);
     this.setState(applyBoundsResistance(requested, bounds), VIEWPORT_PHASE.DRAGGING, 'drag'); event.preventDefault();
+    const moved = Math.hypot(event.clientX - this.drag.pointer.x, event.clientY - this.drag.pointer.y);
+    if (moved > GESTURE_TAP_MAX_DISTANCE_PX) this.gestureConsumed = true;
   };
 
   private readonly onPointerRelease = (event: PointerEvent): void => {
     if (this.destroyed || !this.pointers.delete(event.pointerId)) return;
     this.releasePointer(event.pointerId);
     if (this.pointers.size > 0) { const remaining = this.pointers.values().next().value as PointerSample; this.drag = { pointer: remaining, state: { ...this.state } }; this.pinch = undefined; this.phase = VIEWPORT_PHASE.DRAGGING; return; }
+    // viewport-gesture-end: notifies consumers whether the finished pointer
+    // session consumed the compatibility click. detail: { consumed: boolean;
+    // kind: 'tap' | 'drag' | 'pinch' } — consumed is true when the gesture
+    // really moved (drag) or spanned two pointers (pinch), so a plain tap keeps
+    // firing its click.
+    const kind: 'tap' | 'drag' | 'pinch' = this.gestureConsumed ? (this.pinchHappened ? 'pinch' : 'drag') : 'tap';
+    this.scene.dispatchEvent(new CustomEvent('viewport-gesture-end', { detail: { consumed: this.gestureConsumed, kind } }));
     this.drag = undefined; this.pinch = undefined; this.removeWindowPointerFallback(); this.snapToStrictBounds('release');
   };
   private readonly onWindowPointerMove = (event: PointerEvent): void => { if (!this.isSceneEvent(event)) this.onPointerMove(event); };
@@ -225,7 +255,7 @@ export class ViewportEngine {
     const focalState = projectFocal(this.pinch!.state, this.pinch!.center, scale); const translated = { ...focalState, x: focalState.x + center.x - this.pinch!.center.x, y: focalState.y + center.y - this.pinch!.center.y };
     this.setState(applyBoundsResistance(translated, computeStrictBounds(this.getViewportSize(), this.getContentSize(), scale)), VIEWPORT_PHASE.PINCHING, 'pinch'); event.preventDefault();
   }
-  private beginPinch(): void { const values = [...this.pointers.values()]; const [first, second] = values; if (first === undefined || second === undefined) return; const distance = Math.hypot(second.x - first.x, second.y - first.y); if (distance <= 0 || !Number.isFinite(distance)) return; this.pinch = { firstPointerId: first.pointerId, secondPointerId: second.pointerId, center: this.toLocalPoint({ x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }), distance, state: { ...this.state } }; }
+  private beginPinch(): void { const values = [...this.pointers.values()]; const [first, second] = values; if (first === undefined || second === undefined) return; const distance = Math.hypot(second.x - first.x, second.y - first.y); if (distance <= 0 || !Number.isFinite(distance)) return; this.gestureConsumed = true; this.pinchHappened = true; this.pinch = { firstPointerId: first.pointerId, secondPointerId: second.pointerId, center: this.toLocalPoint({ x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }), distance, state: { ...this.state } }; }
   private setState(state: ViewportState, phase: ViewportPhase, reason: string): void { this.state = state; this.phase = phase; this.commit(reason); }
   private commit(reason: string): void { if (this.destroyed) return; this.revision += 1; const target = this.transformTarget; const visualScale = this.state.scale * this.transformScaleFactor; target.style.transformOrigin = '0 0'; target.style.transform = `translate3d(${this.state.x}px, ${this.state.y}px, 0) scale(${visualScale})`; const inverse = String(1 / visualScale); target.style.setProperty('--viewport-inverse-scale', inverse); this.scene.style.setProperty('--viewport-inverse-scale', inverse); const detail: ViewportEventDetail = { state: this.getState(), reason }; for (const subscriber of this.subscribers) subscriber(detail.state); this.scene.dispatchEvent(new CustomEvent<ViewportEventDetail>('viewport-change', { detail })); }
   private focalState(from: ViewportState, focal: ViewportPoint, scale: number): ViewportState { const focalState = projectFocal(from, focal, scale); return projectToStrictTranslation(focalState, computeStrictBounds(this.getViewportSize(), this.getContentSize(), scale)); }

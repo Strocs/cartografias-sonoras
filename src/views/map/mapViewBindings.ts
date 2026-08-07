@@ -36,6 +36,9 @@ export interface MapViewBindingOptions {
  *   (the fan is always visible; there is no open/close toggle).
  * - Render SVG paths based on the current audio playback state.
  * - Toggle playback from `sound:activate`.
+ * - Guard clicks against the viewport gesture: a drag/pinch that started on a
+ *   sound button suppresses the compatibility click (so it pans instead of
+ *   toggling audio), while a plain tap still reaches the button.
  * - React to store changes: update each sound button, paint the mark accent when
  *   any of its sounds is active, and re-derive path visuals.
  * - Apply one `scaleFactor` per group on `viewport-change`.
@@ -61,6 +64,7 @@ export function bindMapView({
 
   const marksById = new Map<number, HTMLDivElement>();
   const soundButtonsById = new Map<number, HTMLButtonElement>();
+  let gestureConsumed = false;
 
   // Initial render.
   for (const mark of marks) {
@@ -127,6 +131,26 @@ export function bindMapView({
   mapView.addEventListener('sound:activate', soundActivateHandler);
   mapView.addEventListener('viewport-change', viewportChangeHandler);
 
+  // Remember whether the just-finished pointer session consumed the click
+  // (a drag/pinch that started on a button), so the capture-phase guard below
+  // can cancel the compatibility click before it reaches the sound button.
+  const gestureEndHandler = (event: Event) => {
+    const detail = (event as CustomEvent).detail as { consumed?: boolean } | undefined;
+    gestureConsumed = detail?.consumed === true;
+  };
+  mapView.addEventListener('viewport-gesture-end', gestureEndHandler);
+
+  // Capture runs before the button's own bubbling click listener, so
+  // `sound:activate` never dispatches after a real drag/pinch. A plain tap
+  // (no real gesture) leaves `gestureConsumed` false and the click passes.
+  const clickGuard = (event: Event) => {
+    if (!gestureConsumed) return;
+    gestureConsumed = false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+  mapView.addEventListener('click', clickGuard, true);
+
   function soundStatusOf(soundId: number): SoundButtonStatus {
     const state = audioStore.getState().activeSounds.get(soundId);
     const status = state?.status ?? AUDIO_STATUS.IDLE;
@@ -177,6 +201,8 @@ export function bindMapView({
     unsubscribe();
     mapView.removeEventListener('sound:activate', soundActivateHandler);
     mapView.removeEventListener('viewport-change', viewportChangeHandler);
+    mapView.removeEventListener('viewport-gesture-end', gestureEndHandler);
+    mapView.removeEventListener('click', clickGuard, true);
 
     for (const button of soundButtonsById.values()) {
       removeSoundButton(button);

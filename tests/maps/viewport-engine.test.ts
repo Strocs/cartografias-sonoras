@@ -353,21 +353,29 @@ describe('ViewportEngine corrected interaction semantics', () => {
     engine.destroy();
   });
 
-  it('preserves pinch, interactive marker, public controls, and reduced-motion compatibility', () => {
+  it('registers a pointer starting on an interactive target and pans/pinches, publishing a consumed pinch gesture', () => {
     const marker = document.createElement('button');
     scene.appendChild(marker);
     const engine = new ViewportEngine(scene, config);
     const initial = engine.getState();
-    marker.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }));
-    expect(engine.getState()).toEqual(initial);
+    const gestureEnds: unknown[] = [];
+    scene.addEventListener('viewport-gesture-end', (event) => gestureEnds.push((event as CustomEvent).detail));
 
-    scene.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 2, clientX: 100, clientY: 100 }));
-    scene.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 3, clientX: 200, clientY: 100 }));
-    scene.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 3, clientX: 260, clientY: 100 }));
+    marker.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }));
+    expect(engine.getState()).toEqual(expect.objectContaining({ phase: 'dragging' }));
+    expect(engine.getState()).toEqual(expect.objectContaining({ x: initial.x, y: initial.y }));
+
+    scene.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 2, clientX: 180, clientY: 100 }));
+    scene.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 3, clientX: 260, clientY: 100 }));
+    scene.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 3, clientX: 320, clientY: 100 }));
     expect(engine.getState()).toEqual(expect.objectContaining({ phase: 'pinching' }));
     expect(Number.isFinite(engine.getState().scale)).toBe(true);
+
+    scene.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }));
     scene.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 2, clientX: 100, clientY: 100 }));
     scene.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 3, clientX: 260, clientY: 100 }));
+    expect(gestureEnds.at(-1)).toEqual({ consumed: true, kind: 'pinch' });
+
     engine.zoomIn();
     engine.zoomOut();
     engine.reset();
@@ -381,6 +389,64 @@ describe('ViewportEngine corrected interaction semantics', () => {
     expectStrict(reduced.getState());
     expect(reduced.getState().phase).toBe('idle');
     reduced.destroy();
+  });
+
+  it('tap on an interactive target is not consumed', () => {
+    const marker = document.createElement('button');
+    scene.appendChild(marker);
+    const engine = new ViewportEngine(scene, config);
+    const initial = engine.getState();
+    const gestureEnds: unknown[] = [];
+    scene.addEventListener('viewport-gesture-end', (event) => gestureEnds.push((event as CustomEvent).detail));
+
+    marker.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }));
+    scene.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 103, clientY: 100 }));
+    scene.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 103, clientY: 100 }));
+    runPendingFrame(0);
+    runPendingFrame(180);
+
+    expect(gestureEnds.at(-1)).toEqual({ consumed: false, kind: 'tap' });
+    expect(engine.getState()).toEqual(expect.objectContaining({ x: initial.x, y: initial.y, scale: initial.scale }));
+    engine.destroy();
+  });
+
+  it('drag starting on an interactive target consumes the click but pans', () => {
+    const marker = document.createElement('button');
+    scene.appendChild(marker);
+    const engine = new ViewportEngine(scene, config);
+    for (let index = 0; index < 3; index += 1) engine.zoomIn();
+    const initial = engine.getState();
+    const gestureEnds: unknown[] = [];
+    scene.addEventListener('viewport-gesture-end', (event) => gestureEnds.push((event as CustomEvent).detail));
+    const sceneTransformBefore = scene.style.transform;
+
+    marker.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }));
+    scene.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 150, clientY: 100 }));
+    expect(engine.getState().x).toBe(initial.x + 50);
+    scene.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 150, clientY: 100 }));
+
+    expect(gestureEnds.at(-1)).toEqual({ consumed: true, kind: 'drag' });
+    expect(scene.style.transform).not.toBe(sceneTransformBefore);
+    engine.destroy();
+  });
+
+  it('interactive pointer does not preventDefault; scene background pointer does', () => {
+    const marker = document.createElement('button');
+    scene.appendChild(marker);
+    const engine = new ViewportEngine(scene, config);
+
+    const buttonDown = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 1, clientX: 100, clientY: 100 });
+    const buttonPreventDefault = vi.spyOn(buttonDown, 'preventDefault');
+    marker.dispatchEvent(buttonDown);
+    expect(buttonPreventDefault).not.toHaveBeenCalled();
+    scene.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }));
+
+    const sceneDown = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 2, clientX: 200, clientY: 200 });
+    const scenePreventDefault = vi.spyOn(sceneDown, 'preventDefault');
+    scene.dispatchEvent(sceneDown);
+    expect(scenePreventDefault).toHaveBeenCalled();
+    scene.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 2, clientX: 200, clientY: 200 }));
+    engine.destroy();
   });
 
   it('writes the transform and inverse-scale onto a transformTarget, leaving the scene identity', () => {

@@ -466,6 +466,70 @@ test.describe('Map', () => {
   );
 
   test(
+    'drag starting on a sound button pans the map and does not activate audio',
+    { tag: ['@e2e'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page);
+      await mapPage.goto(mapFixtures[0].slug);
+      await mapPage.waitForViewportReady();
+
+      // Attach counters BEFORE the gesture: a 'sound:activate' listener (audio
+      // would only fire on a click) and a 'viewport-change' listener on the
+      // engine's scene (the raw event carries reason === 'drag' for a real
+      // pan; the map-view forward strips it).
+      await page.evaluate(() => {
+        const map = document.querySelector('map-view#main-map')!;
+        const scene = document.querySelector('.map-panzoom');
+        const win = window as Window & {
+          __soundActivations?: number;
+          __viewportDrags?: number;
+        };
+        win.__soundActivations = 0;
+        win.__viewportDrags = 0;
+        map.addEventListener('sound:activate', () => {
+          win.__soundActivations = (win.__soundActivations ?? 0) + 1;
+        });
+        scene?.addEventListener('viewport-change', (event) => {
+          const detail = (event as CustomEvent).detail as
+            | { reason?: string }
+            | undefined;
+          if (detail?.reason === 'drag') {
+            win.__viewportDrags = (win.__viewportDrags ?? 0) + 1;
+          }
+        });
+      });
+
+      const box = await mapPage.soundButtons.first().boundingBox();
+      expect(box).not.toBeNull();
+      const center = {
+        x: box!.x + box!.width / 2,
+        y: box!.y + box!.height / 2
+      };
+      await page.mouse.move(center.x, center.y);
+      await page.mouse.down();
+      await page.mouse.move(center.x + 50, center.y + 40, { steps: 6 });
+      await page.mouse.up();
+
+      // The gesture panned the map: at least one drag-driven viewport-change
+      // must have fired. Poll because the drag settles asynchronously.
+      await expect
+        .poll(() =>
+          page.evaluate(() => (window as Window & { __viewportDrags?: number })
+            .__viewportDrags ?? 0)
+        )
+        .toBeGreaterThan(0);
+
+      // The resulting click was suppressed by the gesture guard: no audio.
+      const activations = await page.evaluate(
+        () =>
+          (window as Window & { __soundActivations?: number })
+            .__soundActivations ?? 0
+      );
+      expect(activations).toBe(0);
+    }
+  );
+
+  test(
     'center button resets the map view',
     { tag: ['@e2e'] },
     async ({ page }) => {
