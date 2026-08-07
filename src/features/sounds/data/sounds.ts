@@ -19,65 +19,11 @@ interface PointEntry {
   }
 }
 
-// Mapa 1 — Avenida de Aguirre — La Serena (2289×1636)
+// Mapa 1 — Cruz del Tercer Milenio — Coquimbo
 const MAP_01_POINTS: PointEntry[] = [
   {
     point: 1,
     soundCount: 4,
-    mark: {
-      title: '',
-      description: null,
-      location: 'Faro Monumental de La Serena',
-      position: { x: 79.05, y: 16 }
-    }
-  },
-  {
-    point: 2,
-    soundCount: 4,
-    mark: {
-      title: '',
-      description: null,
-      location: 'Fco. de Aguirre con Av. del Mar',
-      position: { x: 75, y: 25 }
-    }
-  },
-  {
-    point: 3,
-    soundCount: 3,
-    mark: {
-      title: '',
-      description: null,
-      location: 'INACAP La Serena',
-      position: { x: 56, y: 40 }
-    }
-  },
-  {
-    point: 4,
-    soundCount: 3,
-    mark: {
-      title: '',
-      description: null,
-      location: 'Universidad Central',
-      position: { x: 39, y: 57 }
-    }
-  },
-  {
-    point: 5,
-    soundCount: 3,
-    mark: {
-      title: '',
-      description: null,
-      location: 'Av. de Aguirre',
-      position: { x: 18, y: 82 }
-    }
-  }
-]
-
-// Mapa 2 — Cruz del Tercer Milenio — Coquimbo (1160×912)
-const MAP_02_POINTS: PointEntry[] = [
-  {
-    point: 1,
-    soundCount: 1,
     mark: {
       title: '',
       description: null,
@@ -87,7 +33,7 @@ const MAP_02_POINTS: PointEntry[] = [
   },
   {
     point: 2,
-    soundCount: 2,
+    soundCount: 4,
     mark: {
       title: '',
       description: null,
@@ -107,7 +53,7 @@ const MAP_02_POINTS: PointEntry[] = [
   },
   {
     point: 4,
-    soundCount: 2,
+    soundCount: 3,
     mark: {
       title: '',
       description: null,
@@ -123,6 +69,60 @@ const MAP_02_POINTS: PointEntry[] = [
       description: null,
       location: '',
       position: { x: 62.7, y: 26.2 }
+    }
+  }
+]
+
+// Mapa 2 — Avenida de Aguirre — La Serena
+const MAP_02_POINTS: PointEntry[] = [
+  {
+    point: 1,
+    soundCount: 1,
+    mark: {
+      title: '',
+      description: null,
+      location: 'Faro Monumental de La Serena',
+      position: { x: 79.07, y: 23 }
+    }
+  },
+  {
+    point: 2,
+    soundCount: 2,
+    mark: {
+      title: '',
+      description: null,
+      location: 'Fco. de Aguirre con Av. del Mar',
+      position: { x: 73.5, y: 23 }
+    }
+  },
+  {
+    point: 3,
+    soundCount: 3,
+    mark: {
+      title: '',
+      description: null,
+      location: 'INACAP La Serena',
+      position: { x: 56, y: 40 }
+    }
+  },
+  {
+    point: 4,
+    soundCount: 2,
+    mark: {
+      title: '',
+      description: null,
+      location: 'Universidad Central',
+      position: { x: 39, y: 57 }
+    }
+  },
+  {
+    point: 5,
+    soundCount: 3,
+    mark: {
+      title: '',
+      description: null,
+      location: 'Av. de Aguirre',
+      position: { x: 18, y: 82 }
     }
   }
 ]

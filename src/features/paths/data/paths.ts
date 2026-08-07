@@ -6,7 +6,7 @@ import type { Path } from '../domain/types'
 //   (0, 0) = top-left corner, (100, 100) = bottom-right corner.
 
 export const PATHS: Path[] = [
-  // Mapa 1 — Avenida de Aguirre — La Serena (2289×1636)
+  // Ruta 1 — Cruz del Tercer Milenio — Coquimbo
   {
     id: 1001,
     mapId: 1,
@@ -17,10 +17,7 @@ export const PATHS: Path[] = [
   {
     id: 1002,
     mapId: 1,
-    waypoints: [
-      { x: 64.8, y: 38 },
-      { x: 61.3, y: 35 }
-    ],
+    waypoints: [],
     startMarkId: 102,
     endMarkId: 103
   },
@@ -31,23 +28,24 @@ export const PATHS: Path[] = [
     startMarkId: 103,
     endMarkId: 104
   },
-
   {
     id: 1004,
     mapId: 1,
-    waypoints: [
-      { x: 26.7, y: 69 },
-      { x: 28.9, y: 71.5 }
-    ],
+    waypoints: [],
     startMarkId: 104,
     endMarkId: 105
   },
 
-  // Mapa 2 — Cruz del Tercer Milenio — Coquimbo (1160×912)
+  // Ruta 2 — Avenida de Aguirre — La Serena
   {
     id: 2001,
     mapId: 2,
-    waypoints: [],
+    waypoints: [
+      {
+        x: 76.7,
+        y: 20
+      }
+    ],
     startMarkId: 201,
     endMarkId: 202
   },
@@ -68,12 +66,15 @@ export const PATHS: Path[] = [
   {
     id: 2004,
     mapId: 2,
-    waypoints: [],
+    waypoints: [
+      { x: 26.7, y: 69 },
+      { x: 28.9, y: 71.5 }
+    ],
     startMarkId: 204,
     endMarkId: 205
   },
 
-  // Mapa 3 — Plaza de Armas — La Serena (864×1243, portrait)
+  // Ruta 3 — Plaza de Armas — La Serena
   {
     id: 3001,
     mapId: 3,

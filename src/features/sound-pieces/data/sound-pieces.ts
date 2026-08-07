@@ -3,7 +3,7 @@ import type { SoundPiece } from '../domain/types'
 export const SOUND_PIECES: SoundPiece[] = [
   {
     id: 1,
-    mapId: 1,
+    mapId: 2,
     title: 'Andando por la Avenida de Aguirre',
     author: 'Javier Fredes',
     description:
@@ -12,7 +12,7 @@ export const SOUND_PIECES: SoundPiece[] = [
   },
   {
     id: 2,
-    mapId: 2,
+    mapId: 1,
     title: 'Ritmos del mercado',
     author: 'Colectivo Marcasonora',
     description:

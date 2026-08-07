@@ -25,12 +25,13 @@ interface MapAssets {
  * where declarations are paired with the actual image files.
  */
 const assetsBySlug: Record<string, MapAssets> = {
-  'avenida-de-aguirre-la-serena': {
+  'cruz-del-tercer-milenio-coquimbo': {
     base: ROUTE_1_BASE,
     preview: ROUTE_1_PREVIEW,
     overlays: { 'layer-0': ROUTE_1_BASE_LAYER_1 }
   },
-  'cruz-del-tercer-milenio-coquimbo': {
+
+  'avenida-de-aguirre-la-serena': {
     base: ROUTE_2_BASE,
     preview: ROUTE_2_PREVIEW,
     overlays: { 'layer-0': ROUTE_2_BASE_LAYER_1 }
