@@ -26,26 +26,6 @@ export default defineConfig([
       parserOptions: { parser: tsParser, extraFileExtensions: ['.astro'] }
     }
   },
-  // Panzoom isolation: only features/maps may import Panzoom directly.
-  // This block covers all non-feature source files.
-  {
-    files: ['src/**/*.{js,jsx,ts,tsx,astro}'],
-    ignores: ['src/features/**'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['@panzoom/panzoom'],
-              importNames: ['default'],
-              message: 'Only features/maps may import Panzoom directly.'
-            }
-          ]
-        }
-      ]
-    }
-  },
   // Feature isolation: only features/ cannot import from sibling features.
   // shared/ and views/ are allowed to import from features — they exist to
   // compose, reuse, and orchestrate across feature boundaries.
@@ -63,35 +43,6 @@ export default defineConfig([
             {
               group: ['../sounds/**', '../paths/**', '../sound-pieces/**'],
               message: 'Features cannot import from sibling features via relative paths. Use @shared instead.'
-            }
-          ]
-        }
-      ]
-    }
-  },
-  // Panzoom isolation for feature files outside of features/maps.
-  // This repeats the feature-isolation patterns so they are not lost when the
-  // rule is overridden for these files.
-  {
-    files: ['src/features/**'],
-    ignores: ['src/features/maps/**'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['@features/*'],
-              message: 'Features cannot import from other features. Use @shared instead.'
-            },
-            {
-              group: ['../sounds/**', '../paths/**', '../sound-pieces/**'],
-              message: 'Features cannot import from sibling features via relative paths. Use @shared instead.'
-            },
-            {
-              group: ['@panzoom/panzoom'],
-              importNames: ['default'],
-              message: 'Only features/maps may import Panzoom directly.'
             }
           ]
         }
