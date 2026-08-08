@@ -245,17 +245,31 @@ test.describe('Map', () => {
   )
 
   test(
-    'shows the mark tooltip with title, place and description below the mark',
+    'tooltip follows the rule: rendered iff the mark has a title or a location, shown below the mark',
     { tag: ['@e2e'] },
     async ({ page }) => {
       const mapPage = new MapPage(page)
       const map = mapFixtures[0]
-      const mark = marksFor(map.id)[0]
+      const marks = marksFor(map.id)
 
       await mapPage.goto(map.slug)
       await mapPage.waitForViewportReady()
 
-      const group = mapPage.getSoundMark(mark.id)
+      // Business rule (data-agnostic): the mark renders its tooltip exactly
+      // when it has a title or a location — legacy/placeholder marks with
+      // neither must not produce an empty hover box.
+      for (const mark of marks) {
+        const tooltip = mapPage.getSoundMark(mark.id).locator('.sound-mark__tooltip')
+        const expected = mark.title || mark.location ? 1 : 0
+        await expect(tooltip).toHaveCount(expected)
+      }
+
+      // On a mark that has content, hovering the pin shows the tooltip below
+      // the mark's geometric centre-bottom, with the present fields included.
+      const informative = marks.find((mark) => mark.title || mark.location)
+      if (!informative) return
+
+      const group = mapPage.getSoundMark(informative.id)
       const tooltip = group.locator('.sound-mark__tooltip')
 
       // Hover the pin: the tooltip activates from either the head or the tail
@@ -264,15 +278,17 @@ test.describe('Map', () => {
       await group.locator('.sound-mark__tail').hover()
 
       await expect(tooltip).toBeVisible()
-      await expect(tooltip).toContainText(mark.title)
-      await expect(tooltip).toContainText(mark.location)
+      if (informative.title) {
+        await expect(tooltip).toContainText(informative.title)
+      }
+      if (informative.location) {
+        await expect(tooltip).toContainText(informative.location)
+      }
       // Description is optional: only render/assert when present.
-      if (mark.description) {
-        await expect(tooltip).toContainText(mark.description)
+      if (informative.description) {
+        await expect(tooltip).toContainText(informative.description)
       }
 
-      // The tooltip always sits below the mark's geometric centre-bottom,
-      // while the fan itself stays always-visible (no toggle state).
       const groupBox = await group.boundingBox()
       const tooltipBox = await tooltip.boundingBox()
       expect(groupBox).not.toBeNull()

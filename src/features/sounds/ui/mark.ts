@@ -51,7 +51,9 @@ const SVG_NS = 'http://www.w3.org/2000/svg'
  *   whose bottom-centre tip sits on the group origin (mark.position)
  * - fan: `.sound-mark__fan` role=group, aria-label=mark.title, id=fan-{id},
  *   one `.sound-mark__fan-item` per sound at head-relative dx/dy offsets
- * - tooltip: `.sound-mark__tooltip` role=tooltip below the head
+ * - tooltip: `.sound-mark__tooltip` role=tooltip below the head — rendered
+ *   ONLY when the mark has a title or a location; legacy/placeholder marks
+ *   with neither get no tooltip at all
  */
 export function createMark(mark: Mark, imgWidth: number, imgHeight: number, scaleFactor = 1): HTMLDivElement {
   const pixel = relativeToPixel(mark.position, imgWidth, imgHeight)
@@ -85,34 +87,38 @@ export function createMark(mark: Mark, imgWidth: number, imgHeight: number, scal
   fan.setAttribute('aria-label', mark.title)
   group.appendChild(fan)
 
-  const tooltip = document.createElement('div')
-  tooltip.className = 'sound-mark__tooltip'
-  tooltip.setAttribute('role', 'tooltip')
+  // The tooltip is rendered only when the mark has a title or a location:
+  // legacy/placeholder marks without either must not produce an empty hover
+  // box. Individual fields stay optional — each is omitted rather than
+  // rendered as an empty <p>.
+  if (mark.title || mark.location) {
+    const tooltip = document.createElement('div')
+    tooltip.className = 'sound-mark__tooltip'
+    tooltip.setAttribute('role', 'tooltip')
 
-  // The title is optional: when absent (legacy/placeholder marks) its element
-  // is omitted entirely instead of rendering an empty <p>.
-  if (mark.title) {
-    const tooltipTitle = document.createElement('p')
-    tooltipTitle.className = 'sound-mark__tooltip-title'
-    tooltipTitle.textContent = mark.title
-    tooltip.appendChild(tooltipTitle)
+    if (mark.title) {
+      const tooltipTitle = document.createElement('p')
+      tooltipTitle.className = 'sound-mark__tooltip-title'
+      tooltipTitle.textContent = mark.title
+      tooltip.appendChild(tooltipTitle)
+    }
+
+    if (mark.location) {
+      const tooltipLocation = document.createElement('p')
+      tooltipLocation.className = 'sound-mark__tooltip-location'
+      tooltipLocation.textContent = mark.location
+      tooltip.appendChild(tooltipLocation)
+    }
+
+    if (mark.description) {
+      const tooltipDescription = document.createElement('p')
+      tooltipDescription.className = 'sound-mark__tooltip-description'
+      tooltipDescription.textContent = mark.description
+      tooltip.appendChild(tooltipDescription)
+    }
+
+    group.appendChild(tooltip)
   }
-
-  if (mark.location) {
-    const tooltipLocation = document.createElement('p')
-    tooltipLocation.className = 'sound-mark__tooltip-location'
-    tooltipLocation.textContent = mark.location
-    tooltip.appendChild(tooltipLocation)
-  }
-
-  if (mark.description) {
-    const tooltipDescription = document.createElement('p')
-    tooltipDescription.className = 'sound-mark__tooltip-description'
-    tooltipDescription.textContent = mark.description
-    tooltip.appendChild(tooltipDescription)
-  }
-
-  group.appendChild(tooltip)
 
   // Pre-create the fan slot items; bindings inject the sound buttons so the
   // button factory stays owned by soundButton.ts. The trailing

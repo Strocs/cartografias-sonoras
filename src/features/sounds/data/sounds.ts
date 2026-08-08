@@ -38,7 +38,7 @@ const MAP_01_POINTS: PointEntry[] = [
       title: '',
       description: null,
       location: '',
-      position: { x: 53, y: 57 }
+      position: { x: 53, y: 56.5 }
     }
   },
   {
@@ -67,8 +67,8 @@ const MAP_01_POINTS: PointEntry[] = [
     mark: {
       title: '',
       description: null,
-      location: '',
-      position: { x: 62.7, y: 26.2 }
+      location: 'Cruz del Tercer Milenio',
+      position: { x: 62.1, y: 22.6 }
     }
   }
 ]
@@ -135,7 +135,7 @@ const MAP_03_POINTS: PointEntry[] = [
     mark: {
       title: '',
       description: null,
-      location: '',
+      location: 'Plaza de Armas, La Serena',
       position: { x: 66.75, y: 25.4 }
     }
   },
@@ -145,7 +145,7 @@ const MAP_03_POINTS: PointEntry[] = [
     mark: {
       title: '',
       description: null,
-      location: '',
+      location: 'Codovez con Los Carrera',
       position: { x: 66.75, y: 37 }
     }
   },
@@ -155,7 +155,7 @@ const MAP_03_POINTS: PointEntry[] = [
     mark: {
       title: '',
       description: null,
-      location: '',
+      location: 'Eduardo de la Barra con Los Carrera',
       position: { x: 47, y: 55.5 }
     }
   },
@@ -165,7 +165,7 @@ const MAP_03_POINTS: PointEntry[] = [
     mark: {
       title: '',
       description: null,
-      location: '',
+      location: 'Fco. de Aguirre con Los Carrera',
       position: { x: 20, y: 81 }
     }
   }

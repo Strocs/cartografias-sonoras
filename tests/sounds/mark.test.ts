@@ -100,6 +100,29 @@ describe('createMark', () => {
     // The mark is a passive anchor: no activation event is dispatched.
     expect(group.querySelector('.sound-mark__fan')).not.toBeNull()
   })
+
+  it('does NOT render a tooltip when the mark has no title and no location', () => {
+    // Legacy/placeholder marks may carry only sounds (and even a description):
+    // without a title or a location there is nothing to show on hover.
+    const titleless: Mark = { ...mark, title: '', location: '', description: 'Solo un punto' }
+    const group = createMark(titleless, 800, 600)
+
+    expect(group.querySelector('.sound-mark__tooltip')).toBeNull()
+    expect(group.querySelector('[role="tooltip"]')).toBeNull()
+    // The fan is unaffected.
+    expect(group.querySelector('.sound-mark__fan')).not.toBeNull()
+  })
+
+  it('renders the tooltip when the mark has only a location (no title)', () => {
+    const locationOnly: Mark = { ...mark, title: '', description: null }
+    const group = createMark(locationOnly, 800, 600)
+
+    const tooltip = group.querySelector<HTMLElement>('.sound-mark__tooltip')
+    expect(tooltip).not.toBeNull()
+    expect(tooltip?.querySelector('.sound-mark__tooltip-title')).toBeNull()
+    expect(tooltip?.querySelector('.sound-mark__tooltip-location')?.textContent).toBe(mark.location)
+    expect(tooltip?.querySelector('.sound-mark__tooltip-description')).toBeNull()
+  })
 })
 
 describe('updateMark', () => {
