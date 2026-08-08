@@ -19,11 +19,18 @@ function twoPointState(overrides: Partial<PathVisualState> = {}): PathVisualStat
     ],
     variant: 'idle',
     ...overrides
-  }
+    // Discriminated union + Partial spread widens variant, so the final
+    // shape is re-narrowed here; test callers keep the same freedom.
+  } as PathVisualState
 }
 
 describe('renderPaths', () => {
   let svg: SVGSVGElement
+
+  /** Typed query for the path with id 1. Element has no `style`, SVGPathElement does. */
+  function getPath(): SVGPathElement | null {
+    return svg.querySelector<SVGPathElement>('path[data-path-id="1"]')
+  }
 
   beforeEach(() => {
     svg = createSvg()
@@ -111,14 +118,14 @@ describe('renderPaths', () => {
 
     renderPaths([state], svg, 200, 100)
 
-    const path = svg.querySelector('path[data-path-id="1"]')
+    const path = getPath()
     expect(path?.getAttribute('stroke-dasharray')).toBe('14 8')
     expect(path?.style.getPropertyValue('--path-dash-period')).toBe('22px')
   })
 
   it('keeps the dash pattern stable across repeated renders', () => {
     const state = twoPointState({ variant: 'single', activeEndpoint: 'start' })
-    const path = () => svg.querySelector('path[data-path-id="1"]')
+    const path = () => getPath()
 
     renderPaths([state], svg, 200, 100)
     renderPaths([state], svg, 200, 100)
@@ -161,7 +168,7 @@ describe('renderPaths', () => {
 
   it('preserves the direction and dash pattern across single → both → single', () => {
     renderPaths([twoPointState({ variant: 'single', activeEndpoint: 'start' })], svg, 200, 100)
-    const path = () => svg.querySelector('path[data-path-id="1"]')
+    const path = () => getPath()
 
     expect(path()?.getAttribute('data-path-direction')).toBe('forward')
     expect(path()?.getAttribute('stroke-dasharray')).toBe('14 8')
@@ -252,7 +259,7 @@ describe('renderPaths', () => {
 
     renderPaths([state], svg, 200, 100)
 
-    const path = svg.querySelector('path[data-path-id="1"]')
+    const path = getPath()
     expect(path?.getAttribute('stroke')).toBe('#ff0000')
     expect(path?.getAttribute('stroke-width')).toBe('5')
     expect(path?.getAttribute('stroke-dasharray')).toBe('4 2')
