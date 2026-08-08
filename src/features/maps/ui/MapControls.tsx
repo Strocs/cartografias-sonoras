@@ -17,7 +17,7 @@ export function MapControls({ mapViewId, className }: MapControlsProps) {
   }
 
   return (
-    <div className={cn('absolute top-4 right-4 z-[1000] flex flex-col gap-2', className)} data-testid="map-controls">
+    <div className={cn('absolute top-4 right-4 z-1000 flex flex-col gap-2', className)} data-testid="map-controls">
       <ControlButton onClick={() => getMapView()?.zoomIn()} label="Acercar mapa" data-testid="zoom-in">
         <PlusIcon />
       </ControlButton>
@@ -44,10 +44,10 @@ function ControlButton({ onClick, label, children, 'data-testid': testId }: Cont
       type="button"
       onClick={onClick}
       className={cn(
-        'border-secondary-sand/60 flex size-10 cursor-pointer items-center justify-center rounded-full border',
+        'flex size-10 cursor-pointer items-center justify-center rounded-full border border-secondary-sand/60',
         'bg-canvas text-charcoal shadow-md transition-all',
         'hover:scale-105 hover:shadow-lg',
-        'focus:ring-charcoal/30 focus:ring-2 focus:outline-none',
+        'focus:ring-2 focus:ring-charcoal/30 focus:outline-none',
         'active:scale-95'
       )}
       aria-label={label}

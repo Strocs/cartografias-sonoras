@@ -1,5 +1,7 @@
 {
   "plugins": ["prettier-plugin-astro", "prettier-plugin-tailwindcss"],
+  "tailwindStylesheet": "src/styles/global.css",
+  "tailwindFunctions": ["cn"],
   "singleQuote": true,
   "trailingComma": "none",
   "printWidth": 120,

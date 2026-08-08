@@ -22,14 +22,14 @@ const inactiveMaps = maps.filter((map) => map.slug !== activeSlug)
       inactiveMaps.map((map) => (
         <a
           href={`/${map.slug}`}
-          class="group border-secondary-sand bg-charcoal relative flex h-full flex-1 flex-col overflow-hidden rounded-xl border shadow-lg md:pointer-events-auto"
+          class="group relative flex h-full flex-1 flex-col overflow-hidden rounded-xl border border-secondary-sand bg-charcoal shadow-lg md:pointer-events-auto"
           data-rail-card
         >
           <div
             class="absolute inset-0 z-10 flex items-center justify-center p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             data-rail-title
           >
-            <span class="font-cormorant block text-center text-lg leading-none font-bold tracking-wide text-white uppercase">
+            <span class="block text-center font-cormorant text-lg leading-none font-bold tracking-wide text-white uppercase">
               {map.title}
             </span>
           </div>

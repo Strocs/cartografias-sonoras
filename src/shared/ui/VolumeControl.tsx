@@ -33,7 +33,7 @@ export function VolumeControl({ volume, muted, onToggleMute, onVolumeChange }: V
         step={1}
         value={Math.round(displayVolume * 100)}
         onChange={onVolumeChange}
-        className="accent-secondary-sand hidden h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/20 sm:block"
+        className="hidden h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/20 accent-secondary-sand sm:block"
         aria-label="Volumen"
         data-testid="bottom-volume"
       />

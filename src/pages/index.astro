@@ -23,11 +23,11 @@ const navItems = [
 <Layout title={title} class="flex-col justify-between gap-6">
   <header class="container mx-auto flex flex-col items-center gap-1 px-4 pt-20">
     <h1
-      class="text-secondary-sand font-cormorant max-w-2xl text-center text-4xl leading-none tracking-wide uppercase md:text-6xl"
+      class="max-w-2xl text-center font-cormorant text-4xl leading-none tracking-wide text-secondary-sand uppercase md:text-6xl"
     >
       Cartografías Sensoriales
     </h1>
-    <span class="text-canvas font-inter mx-auto text-center leading-none font-extralight tracking-widest">
+    <span class="mx-auto text-center font-inter leading-none font-extralight tracking-widest text-canvas">
       Mapeo de Marcas Sonoras en la Región de Coquimbo
     </span>
     <nav aria-label="Principal" class="mx-auto pt-6">
@@ -42,7 +42,7 @@ const navItems = [
                   href={item.href}
                   aria-current={isActive ? 'page' : undefined}
                   class:list={[
-                    'text-secondary-sand flex items-center gap-3 rounded-md px-3 py-2 text-lg transition-colors',
+                    'flex items-center gap-3 rounded-md px-3 py-2 text-lg text-secondary-sand transition-colors',
                     isActive ? 'bg-primary-teal/40' : 'hover:bg-primary-teal/40'
                   ]}
                 >
@@ -122,9 +122,9 @@ const navItems = [
     </nav>
   </header>
   <main class="container mx-auto space-y-4 p-4" transition:animate="fade">
-    <h3 class="text-secondary-sand text-center font-light">
+    <h3 class="text-center font-light text-secondary-sand">
       Explora las rutas y sus paisajes sonoros
-      <span class="text-secondary-sand/80 block text-sm font-light">Se recomienda el uso de audífonos</span>
+      <span class="block text-sm font-light text-secondary-sand/80">Se recomienda el uso de audífonos</span>
     </h3>
     <section aria-label="Cartografías">
       <div class="mx-auto grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -137,7 +137,7 @@ const navItems = [
     </section>
   </main>
   <footer class="mx-auto px-4 pb-12">
-    <span class="text-secondary-sand mx-auto block text-center text-sm font-light">Financian: </span>
+    <span class="mx-auto block text-center text-sm font-light text-secondary-sand">Financian: </span>
     <div class="border-secondary-sand/20">
       <div class="mx-auto flex w-full flex-wrap items-center justify-center gap-6 pt-6">
         <Picture

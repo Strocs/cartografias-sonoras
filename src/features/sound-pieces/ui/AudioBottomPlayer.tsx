@@ -91,8 +91,8 @@ export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPla
   return (
     <div
       className={cn(
-        'animate-slide-up w-full rounded-3xl shadow-lg',
-        'border-charcoal bg-primary-teal max-w-2xl border text-white shadow-2xl'
+        'w-full animate-slide-up rounded-3xl shadow-lg',
+        'max-w-2xl border border-charcoal bg-primary-teal text-white shadow-2xl'
       )}
       data-testid="audio-bottom-player"
       data-mode={isIdle ? 'idle' : 'piece'}
@@ -103,7 +103,7 @@ export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPla
           onClick={handlePlayPause}
           className={cn(
             'flex shrink-0 items-center justify-center rounded-full',
-            'text-primary-teal size-10 bg-white transition-transform',
+            'size-10 bg-white text-primary-teal transition-transform',
             'hover:scale-105 active:scale-95',
             'focus:ring-2 focus:ring-white/50 focus:outline-none'
           )}
@@ -123,12 +123,8 @@ export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPla
         </button>
 
         <div className="min-w-0 shrink-0 flex-col">
-          <span className="block max-w-[140px] truncate text-sm font-semibold md:max-w-[200px] md:text-base">
-            {title}
-          </span>
-          {subtitle && (
-            <span className="block max-w-[140px] truncate text-xs text-white/70 md:max-w-[200px]">{subtitle}</span>
-          )}
+          <span className="block max-w-35 truncate text-sm font-semibold md:max-w-50 md:text-base">{title}</span>
+          {subtitle && <span className="block max-w-35 truncate text-xs text-white/70 md:max-w-50">{subtitle}</span>}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -179,7 +175,7 @@ function Scrubber({ playedPercentage, bufferGeometry, disabled, onChange }: Scru
       />
       <div
         aria-hidden="true"
-        className="bg-secondary-sand pointer-events-none absolute inset-y-0 left-0 rounded-full"
+        className="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-secondary-sand"
         data-testid="bottom-scrubber-played"
         data-played-percentage={playedPercentage}
         style={{ width: `${playedPercentage}%` }}
@@ -194,7 +190,7 @@ function Scrubber({ playedPercentage, bufferGeometry, disabled, onChange }: Scru
         disabled={disabled}
         className={cn(
           'relative z-10 h-1.5 w-full cursor-pointer appearance-none rounded-full',
-          'accent-secondary-sand bg-transparent',
+          'bg-transparent accent-secondary-sand',
           disabled && 'cursor-default opacity-60'
         )}
         aria-label="Progreso de reproducción"
@@ -263,7 +259,7 @@ function WaveVisualizer({ active }: WaveVisualizerProps) {
       {Array.from({ length: 5 }).map((_, index) => (
         <span
           key={index}
-          className={cn('bg-secondary-sand w-1 origin-bottom rounded-full', 'animate-soundwave h-4')}
+          className={cn('w-1 origin-bottom rounded-full bg-secondary-sand', 'h-4 animate-soundwave')}
           style={{
             animationDelay: `${index * 100}ms`,
             animationPlayState: active ? 'running' : 'paused'

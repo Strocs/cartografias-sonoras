@@ -1,20 +1,20 @@
 ---
-import RightRail from '../../features/maps/ui/RightRail.astro'
-import MapCompositionPreview from '../../features/maps/ui/MapCompositionPreview.astro'
-import HeadphonesNotice from '../../features/maps/ui/HeadphonesNotice.astro'
-import { AudioPool } from '../../shared/lib/audio-engine'
-import { AudioBottomPlayer } from '../../features/sound-pieces/ui/AudioBottomPlayer.tsx'
-import { MapControls } from '../../features/maps/ui/MapControls.tsx'
+import RightRail from '@features/maps/ui/RightRail.astro'
+import MapCompositionPreview from '@features/maps/ui/MapCompositionPreview.astro'
+import HeadphonesNotice from '@features/maps/ui/HeadphonesNotice.astro'
+import { AudioPool } from '@shared/lib/audio-engine'
+import { AudioBottomPlayer } from '@features/sound-pieces/ui/AudioBottomPlayer.tsx'
+import { MapControls } from '@features/maps/ui/MapControls.tsx'
 
-import '../../features/sounds/ui/mark-styles.css'
-import '../../features/sounds/ui/sound-button-styles.css'
-import '../../features/paths/styles/path-styles.css'
-import '../../features/maps/styles/map-layer-styles.css'
+import '@features/sounds/ui/mark-styles.css'
+import '@features/sounds/ui/sound-button-styles.css'
+import '@features/paths/styles/path-styles.css'
+import '@features/maps/styles/map-layer-styles.css'
 
-import type { Map } from '../../features/maps/domain/types'
-import type { Mark } from '../../features/sounds/domain/types'
-import type { Path } from '../../features/paths/domain/types'
-import type { SoundPiece } from '../../features/sound-pieces/domain/types'
+import type { Map } from '@features/maps/domain/types'
+import type { Mark } from '@features/sounds/domain/types'
+import type { Path } from '@features/paths/domain/types'
+import type { SoundPiece } from '@features/sound-pieces/domain/types'
 
 interface Props {
   map: Map
@@ -77,7 +77,7 @@ const mapData = {
     class="pointer-events-none absolute right-4 bottom-28 left-4 z-1001 flex flex-col gap-3 md:right-8 md:bottom-4 md:left-8 md:flex-row md:items-end md:justify-between"
   >
     <h2
-      class="text-secondary-sand font-cormorant block pb-4 text-xl font-bold uppercase md:pb-0 md:text-3xl"
+      class="block pb-4 font-cormorant text-xl font-bold text-secondary-sand uppercase md:pb-0 md:text-3xl"
       transition:name={`map-title-${map.slug}`}
     >
       {map.title}
