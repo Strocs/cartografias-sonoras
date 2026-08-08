@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets'
 
 import type { Map } from '../domain/types'
+import type { DestinationPreview } from '../lib/destinationPreview'
 
 interface Props {
   map: Map
@@ -12,6 +13,7 @@ interface Props {
   widths?: number[]
   /** The container's rendered width, so the browser picks the right candidate. */
   sizes?: string
+  destinationPreview?: DestinationPreview
 }
 
 const {
@@ -20,7 +22,8 @@ const {
   class: className = '',
   imageClass = '',
   widths = [640, 960, 1280, 1600],
-  sizes = '100vw'
+  sizes = '100vw',
+  destinationPreview
 } = Astro.props
 
 const labelId = `map-composition-label-${map.slug}`
@@ -32,17 +35,34 @@ const labelId = `map-composition-label-${map.slug}`
   transition:name={`map-composition-${map.slug}`}
   data-map-composition-preview
 >
-  <Image
-    src={map.preview.asset!}
-    alt=""
-    aria-hidden="true"
-    class={imageClass}
-    loading={loading}
-    width={map.preview.width}
-    height={map.preview.height}
-    widths={widths}
-    sizes={sizes}
-    {...loading === 'eager' ? { fetchpriority: 'high' } : {}}
-  />
+  {
+    destinationPreview ? (
+      <img
+        src={destinationPreview.src}
+        srcset={destinationPreview.srcset}
+        sizes={destinationPreview.sizes}
+        alt=""
+        aria-hidden="true"
+        class={imageClass}
+        loading={loading}
+        width={destinationPreview.width}
+        height={destinationPreview.height}
+        {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
+      />
+    ) : (
+      <Image
+        src={map.preview.asset!}
+        alt=""
+        aria-hidden="true"
+        class={imageClass}
+        loading={loading}
+        width={map.preview.width}
+        height={map.preview.height}
+        widths={widths}
+        sizes={sizes}
+        {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
+      />
+    )
+  }
   <figcaption id={labelId} class="sr-only">{map.title}</figcaption>
 </figure>

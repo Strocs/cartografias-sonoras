@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AUDIO_STATUS, audioStore } from '../../../src/shared/lib/audio-engine'
 import { createInitialState } from '../../../src/shared/lib/audio-engine/engine'
@@ -43,7 +43,7 @@ function setSoundStatus(soundId: number, status: SoundState['status']): void {
 }
 
 function createStubMapView(): MapViewElement {
-  const element = document.createElement('div')
+  const element = document.createElement('div') as unknown as MapViewElement
   const markerLayer = document.createElement('div')
   const svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 
@@ -52,8 +52,9 @@ function createStubMapView(): MapViewElement {
   Object.defineProperty(element, 'imageWidth', { value: 800, configurable: true })
   Object.defineProperty(element, 'imageHeight', { value: 600, configurable: true })
   Object.defineProperty(element, 'scaleFactor', { value: 1, configurable: true })
+  element.revealScene = vi.fn()
 
-  return element as unknown as MapViewElement
+  return element
 }
 
 function findMarkGroup(mapView: MapViewElement): HTMLElement {
@@ -95,5 +96,27 @@ describe('bindMapView mark engagement', () => {
 
     setSoundStatus(mark.sounds[0]!.id, AUDIO_STATUS.PAUSED)
     expect(group.getAttribute('data-state')).toBe('idle')
+  })
+
+  it('reveals the scene only after the initial marks, sound buttons, and paths are rendered', () => {
+    const mapView = createStubMapView()
+    const revealScene = vi.fn(() => {
+      expect(mapView.markerLayer?.children.length).toBe(1)
+      expect(mapView.markerLayer?.querySelectorAll('[data-testid="sound-button"]').length).toBe(1)
+      expect(mapView.svgLayer?.querySelectorAll('path[data-path-id]').length).toBe(1)
+    })
+    mapView.revealScene = revealScene
+
+    const path = {
+      id: 7,
+      mapId: 1,
+      waypoints: [],
+      startMarkId: mark.id,
+      endMarkId: mark.id
+    }
+
+    unbind = bindMapView({ mapView, marks: [mark], paths: [path], imgWidth: 800, imgHeight: 600 })
+
+    expect(revealScene).toHaveBeenCalledOnce()
   })
 })

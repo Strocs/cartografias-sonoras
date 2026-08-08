@@ -28,11 +28,7 @@ export default defineConfig({
     }
   ],
   webServer: {
-    // Build the real artifact, then serve `dist/` with `astro preview` in the
-    // foreground. `url` (not `port`) gates readiness on an HTTP response from
-    // the exact deterministic host:port the preview binds to, so the tests run
-    // against the same artifact a production deploy would serve.
-    command: 'pnpm build && pnpm preview --host 127.0.0.1 --port 4322',
+    command: 'pnpm build && node tests/support/serve-dist.mjs',
     url: PREVIEW_URL,
     reuseExistingServer: false,
     timeout: 120_000

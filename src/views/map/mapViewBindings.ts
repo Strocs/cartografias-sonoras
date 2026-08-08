@@ -40,6 +40,9 @@ export interface MapViewBindingOptions {
  * - React to store changes: update each sound button, paint the mark accent when
  *   any of its sounds is active, and re-derive path visuals.
  * - Apply one `scaleFactor` per group on `viewport-change`.
+ * - Signal the scene-ready boundary: after the synchronous initial render has
+ *   created every mark, sound button, and path, the live world is revealed via
+ *   `mapView.revealScene()` — the live map never becomes visible early.
  */
 export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapViewBindingOptions): () => void {
   const markerLayer = mapView.markerLayer
@@ -76,8 +79,7 @@ export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapV
 
   updatePaths()
 
-  // React to audio state changes: sound button state, mark accent, path visuals.
-  const unsubscribe = audioStore.subscribe(
+  const unwatchStore = audioStore.subscribe(
     (state) => state.activeSounds,
     () => {
       updateSoundButtons()
@@ -85,6 +87,10 @@ export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapV
       updatePaths()
     }
   )
+
+  // The scene is complete: every mark, sound button, and path has been added
+  // synchronously. Revealing here is the explicit post-binding handoff.
+  mapView.revealScene()
 
   // Sound activation toggles playback (play/pause/resume) by soundId + mapId.
   const soundActivateHandler = (event: Event) => {
@@ -188,7 +194,7 @@ export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapV
   }
 
   return function unbind(): void {
-    unsubscribe()
+    unwatchStore()
     mapView.removeEventListener('sound:activate', soundActivateHandler)
     mapView.removeEventListener('viewport-change', viewportChangeHandler)
     mapView.removeEventListener('viewport-gesture-end', gestureEndHandler)

@@ -35,3 +35,9 @@ const path = Astro.url.pathname
     <slot />
   </body>
 </html>
+
+<script>
+  import { installHoverPreviewController } from '@features/maps/ui/hoverPreviewController'
+
+  installHoverPreviewController()
+</script>

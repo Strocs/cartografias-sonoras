@@ -1,6 +1,7 @@
 ---
 import RightRail from '@features/maps/ui/RightRail.astro'
 import MapCompositionPreview from '@features/maps/ui/MapCompositionPreview.astro'
+import { getMapDestinationPreview } from '@features/maps/lib/destinationPreview'
 import HeadphonesNotice from '@features/maps/ui/HeadphonesNotice.astro'
 import { AudioPool } from '@shared/lib/audio-engine'
 import { AudioBottomPlayer } from '@features/sound-pieces/ui/AudioBottomPlayer.tsx'
@@ -26,6 +27,7 @@ interface Props {
 }
 
 const { map, maps, marks, paths, soundPiece, soundPieceEnabled = true } = Astro.props
+const destinationPreview = await getMapDestinationPreview(map)
 
 const audioPoolSounds = marks.flatMap((mark) =>
   mark.sounds.map((sound) => ({
@@ -53,9 +55,10 @@ const mapData = {
       >
         <MapCompositionPreview
           map={map}
+          destinationPreview={destinationPreview}
           loading="eager"
           class="absolute inset-0 z-10 size-full"
-          imageClass="size-full object-contain"
+          imageClass="h-full w-fit mx-auto object-contain"
         />
         <map-view
           id="main-map"
@@ -106,7 +109,7 @@ const mapData = {
 </script>
 
 <style is:inline>
-  .map-wrapper:has(map-view[data-ready]) [data-map-composition-preview] {
+  .map-wrapper:has(map-view[data-scene-ready]) [data-map-composition-preview] {
     opacity: 0;
     pointer-events: none;
   }

@@ -1,5 +1,6 @@
 ---
 import MapCompositionPreview from './MapCompositionPreview.astro'
+import { getMapDestinationPreview } from '../lib/destinationPreview'
 
 import type { Map } from '../domain/types'
 
@@ -9,12 +10,16 @@ interface Props {
 }
 
 const { map, loading = 'lazy' } = Astro.props
+const destinationPreview = await getMapDestinationPreview(map)
 ---
 
 <a
   href={`/${map.slug}`}
   class="group relative block h-full max-h-48 overflow-hidden rounded-xl border border-secondary-sand bg-charcoal md:max-h-64"
   data-testid="map-card"
+  data-preview-src={destinationPreview.src}
+  data-preview-srcset={destinationPreview.srcset}
+  data-preview-sizes={destinationPreview.sizes}
 >
   <h2
     class="absolute right-0 bottom-4 left-0 z-10 mx-auto block px-4 text-center text-3xl font-bold text-canvas md:text-4xl"

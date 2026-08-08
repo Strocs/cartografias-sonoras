@@ -16,6 +16,15 @@ export interface MapViewElement extends HTMLElement {
   zoomOut(): void
   resetView(): void
   getScale(): number
+  /**
+   * Reveals the rendered live world and marks the full scene as ready.
+   *
+   * This is the explicit post-binding scene-ready boundary: callers that have
+   * synchronously built the overlays (marks, sound buttons, paths) signal the
+   * element here so the live map never becomes visible before its scene is
+   * complete. Idempotent — safe to call from multiple bindings.
+   */
+  revealScene(): void
 }
 
 const MAP_SRC_ATTR = 'map-src'
@@ -27,6 +36,7 @@ const MIN_ZOOM_ATTR = 'min-zoom'
 const MAX_ZOOM_ATTR = 'max-zoom'
 const START_ZOOM_ATTR = 'start-zoom'
 const READY_ATTR = 'data-ready'
+const SCENE_READY_ATTR = 'data-scene-ready'
 
 const COMPOSITION_STATUS = {
   INITIALIZING: 'initializing',
@@ -172,6 +182,11 @@ export class MapView extends HTMLElement implements MapViewElement {
     world.style.left = '0'
     world.style.top = '0'
     world.style.transformOrigin = '0 0'
+    // Keep the live world invisible until renderers have added the image
+    // layers and the binder has synchronously built the overlays (marks, sound
+    // buttons, paths). The scene is revealed through `revealScene()` or, as a
+    // failure fallback, through `_setWorldVisible()` — never by a delay.
+    world.style.visibility = 'hidden'
     container.appendChild(world)
     this._world = world
   }
@@ -408,9 +423,29 @@ export class MapView extends HTMLElement implements MapViewElement {
     }
   }
 
+  /**
+   * Reveals the live world and records the full scene as ready.
+   *
+   * Must be invoked by the scene binder after its synchronous initial render
+   * (`bindMapView` creating marks, sound buttons, and paths) so nothing from
+   * the live map is visible before the overlays exist. Idempotent.
+   */
+  revealScene(): void {
+    this._setWorldVisible()
+    this.setAttribute(SCENE_READY_ATTR, 'true')
+  }
+
+  /** Failure fallback: never leave the live world permanently hidden. */
+  private _setWorldVisible(): void {
+    const world = this._world
+    if (world === null) return
+    world.style.visibility = 'visible'
+  }
+
   private _fail(error: Error, layer?: MapLayer): void {
     if (!this.isConnected) return
 
+    this._setWorldVisible()
     this._setStatus(COMPOSITION_STATUS.ERROR)
     this.dispatchEvent(
       new CustomEvent('viewport-error', {
@@ -580,6 +615,7 @@ export class MapView extends HTMLElement implements MapViewElement {
     this.replaceChildren()
 
     this.removeAttribute(READY_ATTR)
+    this.removeAttribute(SCENE_READY_ATTR)
     this.removeAttribute('data-composition-status')
   }
 }

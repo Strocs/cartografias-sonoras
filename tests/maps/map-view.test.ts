@@ -156,6 +156,70 @@ describe('MapView custom element', () => {
     expect(el.querySelector('.map-panzoom > .map-world > div')).not.toBeNull()
   })
 
+  it('keeps the live world hidden and unannounced until the scene is revealed', async () => {
+    const el = document.createElement('map-view') as MapView
+    setLayers(el)
+    wrapper.appendChild(el)
+
+    const world = () => el.querySelector<HTMLElement>('.map-world')
+    // Before any decode settles, the live world is not yet built.
+    expect(world()).not.toBeNull()
+    expect(world()?.style.visibility).toBe('hidden')
+    expect(el.hasAttribute('data-scene-ready')).toBe(false)
+
+    // Composition may be fully ready (layers decoded, engine built, ready
+    // published) while the world stays hidden until the binder reveals it.
+    await waitForReady(el)
+    expect(el.hasAttribute('data-ready')).toBe(true)
+    expect(world()?.style.visibility).toBe('hidden')
+    expect(el.hasAttribute('data-scene-ready')).toBe(false)
+  })
+
+  it('reveals the scene explicitly and idempotently via revealScene()', async () => {
+    const el = document.createElement('map-view') as MapView
+    setLayers(el)
+    wrapper.appendChild(el)
+    await waitForReady(el)
+
+    const world = el.querySelector<HTMLElement>('.map-world')
+    expect(world?.style.visibility).toBe('hidden')
+
+    el.revealScene()
+    expect(world?.style.visibility).toBe('visible')
+    expect(el.getAttribute('data-scene-ready')).toBe('true')
+
+    // Idempotent: repeated calls never throw nor reset the state.
+    el.revealScene()
+    expect(world?.style.visibility).toBe('visible')
+    expect(el.getAttribute('data-scene-ready')).toBe('true')
+  })
+
+  it('drops data-scene-ready when the element disconnects', async () => {
+    const el = document.createElement('map-view') as MapView
+    setLayers(el)
+    wrapper.appendChild(el)
+    await waitForReady(el)
+
+    el.revealScene()
+    expect(el.hasAttribute('data-scene-ready')).toBe(true)
+
+    el.remove()
+    expect(el.hasAttribute('data-scene-ready')).toBe(false)
+    expect(el.hasAttribute('data-ready')).toBe(false)
+  })
+
+  it('keeps the preview fallback after a base failure (no scene-ready publication)', async () => {
+    HTMLImageElement.prototype.decode = () => Promise.reject(new Error('base failed'))
+    const el = document.createElement('map-view') as MapView
+    setLayers(el)
+    wrapper.appendChild(el)
+
+    await waitForStatus(el, 'error')
+
+    expect(el.hasAttribute('data-ready')).toBe(false)
+    expect(el.hasAttribute('data-scene-ready')).toBe(false)
+  })
+
   it('publishes initializing on connect and clears ready until composition settles', async () => {
     const decodes: Array<() => void> = []
     HTMLImageElement.prototype.decode = function () {

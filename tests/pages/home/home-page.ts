@@ -31,6 +31,10 @@ export class HomePage extends BasePage {
     return this.page.getByRole('link', { name: title })
   }
 
+  async hoverMapCard(title: string): Promise<void> {
+    await this.getMapCard(title).hover()
+  }
+
   get firstMapTitle(): string {
     return mapFixtures[0].title
   }
