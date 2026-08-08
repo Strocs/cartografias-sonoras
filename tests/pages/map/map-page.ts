@@ -65,10 +65,25 @@ export class MapPage extends BasePage {
 
   async goto(slug: string): Promise<void> {
     await super.goto(`/${slug}`)
+    await this.dismissHeadphonesNotice()
   }
 
   async waitForViewportReady(): Promise<void> {
+    await this.dismissHeadphonesNotice()
     await expect(this.viewport).toHaveAttribute('data-ready', 'true')
+  }
+
+  /**
+   * Dismisses the first-visit headphones notice when it is present (each
+   * Playwright test context starts with a clean localStorage, so every map
+   * visit shows it once). No-op when the notice is absent or was already
+   * dismissed earlier in the test.
+   */
+  private async dismissHeadphonesNotice(): Promise<void> {
+    const notice = this.page.locator('#headphones-notice')
+    if ((await notice.count()) === 0) return
+    await notice.click()
+    await expect(notice).toHaveCount(0, { timeout: 3000 })
   }
 
   getCompositionPreview(slug: string): Locator {

@@ -963,4 +963,35 @@ test.describe('Map', () => {
       }
     }
   )
+
+  test(
+    'headphones notice shows on first visit, dismisses on tap and never reappears',
+    { tag: ['@critical', '@e2e', '@NOTICE-E2E-001'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page)
+      const firstMap = mapFixtures[0]
+      const nextMap = mapFixtures[1]
+
+      // Raw navigation: MapPage.goto dismisses the notice for other tests, so
+      // the first-visit state must be asserted without that helper.
+      await page.goto(`/${firstMap.slug}`)
+
+      const notice = page.locator('#headphones-notice')
+      await expect(notice).toBeVisible()
+      await expect(notice).toContainText('Se recomienda el uso de audífonos')
+      await expect.poll(() => notice.evaluate((element) => getComputedStyle(element).opacity)).toBe('1')
+
+      // Tapping anywhere on the overlay dismisses it and persists the flag.
+      await notice.click()
+      await expect(notice).toHaveCount(0)
+      await expect
+        .poll(() => page.evaluate(() => localStorage.getItem('cartografias:headphones-notice')))
+        .toBe('dismissed')
+
+      // Navigating to another map never shows the notice again.
+      await page.goto(`/${nextMap.slug}`)
+      await expect(page.locator('#headphones-notice')).toHaveCount(0)
+      await expect(mapPage.viewport).toHaveAttribute('data-ready', 'true')
+    }
+  )
 })

@@ -1,0 +1,139 @@
+---
+// First-visit notice recommending headphones on map pages.
+//
+// Rendered statically at opacity 0: the bundled script fades the backdrop
+// blur in first, then the text, and dismisses on tap/click anywhere, Escape,
+// or after 5 seconds. The dismissed state is stored in localStorage so the
+// notice never renders again. Because the overlay only animates to visible
+// when the script runs, returning visitors never see a flash.
+---
+
+<div
+  id="headphones-notice"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Aviso: se recomienda el uso de audífonos"
+  tabindex="-1"
+  class="bg-charcoal/50 fixed inset-0 z-1200 flex cursor-pointer items-center justify-center opacity-0 backdrop-blur-md"
+  data-headphones-notice
+>
+  <p class="text-secondary-sand font-cormorant px-6 text-center text-3xl font-light" data-headphones-notice-text>
+    Se recomienda el uso de audífonos
+  </p>
+</div>
+
+<script>
+  const STORAGE_KEY = 'cartografias:headphones-notice'
+  const OVERLAY_ID = 'headphones-notice'
+  const TEXT_SELECTOR = '[data-headphones-notice-text]'
+
+  const BACKDROP_ENTRANCE_MS = 350
+  const TEXT_DELAY_MS = 350
+  const TEXT_ENTRANCE_MS = 400
+  const EXIT_MS = 350
+  const AUTO_CLOSE_MS = 5000
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  /**
+   * The overlay instance currently bound in the DOM. Bundled page scripts
+   * execute once and re-run on every `astro:page-load` (one per navigation),
+   * so this guard makes re-binds for the same node no-ops while still
+   * initializing the fresh overlay a navigation brings in.
+   */
+  let activeOverlay: HTMLElement | null = null
+
+  function initHeadphonesNotice(): void {
+    const overlay = document.getElementById(OVERLAY_ID)
+    if (overlay === null || overlay === activeOverlay) return
+
+    activeOverlay = overlay
+
+    if (localStorage.getItem(STORAGE_KEY) === 'dismissed') {
+      overlay.remove()
+      return
+    }
+
+    const text = overlay.querySelector<HTMLElement>(TEXT_SELECTOR)
+
+    let closing = false
+
+    const close = (): void => {
+      if (closing) return
+      closing = true
+      localStorage.setItem(STORAGE_KEY, 'dismissed')
+      void dismiss(overlay, text)
+    }
+
+    overlay.addEventListener('click', close)
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close()
+    })
+
+    show(overlay, text).then(() => {
+      window.setTimeout(() => {
+        if (overlay.isConnected) close()
+      }, AUTO_CLOSE_MS)
+    })
+  }
+
+  async function show(overlay: HTMLElement, text: HTMLElement | null): Promise<void> {
+    overlay.focus()
+
+    if (prefersReducedMotion) {
+      overlay.style.opacity = '1'
+      if (text) text.style.opacity = '1'
+      return
+    }
+
+    await Promise.all([
+      overlay.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: BACKDROP_ENTRANCE_MS,
+        easing: 'ease-out',
+        fill: 'forwards'
+      }).finished,
+      text
+        ? text.animate([{ opacity: 0 }, { opacity: 1 }], {
+            duration: TEXT_ENTRANCE_MS,
+            delay: TEXT_DELAY_MS,
+            easing: 'ease-out',
+            fill: 'forwards'
+          }).finished
+        : Promise.resolve()
+    ])
+  }
+
+  async function dismiss(overlay: HTMLElement, text: HTMLElement | null): Promise<void> {
+    if (prefersReducedMotion) {
+      overlay.remove()
+      return
+    }
+
+    // Read the current opacity while the entrance animation is still active,
+    // then cancel it so the exit eases out from exactly where the user saw it.
+    const overlayOpacity = Number.parseFloat(getComputedStyle(overlay).opacity)
+    const textOpacity = text ? Number.parseFloat(getComputedStyle(text).opacity) : 0
+    overlay.getAnimations().forEach((animation) => animation.cancel())
+    text?.getAnimations().forEach((animation) => animation.cancel())
+
+    await Promise.all([
+      overlay.animate([{ opacity: overlayOpacity }, { opacity: 0 }], {
+        duration: EXIT_MS,
+        easing: 'ease-in',
+        fill: 'forwards'
+      }).finished,
+      text
+        ? text.animate([{ opacity: textOpacity }, { opacity: 0 }], {
+            duration: EXIT_MS,
+            easing: 'ease-in',
+            fill: 'forwards'
+          }).finished
+        : Promise.resolve()
+    ])
+
+    overlay.remove()
+  }
+
+  document.addEventListener('astro:page-load', initHeadphonesNotice)
+  initHeadphonesNotice()
+</script>
