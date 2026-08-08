@@ -33,22 +33,20 @@ const VARIANT_BEM_CLASS: Record<PathVisualState['variant'], string> = {
  * geometry (rounded corners) is shared by every state (`idle`, `single`,
  * `both`), so switching states never jumps the route line.
  *
- * `scaleFactor` is the inverse of the current viewport zoom. `vector-effect`
- * only normalizes stroke-width: dash lengths are always resolved in the
- * current user coordinate system, so the dash pattern is scaled by
- * `scaleFactor` to keep it visually constant (14px dashes, 4px gaps) at any
- * zoom, mirroring the stroke compensation the marker layer already uses.
+ * `vector-effect="non-scaling-stroke"` keeps stroke-width and the dash pattern
+ * constant on screen, so dashes stay a fixed 14px/8px at any zoom without any
+ * scale compensation.
  *
  * Direction is carried by `data-path-direction` (`forward`/`backward`) so the
- * CSS animation can slide the dashes toward the non-playing endpoint while the
- * `both` variant stays static.
+ * CSS animation can slide the dashes and keep its direction across variant
+ * switches. The attribute is never removed once set (defaults to `forward`),
+ * because changing or dropping it would reset the paused animation phase.
  */
 export function renderPaths(
   pathStates: PathVisualState[],
   svgElement: SVGSVGElement,
   imgWidth: number,
-  imgHeight: number,
-  scaleFactor: number = 1
+  imgHeight: number
 ): void {
   const existingPaths = new Map<number, SVGPathElement>()
   for (const pathEl of svgElement.querySelectorAll('path[data-path-id]')) {
@@ -92,14 +90,14 @@ export function renderPaths(
       applyPathStyle(pathEl, state.style)
     }
 
-    const { dashArray, period } = resolveDashPattern(state.style, scaleFactor)
+    const { dashArray, period } = resolveDashPattern(state.style)
     pathEl.setAttribute('stroke-dasharray', dashArray)
     pathEl.style.setProperty(DASH_PERIOD_VAR, `${period}px`)
 
     if (state.variant === 'single') {
       pathEl.setAttribute(DIRECTION_ATTR, state.activeEndpoint === 'start' ? 'forward' : 'backward')
-    } else {
-      pathEl.removeAttribute(DIRECTION_ATTR)
+    } else if (!pathEl.hasAttribute(DIRECTION_ATTR)) {
+      pathEl.setAttribute(DIRECTION_ATTR, 'forward')
     }
   }
 
@@ -137,11 +135,11 @@ interface DashPattern {
 }
 
 /**
- * Resolves the dash pattern. The default keeps dashes visually constant
- * (14px/4px) by scaling the pattern with `scaleFactor`; an explicit
+ * Resolves the dash pattern. The default dash array (14px/8px) is constant on
+ * screen thanks to `vector-effect="non-scaling-stroke"`; an explicit
  * `style.dashArray` is honored as-is (user units, caller-controlled).
  */
-function resolveDashPattern(style: PathVisualState['style'], scaleFactor: number): DashPattern {
+function resolveDashPattern(style: PathVisualState['style']): DashPattern {
   if (style?.dashArray !== undefined) {
     const values = style.dashArray
       .trim()
@@ -154,10 +152,9 @@ function resolveDashPattern(style: PathVisualState['style'], scaleFactor: number
     }
   }
 
-  const factor = Number.isFinite(scaleFactor) && scaleFactor > 0 ? scaleFactor : 1
   return {
-    dashArray: `${round2(DASH_LENGTH * factor)} ${round2(DASH_GAP * factor)}`,
-    period: round2((DASH_LENGTH + DASH_GAP) * factor)
+    dashArray: `${DASH_LENGTH} ${DASH_GAP}`,
+    period: DASH_LENGTH + DASH_GAP
   }
 }
 

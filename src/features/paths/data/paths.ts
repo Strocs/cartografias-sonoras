@@ -18,6 +18,10 @@ export const PATHS: Path[] = [
       {
         x: 59,
         y: 61
+      },
+      {
+        x: 59,
+        y: 60
       }
     ],
     startMarkId: 101,
@@ -29,7 +33,7 @@ export const PATHS: Path[] = [
     waypoints: [
       {
         x: 42.2,
-        y: 48.5
+        y: 48.7
       }
     ],
     startMarkId: 102,
@@ -40,12 +44,16 @@ export const PATHS: Path[] = [
     mapId: 1,
     waypoints: [
       {
-        x: 33.5,
+        x: 34.5,
+        y: 39
+      },
+      {
+        x: 34,
         y: 34.8
       },
       {
-        x: 38,
-        y: 26
+        x: 37.7,
+        y: 26.8
       }
     ],
     startMarkId: 103,
@@ -56,16 +64,20 @@ export const PATHS: Path[] = [
     mapId: 1,
     waypoints: [
       {
-        x: 43.9,
+        x: 42.9,
         y: 23.6
       },
       {
-        x: 53,
-        y: 24.4
+        x: 45.5,
+        y: 24
       },
       {
-        x: 57,
-        y: 24
+        x: 51,
+        y: 24.7
+      },
+      {
+        x: 57.2,
+        y: 24.2
       }
     ],
     startMarkId: 104,
@@ -103,8 +115,8 @@ export const PATHS: Path[] = [
     id: 2004,
     mapId: 2,
     waypoints: [
-      { x: 26.7, y: 69 },
-      { x: 28.9, y: 71.5 }
+      { x: 26, y: 68.5 },
+      { x: 29, y: 71.5 }
     ],
     startMarkId: 204,
     endMarkId: 205

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildPolylineD, buildRoundedPathD, reversePoints } from '../../src/features/paths/lib/pathEngine'
+import {
+  buildPolylineD,
+  buildRoundedPathD,
+  DEFAULT_CORNER_RADIUS,
+  reversePoints
+} from '../../src/features/paths/lib/pathEngine'
 
 describe('pathEngine', () => {
   describe('buildPolylineD', () => {
@@ -110,7 +115,8 @@ describe('pathEngine', () => {
         100
       )
 
-      expect(d).toBe('M 0 0 L 88 0 Q 100 0 100 12 L 100 100')
+      const cornerRadius = DEFAULT_CORNER_RADIUS
+      expect(d).toBe(`M 0 0 L ${100 - cornerRadius} 0 Q 100 0 100 ${cornerRadius} L 100 100`)
       expect(d.startsWith('M 0 0 ')).toBe(true)
       expect(d.endsWith('L 100 100')).toBe(true)
     })
@@ -126,8 +132,8 @@ describe('pathEngine', () => {
         100
       )
 
-      // Default radius 12 but the outgoing segment is 20px long, so the corner
-      // is trimmed to a 10px radius.
+      // DEFAULT_CORNER_RADIUS is larger than half the 20px outgoing segment,
+      // so the corner is trimmed to a 10px radius.
       expect(d).toBe('M 0 0 L 70 0 Q 80 0 80 10 L 80 20')
     })
 

@@ -8,37 +8,57 @@
  *
  * Variant classes are applied by pathRenderer and compose on top of .path-base.
  *
- * The dash pattern itself is applied inline by pathRenderer, scaled by the
- * current viewport scale so dashes stay visually 14px/4px at any zoom. The
- * animation below slides those dashes; its one-cycle distance comes from
+ * The dash pattern is applied inline by pathRenderer as a constant 14px/8px;
+ * `vector-effect="non-scaling-stroke"` keeps it stable on screen at any zoom.
+ * The animation below slides those dashes; its one-cycle distance comes from
  * `--path-dash-period` (a dash + gap in user units), which pathRenderer sets
  * on every path.
+ *
+ * Every variant registers the same `path-dash-flow` animation so the dash
+ * phase (its current position) survives variant switches. `idle` and `both`
+ * keep it `paused`; only `single` resumes it, so switching back to `single`
+ * continues exactly where the path left off instead of restarting.
  */
 
 @layer components {
   /* ── Base ─────────────────────────────────────────────────────── */
 
   .path-base {
-    @apply fill-none transition-all duration-300;
-    stroke: var(--color-secondary-sand);
+    stroke: var(--color-canvas);
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 6;
+    fill: none;
+    transition: all;
+    animation-duration: 300;
   }
 
   /* ── Variants ─────────────────────────────────────────────────── */
 
+  /* The same dash-flow animation is registered on every variant: only its
+   * play-state changes. This keeps the animation element (and thus the current
+   * dash phase) alive while idle/both pause it, so `single` resumes in place. */
+  .path--idle,
+  .path--single,
+  .path--both {
+    animation: path-dash-flow 1s linear infinite;
+  }
+
   .path--idle {
     stroke-opacity: 0.4;
+    animation-play-state: paused;
   }
 
   .path--single {
     stroke-opacity: 1;
-    animation: path-dash-flow 1s linear infinite;
   }
 
-  /* Playing endpoint is the end mark: reverse the slide toward the start. */
-  .path--single[data-path-direction='backward'] {
+  /* Playing endpoint is the end mark: reverse the slide toward the start.
+   * Applied on every variant (not just `single`) so the animation direction
+   * never changes across variant switches, which would reset the phase. */
+  .path--idle[data-path-direction='backward'],
+  .path--single[data-path-direction='backward'],
+  .path--both[data-path-direction='backward'] {
     animation-direction: reverse;
   }
 
@@ -46,6 +66,7 @@
   .path--both {
     stroke: var(--color-canvas);
     stroke-opacity: 1;
+    animation-play-state: paused;
     filter: drop-shadow(0 0 2px var(--color-canvas)) drop-shadow(0 0 8px var(--color-secondary-sand));
   }
 

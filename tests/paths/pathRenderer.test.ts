@@ -2,6 +2,8 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 
 import { renderPaths, clearPaths } from '../../src/features/paths/ui/pathRenderer'
 
+import { DEFAULT_CORNER_RADIUS } from '../../src/features/paths/lib/pathEngine'
+
 import type { PathVisualState } from '../../src/features/paths/domain/PathVisualState'
 
 function createSvg(): SVGSVGElement {
@@ -46,7 +48,8 @@ describe('renderPaths', () => {
 
     const path = svg.querySelector('path[data-path-id="1"]')
     expect(path).not.toBeNull()
-    expect(path?.getAttribute('d')).toBe('M 0 0 L 88 0 Q 100 0 100 12 L 100 100')
+    const cornerRadius = DEFAULT_CORNER_RADIUS
+    expect(path?.getAttribute('d')).toBe(`M 0 0 L ${100 - cornerRadius} 0 Q 100 0 100 ${cornerRadius} L 100 100`)
   })
 
   it('applies vector-effect="non-scaling-stroke" to every path', () => {
@@ -103,27 +106,26 @@ describe('renderPaths', () => {
     expect(svg.querySelector('path[data-path-id="1"]')).toBeNull()
   })
 
-  it('sets a 14/4 dash pattern at unit scale', () => {
+  it('sets the 14/8 dash pattern at any scale', () => {
     const state = twoPointState({ variant: 'single', activeEndpoint: 'start' })
 
-    renderPaths([state], svg, 200, 100, 1)
+    renderPaths([state], svg, 200, 100)
 
     const path = svg.querySelector('path[data-path-id="1"]')
-    expect(path?.getAttribute('stroke-dasharray')).toBe('14 4')
-    expect(path?.style.getPropertyValue('--path-dash-period')).toBe('18px')
+    expect(path?.getAttribute('stroke-dasharray')).toBe('14 8')
+    expect(path?.style.getPropertyValue('--path-dash-period')).toBe('22px')
   })
 
-  it('scales the dash pattern so dashes stay 14px/4px on screen at any zoom', () => {
+  it('keeps the dash pattern stable across repeated renders', () => {
     const state = twoPointState({ variant: 'single', activeEndpoint: 'start' })
     const path = () => svg.querySelector('path[data-path-id="1"]')
 
-    renderPaths([state], svg, 200, 100, 2)
-    expect(path()?.getAttribute('stroke-dasharray')).toBe('28 8')
-    expect(path()?.style.getPropertyValue('--path-dash-period')).toBe('36px')
+    renderPaths([state], svg, 200, 100)
+    renderPaths([state], svg, 200, 100)
+    renderPaths([state], svg, 200, 100)
 
-    renderPaths([state], svg, 200, 100, 0.5)
-    expect(path()?.getAttribute('stroke-dasharray')).toBe('7 2')
-    expect(path()?.style.getPropertyValue('--path-dash-period')).toBe('9px')
+    expect(path()?.getAttribute('stroke-dasharray')).toBe('14 8')
+    expect(path()?.style.getPropertyValue('--path-dash-period')).toBe('22px')
   })
 
   it('marks the dash direction forward when the start endpoint is playing', () => {
@@ -140,12 +142,47 @@ describe('renderPaths', () => {
     expect(path?.getAttribute('data-path-direction')).toBe('backward')
   })
 
-  it('clears the direction attribute when the path leaves the single state', () => {
+  it('keeps the direction attribute when the path leaves the single state', () => {
     renderPaths([twoPointState({ variant: 'single', activeEndpoint: 'start' })], svg, 200, 100)
     renderPaths([twoPointState({ variant: 'both' })], svg, 200, 100)
 
     const path = svg.querySelector('path[data-path-id="1"]')
-    expect(path?.getAttribute('data-path-direction')).toBeNull()
+    expect(path?.getAttribute('data-path-direction')).toBe('forward')
+  })
+
+  it('keeps the backward direction attribute across single → idle → both', () => {
+    renderPaths([twoPointState({ variant: 'single', activeEndpoint: 'end' })], svg, 200, 100)
+    renderPaths([twoPointState({ variant: 'idle' })], svg, 200, 100)
+    renderPaths([twoPointState({ variant: 'both' })], svg, 200, 100)
+
+    const path = svg.querySelector('path[data-path-id="1"]')
+    expect(path?.getAttribute('data-path-direction')).toBe('backward')
+  })
+
+  it('preserves the direction and dash pattern across single → both → single', () => {
+    renderPaths([twoPointState({ variant: 'single', activeEndpoint: 'start' })], svg, 200, 100)
+    const path = () => svg.querySelector('path[data-path-id="1"]')
+
+    expect(path()?.getAttribute('data-path-direction')).toBe('forward')
+    expect(path()?.getAttribute('stroke-dasharray')).toBe('14 8')
+    expect(path()?.style.getPropertyValue('--path-dash-period')).toBe('22px')
+
+    renderPaths([twoPointState({ variant: 'both' })], svg, 200, 100)
+    expect(path()?.getAttribute('data-path-direction')).toBe('forward')
+    expect(path()?.getAttribute('stroke-dasharray')).toBe('14 8')
+    expect(path()?.style.getPropertyValue('--path-dash-period')).toBe('22px')
+
+    renderPaths([twoPointState({ variant: 'single', activeEndpoint: 'start' })], svg, 200, 100)
+    expect(path()?.getAttribute('data-path-direction')).toBe('forward')
+    expect(path()?.getAttribute('stroke-dasharray')).toBe('14 8')
+    expect(path()?.style.getPropertyValue('--path-dash-period')).toBe('22px')
+  })
+
+  it('defaults the direction attribute to forward when first rendered outside single', () => {
+    renderPaths([twoPointState({ variant: 'both' })], svg, 200, 100)
+
+    const path = svg.querySelector('path[data-path-id="1"]')
+    expect(path?.getAttribute('data-path-direction')).toBe('forward')
   })
 
   it('renders no pulse circles or animateMotion nodes for the single variant', () => {
@@ -157,7 +194,7 @@ describe('renderPaths', () => {
     expect(svg.querySelectorAll('mpath').length).toBe(0)
   })
 
-  it('leaves the both variant static: same dashes, no direction attribute', () => {
+  it('leaves the both variant static: same dashes, direction defaults to forward', () => {
     const state: PathVisualState = {
       pathId: 1,
       points: [
@@ -172,7 +209,7 @@ describe('renderPaths', () => {
 
     const path = svg.querySelector('path[data-path-id="1"]')
     expect(path).not.toBeNull()
-    expect(path?.getAttribute('data-path-direction')).toBeNull()
+    expect(path?.getAttribute('data-path-direction')).toBe('forward')
     expect(svg.querySelectorAll('.path-pulse').length).toBe(0)
   })
 
@@ -198,7 +235,9 @@ describe('renderPaths', () => {
       Array.from(svg.querySelectorAll('path[data-path-id]')).map((pathEl) => pathEl.getAttribute('d'))
     )
     expect(shapes.size).toBe(1)
-    expect(shapes.values().next().value).toBe('M 0 0 L 88 0 Q 100 0 100 12 L 100 100')
+    expect(shapes.values().next().value).toBe(
+      `M 0 0 L ${100 - DEFAULT_CORNER_RADIUS} 0 Q 100 0 100 ${DEFAULT_CORNER_RADIUS} L 100 100`
+    )
   })
 
   it('applies explicit style overrides when provided', () => {
