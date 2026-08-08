@@ -390,7 +390,6 @@ export class MapView extends HTMLElement implements MapViewElement {
   }
 
   private _reportFailure(layer: MapLayer, message: string): void {
-    console.log('[map-view] layer failed', { layerId: layer.id, optional: layer.optional, message })
     this.dispatchEvent(new CustomEvent('viewport-error', { bubbles: true, detail: { message } }))
     this.dispatchEvent(
       new CustomEvent('map-composition-error', {
@@ -412,11 +411,6 @@ export class MapView extends HTMLElement implements MapViewElement {
   private _fail(error: Error, layer?: MapLayer): void {
     if (!this.isConnected) return
 
-    console.log('[map-view] composition failed', {
-      layerId: layer?.id,
-      optional: layer?.optional ?? false,
-      message: error.message
-    })
     this._setStatus(COMPOSITION_STATUS.ERROR)
     this.dispatchEvent(
       new CustomEvent('viewport-error', {
