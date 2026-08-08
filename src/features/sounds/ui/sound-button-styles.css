@@ -15,6 +15,7 @@
 
 .sound-button {
   --progress: 0%;
+  --buffer-progress: 0%;
 
   position: relative;
   display: flex;
@@ -54,11 +55,7 @@
   z-index: 1;
 }
 
-/* Progress ring — single element with fill + base track.
- * Base track is a semi-transparent white ring always visible when active;
- * progress is a maroon conic-gradient filling clockwise from 12 o'clock.
- * The ring renders at the perimeter (~20px–24px radius on a 54px button).
- */
+/* Kept transparent so the SVG layers own active perimeter rendering. */
 .sound-button::after {
   content: '';
   position: absolute;
@@ -66,17 +63,38 @@
   border-radius: inherit;
   z-index: 2;
 
-  background:
-    conic-gradient(var(--color-primary-brown, #8b5a2b) var(--progress), transparent var(--progress)),
-    rgba(255, 255, 255, 0.25);
-  background-origin: border-box;
-  background-clip: padding-box;
-
   opacity: 0;
   transition: opacity 200ms ease-out;
 
   mask: radial-gradient(transparent 74%, black 89%);
   -webkit-mask: radial-gradient(transparent 74%, black 89%);
+}
+
+.sound-button__rings {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.sound-button__ring {
+  fill: none;
+  stroke-linecap: butt;
+}
+
+.sound-button__ring--base {
+  stroke: rgb(255 255 255 / 25%);
+}
+
+.sound-button__ring--buffer {
+  stroke: rgb(255 255 255 / 45%);
+}
+
+.sound-button__ring--progress {
+  stroke: firebrick;
+  stroke-linecap: round;
 }
 
 .sound-button:hover,
@@ -97,13 +115,25 @@
 /* Playing / paused state. */
 .sound-button[data-state='playing'],
 .sound-button[data-state='paused'],
-.sound-button[data-state='loading'] {
+.sound-button[data-state='loading'],
+.sound-button[data-state='ready'],
+.sound-button[data-state='buffering'] {
   z-index: 10;
 }
 
 .sound-button[data-state='playing']::after,
 .sound-button[data-state='paused']::after,
-.sound-button[data-state='loading']::after {
+.sound-button[data-state='loading']::after,
+.sound-button[data-state='ready']::after,
+.sound-button[data-state='buffering']::after {
+  opacity: 1;
+}
+
+.sound-button[data-state='playing'] .sound-button__rings,
+.sound-button[data-state='paused'] .sound-button__rings,
+.sound-button[data-state='loading'] .sound-button__rings,
+.sound-button[data-state='ready'] .sound-button__rings,
+.sound-button[data-state='buffering'] .sound-button__rings {
   opacity: 1;
 }
 
@@ -145,6 +175,36 @@
   opacity: 1;
 }
 
+.sound-button__icon--spinner,
+.sound-button__icon--error {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.sound-button[data-state='loading'] .sound-button__icon--play,
+.sound-button[data-state='ready'] .sound-button__icon--play,
+.sound-button[data-state='buffering'] .sound-button__icon--play {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.sound-button[data-state='loading'] .sound-button__icon--spinner,
+.sound-button[data-state='ready'] .sound-button__icon--spinner,
+.sound-button[data-state='buffering'] .sound-button__icon--spinner {
+  animation: sound-button-spinner 800ms linear infinite;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sound-button[data-state='error'] .sound-button__icon--play {
+  opacity: 0;
+}
+
+.sound-button[data-state='error'] .sound-button__icon--error {
+  opacity: 1;
+  transform: scale(1);
+}
+
 /* Ripple animation for the playing state. */
 @keyframes sound-button-ripple {
   0% {
@@ -157,6 +217,16 @@
 
   100% {
     box-shadow: 0 0 0 0 rgba(239, 83, 80, 0);
+  }
+}
+
+@keyframes sound-button-spinner {
+  from {
+    transform: scale(1) rotate(0deg);
+  }
+
+  to {
+    transform: scale(1) rotate(360deg);
   }
 }
 

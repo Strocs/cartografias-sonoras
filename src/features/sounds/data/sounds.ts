@@ -1,8 +1,6 @@
-import type { Mark, Sound } from '../domain/types'
+import { buildSoundAudioAssetUrls } from '@shared/lib/audio-sources'
 
-const getSoundUrl = (mapId: number, point: number, soundNumber: number) => {
-  return `https://mapasonoro.frijolmagico.cl/1/sonidos/Ruta_${mapId}_Punto_${point}_Sonido_${soundNumber}_Binaural_norm.wav`
-}
+import type { Mark, Sound } from '../domain/types'
 
 // Per map, one point per map grid. Each entry carries the point metadata (title,
 // description, location, position) and the per-point sound count. The first
@@ -181,12 +179,17 @@ function buildMark(mapId: number, entry: PointEntry): Mark {
 
   const sounds: Sound[] = Array.from({ length: entry.soundCount }, (_, i) => {
     const soundIdx = i + 1
+    const assetUrls = buildSoundAudioAssetUrls(mapId, entry.point, soundIdx)
+    if (assetUrls === null) {
+      throw new Error(`Invalid static sound asset identifiers: ${mapId}/${entry.point}/${soundIdx}`)
+    }
+
     return {
       id: soundIdFor(mapId, entry.point, soundIdx, legacyMarkId),
       title: firstSound.title,
       description: firstSound.description,
       location: firstSound.location,
-      audioUrl: getSoundUrl(mapId, entry.point, soundIdx)
+      audioSources: assetUrls.audioSources
     }
   })
 

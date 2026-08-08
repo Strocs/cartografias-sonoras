@@ -30,3 +30,27 @@ export function createPlayIcon(): SVGSVGElement {
 export function createPauseIcon(): SVGSVGElement {
   return createSvgIcon('M6 19h4V5H6v14zm8-14v14h4V5h-4z')
 }
+
+export function createSpinnerIcon(): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg')
+  svg.setAttribute('width', '16')
+  svg.setAttribute('height', '16')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('aria-hidden', 'true')
+
+  const circle = document.createElementNS(SVG_NS, 'circle')
+  circle.setAttribute('cx', '12')
+  circle.setAttribute('cy', '12')
+  circle.setAttribute('r', '8')
+  circle.setAttribute('stroke', 'currentColor')
+  circle.setAttribute('stroke-width', '3')
+  circle.setAttribute('stroke-linecap', 'round')
+  circle.setAttribute('stroke-dasharray', '32 18')
+  svg.appendChild(circle)
+  return svg
+}
+
+export function createErrorIcon(): SVGSVGElement {
+  return createSvgIcon('M12 2 1 21h22L12 2zm1 16h-2v-2h2v2zm0-4h-2v-4h2v4z')
+}

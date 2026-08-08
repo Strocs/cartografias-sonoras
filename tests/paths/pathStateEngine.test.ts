@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { computePathVisualStates } from '../../src/features/paths/services/pathStateEngine'
 import { AUDIO_STATUS } from '../../src/shared/lib/audio-engine'
+import { buildSoundAudioAssetUrls } from '../../src/shared/lib/audio-sources'
 
 import type { Path } from '../../src/features/paths/domain/types'
 import type { Mark } from '../../src/features/sounds/domain/types'
@@ -14,8 +15,20 @@ const markA: Mark = {
   location: 'Start',
   position: { x: 0, y: 0 },
   sounds: [
-    { id: 11, title: 'A1', description: '', location: '', audioUrl: '/a1.mp3' },
-    { id: 12, title: 'A2', description: '', location: '', audioUrl: '/a2.mp3' }
+    {
+      id: 11,
+      title: 'A1',
+      description: '',
+      location: '',
+      audioSources: buildSoundAudioAssetUrls(1, 1, 1)!.audioSources
+    },
+    {
+      id: 12,
+      title: 'A2',
+      description: '',
+      location: '',
+      audioSources: buildSoundAudioAssetUrls(1, 1, 2)!.audioSources
+    }
   ]
 }
 
@@ -26,7 +39,15 @@ const markB: Mark = {
   description: 'Mark B',
   location: 'End',
   position: { x: 100, y: 100 },
-  sounds: [{ id: 21, title: 'B1', description: '', location: '', audioUrl: '/b1.mp3' }]
+  sounds: [
+    {
+      id: 21,
+      title: 'B1',
+      description: '',
+      location: '',
+      audioSources: buildSoundAudioAssetUrls(1, 2, 1)!.audioSources
+    }
+  ]
 }
 
 const path: Path = {

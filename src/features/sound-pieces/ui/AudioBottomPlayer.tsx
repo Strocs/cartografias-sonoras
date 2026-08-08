@@ -2,7 +2,13 @@
 
 import { cn } from '@shared/utils/cn'
 import { VolumeControl } from '@shared/ui/VolumeControl'
-import { AUDIO_STATUS, useAudioStore, type AudioEngineState, type AudioStatus } from '@shared/lib/audio-engine'
+import {
+  AUDIO_STATUS,
+  useAudioStore,
+  type AudioEngineState,
+  type AudioStatus,
+  type BufferedRange
+} from '@shared/lib/audio-engine'
 
 import type { SoundPiece } from '../domain/types'
 
@@ -11,7 +17,13 @@ export interface AudioBottomPlayerProps {
   enabled?: boolean
 }
 
-const ACTIVE_STATUSES = new Set<AudioStatus>([AUDIO_STATUS.LOADING, AUDIO_STATUS.PLAYING, AUDIO_STATUS.PAUSED])
+const ACTIVE_STATUSES = new Set<AudioStatus>([
+  AUDIO_STATUS.LOADING,
+  AUDIO_STATUS.READY,
+  AUDIO_STATUS.PLAYING,
+  AUDIO_STATUS.BUFFERING,
+  AUDIO_STATUS.PAUSED
+])
 
 // Primitive selectors — Object.is comparison works natively, no useShallow needed.
 
@@ -28,6 +40,8 @@ export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPla
   const isPiecePlaying = useAudioStore(selectIsPiecePlaying)
   const pieceCurrentTime = useAudioStore((s) => s.piece.currentTime)
   const pieceDuration = useAudioStore((s) => s.piece.duration)
+  const pieceStatus = useAudioStore((s) => s.piece.status)
+  const pieceBuffered = useAudioStore((s) => s.piece.buffered)
   const volume = useAudioStore((s) => s.volume)
   const muted = useAudioStore((s) => s.muted)
 
@@ -44,10 +58,12 @@ export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPla
 
   const isIdle = !isPieceMode
 
-  const progress = pieceDuration <= 0 ? 0 : Math.min(1, Math.max(0, pieceCurrentTime / pieceDuration))
+  const playedPercentage = toPercentage(pieceCurrentTime, pieceDuration)
+  const bufferGeometry = getBufferGeometry(pieceCurrentTime, pieceDuration, pieceBuffered)
+  const isTransient = pieceStatus === AUDIO_STATUS.LOADING || pieceStatus === AUDIO_STATUS.BUFFERING
 
   const handlePlayPause = () => {
-    if (isIdle && soundPiece?.audioUrl) {
+    if (isIdle && soundPiece?.audioSources) {
       playPiece(soundPiece.id, soundPiece.mapId)
       return
     }
@@ -91,10 +107,19 @@ export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPla
             'hover:scale-105 active:scale-95',
             'focus:ring-2 focus:ring-white/50 focus:outline-none'
           )}
-          aria-label={isPiecePlaying ? 'Pausar' : 'Reproducir'}
+          aria-label={
+            pieceStatus === AUDIO_STATUS.LOADING
+              ? 'Cargando audio'
+              : pieceStatus === AUDIO_STATUS.BUFFERING
+                ? 'Recuperando audio'
+                : isPiecePlaying
+                  ? 'Pausar'
+                  : 'Reproducir'
+          }
           data-testid="bottom-play-pause"
+          data-status={pieceStatus}
         >
-          {isPiecePlaying ? <PauseIcon /> : <PlayIcon />}
+          {isTransient ? <LoadingSpinner status={pieceStatus} /> : isPiecePlaying ? <PauseIcon /> : <PlayIcon />}
         </button>
 
         <div className="min-w-0 shrink-0 flex-col">
@@ -107,7 +132,12 @@ export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPla
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <Scrubber progress={progress} disabled={isIdle} onChange={handleScrub} />
+          <Scrubber
+            playedPercentage={playedPercentage}
+            bufferGeometry={bufferGeometry}
+            disabled={isIdle}
+            onChange={handleScrub}
+          />
           <TimeDisplay currentTime={pieceCurrentTime} duration={pieceDuration} />
         </div>
 
@@ -120,30 +150,82 @@ export function AudioBottomPlayer({ soundPiece, enabled = true }: AudioBottomPla
 }
 
 interface ScrubberProps {
-  progress: number
+  playedPercentage: number
+  bufferGeometry: BufferGeometry
   disabled: boolean
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
 }
 
-function Scrubber({ progress, disabled, onChange }: ScrubberProps) {
+interface BufferGeometry {
+  start: number
+  width: number
+}
+
+function Scrubber({ playedPercentage, bufferGeometry, disabled, onChange }: ScrubberProps) {
   return (
-    <input
-      type="range"
-      min={0}
-      max={100}
-      step={0.1}
-      value={Math.round(progress * 1000) / 10}
-      onChange={onChange}
-      disabled={disabled}
-      className={cn(
-        'h-1.5 w-full cursor-pointer appearance-none rounded-full',
-        'accent-secondary-sand bg-white/20',
-        disabled && 'cursor-default opacity-60'
-      )}
-      aria-label="Progreso de reproducción"
-      data-testid="bottom-scrubber"
-    />
+    <div className="relative h-1.5 w-full" data-testid="bottom-scrubber-track">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-full bg-white/20"
+        data-testid="bottom-scrubber-base"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 rounded-full bg-white/40"
+        data-testid="bottom-scrubber-buffered"
+        data-buffer-start={bufferGeometry.start}
+        data-buffer-width={bufferGeometry.width}
+        style={{ left: `${bufferGeometry.start}%`, width: `${bufferGeometry.width}%` }}
+      />
+      <div
+        aria-hidden="true"
+        className="bg-secondary-sand pointer-events-none absolute inset-y-0 left-0 rounded-full"
+        data-testid="bottom-scrubber-played"
+        data-played-percentage={playedPercentage}
+        style={{ width: `${playedPercentage}%` }}
+      />
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={0.1}
+        value={Math.round(playedPercentage * 10) / 10}
+        onChange={onChange}
+        disabled={disabled}
+        className={cn(
+          'relative z-10 h-1.5 w-full cursor-pointer appearance-none rounded-full',
+          'accent-secondary-sand bg-transparent',
+          disabled && 'cursor-default opacity-60'
+        )}
+        aria-label="Progreso de reproducción"
+        data-testid="bottom-scrubber"
+      />
+    </div>
   )
+}
+
+function toPercentage(value: number, duration: number): number {
+  if (!Number.isFinite(value) || !Number.isFinite(duration) || duration <= 0) return 0
+  return Math.min(100, Math.max(0, (value / duration) * 100))
+}
+
+function getBufferGeometry(currentTime: number, duration: number, ranges: BufferedRange[]): BufferGeometry {
+  if (!Number.isFinite(currentTime) || !Number.isFinite(duration) || duration <= 0) {
+    return { start: 0, width: 0 }
+  }
+
+  const containingRange = ranges.find(
+    (range) =>
+      Number.isFinite(range.start) &&
+      Number.isFinite(range.end) &&
+      range.start <= currentTime &&
+      currentTime <= range.end
+  )
+  if (!containingRange) return { start: 0, width: 0 }
+
+  const start = toPercentage(currentTime, duration)
+  const end = toPercentage(containingRange.end, duration)
+  return { start, width: Math.max(0, end - start) }
 }
 
 interface TimeDisplayProps {
@@ -189,6 +271,21 @@ function WaveVisualizer({ active }: WaveVisualizerProps) {
         />
       ))}
     </div>
+  )
+}
+
+function LoadingSpinner({ status }: { status: AudioStatus }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-5 animate-spin"
+      data-status={status}
+      data-testid="bottom-spinner"
+      viewBox="0 0 24 24"
+    >
+      <circle className="opacity-25" cx="12" cy="12" fill="none" r="9" stroke="currentColor" strokeWidth="3" />
+      <path className="opacity-75" d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" strokeWidth="3" />
+    </svg>
   )
 }
 

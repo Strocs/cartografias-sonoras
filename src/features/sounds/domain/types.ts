@@ -1,3 +1,5 @@
+import type { AudioSources } from '@shared/lib/audio-sources'
+
 export interface Position {
   x: number
   y: number
@@ -14,7 +16,7 @@ export interface Sound {
   title: string
   description: string | null
   location: string
-  audioUrl: string
+  audioSources: AudioSources
   geoReferenceUrl?: string
 }
 

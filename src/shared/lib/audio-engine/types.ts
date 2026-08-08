@@ -1,7 +1,9 @@
 export const AUDIO_STATUS = {
   IDLE: 'idle',
   LOADING: 'loading',
+  READY: 'ready',
   PLAYING: 'playing',
+  BUFFERING: 'buffering',
   PAUSED: 'paused',
   ENDED: 'ended',
   ERROR: 'error'
@@ -11,11 +13,17 @@ export type AudioStatus = (typeof AUDIO_STATUS)[keyof typeof AUDIO_STATUS]
 
 export type AudioElementId = number
 
+export interface BufferedRange {
+  start: number
+  end: number
+}
+
 export interface SoundState {
   status: AudioStatus
   currentTime: number
   duration: number
   error: string | null
+  buffered: BufferedRange[]
 }
 
 export interface PieceState {
@@ -23,6 +31,7 @@ export interface PieceState {
   currentTime: number
   duration: number
   error: string | null
+  buffered: BufferedRange[]
 }
 
 export interface AudioEngineState {
@@ -54,11 +63,21 @@ export interface AudioActions {
 }
 
 export interface AudioTransitions {
+  soundLoadStarted: (soundId: number) => void
+  soundReady: (soundId: number) => void
+  soundPlaying: (soundId: number) => void
+  soundBuffering: (soundId: number) => void
+  soundBuffered: (soundId: number, ranges: BufferedRange[]) => void
   soundLoaded: (soundId: number, duration: number) => void
   soundEnded: (soundId: number) => void
   soundError: (soundId: number, error: string) => void
   seekSound: (soundId: number, time: number) => void
   soundTimeUpdated: (soundId: number, time: number) => void
+  pieceLoadStarted: () => void
+  pieceReady: () => void
+  piecePlaying: () => void
+  pieceBuffering: () => void
+  pieceBuffered: (ranges: BufferedRange[]) => void
   pieceLoaded: (duration: number) => void
   pieceEnded: () => void
   pieceError: (error: string) => void

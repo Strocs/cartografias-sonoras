@@ -1,6 +1,7 @@
 export {
   AUDIO_STATUS,
   type AudioActions,
+  type BufferedRange,
   type AudioElementId,
   type AudioEngineState,
   type AudioStatus,

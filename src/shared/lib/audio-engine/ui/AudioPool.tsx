@@ -3,19 +3,20 @@
 import { useRef } from 'react'
 
 import { useMountEffect } from '@shared/hooks/useMountEffect'
+import type { AudioSources } from '@shared/lib/audio-sources'
 import { AUDIO_STATUS, audioStore, audioTransitions, useAudioStore } from '../'
-import type { AudioElementId, AudioEngineState, AudioStatus } from '../types'
+import type { AudioElementId, AudioEngineState, AudioStatus, BufferedRange } from '../types'
 
 /** A sound from a mark: audio is always present. */
 interface AudioPoolSound {
   id: number
-  audioUrl: string
+  audioSources: AudioSources
 }
 
 /** A background sound piece: audio may be absent (null = not played). */
 interface AudioPoolPiece {
   id: number
-  audioUrl: string | null
+  audioSources: AudioSources | null
 }
 
 interface AudioPoolProps {
@@ -25,10 +26,16 @@ interface AudioPoolProps {
 
 /** True when the current piece cannot render an <audio> source, so any LOADING on it must be cleared. */
 function pieceHasNoSource(soundPiece: AudioPoolProps['soundPiece']): boolean {
-  return !soundPiece || !soundPiece.audioUrl
+  return !soundPiece || !soundPiece.audioSources
 }
 
-const ACTIVE_ELEMENT_STATUSES = new Set<AudioStatus>([AUDIO_STATUS.LOADING, AUDIO_STATUS.PLAYING, AUDIO_STATUS.PAUSED])
+const ACTIVE_ELEMENT_STATUSES = new Set<AudioStatus>([
+  AUDIO_STATUS.LOADING,
+  AUDIO_STATUS.READY,
+  AUDIO_STATUS.PLAYING,
+  AUDIO_STATUS.BUFFERING,
+  AUDIO_STATUS.PAUSED
+])
 
 function selectActiveSoundIds(state: AudioEngineState): string {
   const ids: number[] = []
@@ -44,12 +51,25 @@ function selectPieceActive(state: AudioEngineState): boolean {
   return state.activePieceId !== null && ACTIVE_ELEMENT_STATUSES.has(state.piece.status)
 }
 
-function findSoundUrl(sounds: AudioPoolSound[], soundId: number): string | undefined {
-  return sounds.find((sound) => sound.id === soundId)?.audioUrl
+function findSoundSources(sounds: AudioPoolSound[], soundId: number): AudioSources | undefined {
+  return sounds.find((sound) => sound.id === soundId)?.audioSources
+}
+
+function serializeBuffered(audio: HTMLAudioElement): BufferedRange[] | undefined {
+  try {
+    const ranges: BufferedRange[] = []
+    for (let index = 0; index < audio.buffered.length; index += 1) {
+      ranges.push({ start: audio.buffered.start(index), end: audio.buffered.end(index) })
+    }
+    return ranges
+  } catch {
+    return undefined
+  }
 }
 
 export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
   const audioRefs = useRef(new Map<AudioElementId, HTMLAudioElement>())
+  const audioRefCallbacks = useRef(new Map<string, (element: HTMLAudioElement | null) => void>())
   const prevStatuses = useRef(new Map<AudioElementId, AudioStatus>())
   const prevVolume = useRef<number>(1)
   const prevMuted = useRef<boolean>(false)
@@ -160,17 +180,27 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
     return unsubscribe
   })
 
-  const registerAudio = (id: AudioElementId) => (element: HTMLAudioElement | null) => {
-    if (element === null) {
-      audioRefs.current.delete(id)
-      prevStatuses.current.delete(id)
-      return
-    }
+  const registerAudio = (id: AudioElementId, isPiece: boolean) => {
+    const callbackKey = `${isPiece ? 'piece' : 'sound'}:${id}`
+    const existingCallback = audioRefCallbacks.current.get(callbackKey)
+    if (existingCallback) return existingCallback
 
-    element.volume = prevVolume.current
-    element.muted = prevMuted.current
-    audioRefs.current.set(id, element)
-    syncAudioElement(id, element, audioStore.getState())
+    const callback = (element: HTMLAudioElement | null) => {
+      if (element === null) {
+        audioRefs.current.delete(id)
+        prevStatuses.current.delete(id)
+        if (isPiece) audioTransitions.pieceBuffered([])
+        else audioTransitions.soundBuffered(id, [])
+        return
+      }
+
+      element.volume = prevVolume.current
+      element.muted = prevMuted.current
+      audioRefs.current.set(id, element)
+      syncAudioElement(id, element, audioStore.getState())
+    }
+    audioRefCallbacks.current.set(callbackKey, callback)
+    return callback
   }
 
   const handleLoadedMetadata =
@@ -178,10 +208,36 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
       const audio = event.currentTarget
       if (isPiece) {
         audioTransitions.pieceLoaded(audio.duration)
+        const ranges = serializeBuffered(audio)
+        if (ranges) audioTransitions.pieceBuffered(ranges)
       } else {
         audioTransitions.soundLoaded(id, audio.duration)
+        const ranges = serializeBuffered(audio)
+        if (ranges) audioTransitions.soundBuffered(id, ranges)
       }
     }
+
+  const handleCanPlay = (id: AudioElementId, isPiece: boolean) => () => {
+    if (isPiece) audioTransitions.pieceReady()
+    else audioTransitions.soundReady(id)
+  }
+
+  const handlePlaying = (id: AudioElementId, isPiece: boolean) => () => {
+    if (isPiece) audioTransitions.piecePlaying()
+    else audioTransitions.soundPlaying(id)
+  }
+
+  const handleBuffering = (id: AudioElementId, isPiece: boolean) => () => {
+    if (isPiece) audioTransitions.pieceBuffering()
+    else audioTransitions.soundBuffering(id)
+  }
+
+  const handleBuffered = (id: AudioElementId, isPiece: boolean) => (event: React.SyntheticEvent<HTMLAudioElement>) => {
+    const ranges = serializeBuffered(event.currentTarget)
+    if (!ranges) return
+    if (isPiece) audioTransitions.pieceBuffered(ranges)
+    else audioTransitions.soundBuffered(id, ranges)
+  }
 
   const handleTimeUpdate =
     (id: AudioElementId, isPiece: boolean) => (event: React.SyntheticEvent<HTMLAudioElement>) => {
@@ -191,6 +247,10 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
       } else {
         audioTransitions.soundTimeUpdated(id, audio.currentTime)
       }
+      const ranges = serializeBuffered(audio)
+      if (!ranges) return
+      if (isPiece) audioTransitions.pieceBuffered(ranges)
+      else audioTransitions.soundBuffered(id, ranges)
     }
 
   const handleEnded = (id: AudioElementId, isPiece: boolean) => () => {
@@ -213,34 +273,52 @@ export function AudioPool({ sounds, soundPiece }: AudioPoolProps) {
   return (
     <div aria-hidden="true" className="sr-only">
       {activeSoundIds.map((soundId) => {
-        const src = findSoundUrl(sounds, soundId)
-        if (!src) {
+        const audioSources = findSoundSources(sounds, soundId)
+        if (!audioSources) {
           return null
         }
         return (
           <audio
-            key={soundId}
-            ref={registerAudio(soundId)}
-            src={src}
-            preload="auto"
+            key={`${soundId}-${audioSources.primary.url}-${audioSources.fallback.url}`}
+            ref={registerAudio(soundId, false)}
+            preload="metadata"
             onLoadedMetadata={handleLoadedMetadata(soundId, false)}
+            onLoadStart={() => audioTransitions.soundLoadStarted(soundId)}
+            onCanPlay={handleCanPlay(soundId, false)}
+            onPlaying={handlePlaying(soundId, false)}
+            onWaiting={handleBuffering(soundId, false)}
+            onStalled={handleBuffering(soundId, false)}
+            onProgress={handleBuffered(soundId, false)}
+            onSeeked={handleBuffered(soundId, false)}
             onTimeUpdate={handleTimeUpdate(soundId, false)}
             onEnded={handleEnded(soundId, false)}
             onError={handleError(soundId, false)}
-          />
+          >
+            <source src={audioSources.primary.url} type={audioSources.primary.mimeType} />
+            <source src={audioSources.fallback.url} type={audioSources.fallback.mimeType} />
+          </audio>
         )
       })}
-      {pieceActive && soundPiece?.audioUrl && (
+      {pieceActive && soundPiece?.audioSources && (
         <audio
-          key={`piece-${soundPiece.id}`}
-          ref={registerAudio(soundPiece.id)}
-          src={soundPiece.audioUrl}
-          preload="auto"
+          key={`piece-${soundPiece.id}-${soundPiece.audioSources.primary.url}-${soundPiece.audioSources.fallback.url}`}
+          ref={registerAudio(soundPiece.id, true)}
+          preload="metadata"
           onLoadedMetadata={handleLoadedMetadata(soundPiece.id, true)}
+          onLoadStart={() => audioTransitions.pieceLoadStarted()}
+          onCanPlay={handleCanPlay(soundPiece.id, true)}
+          onPlaying={handlePlaying(soundPiece.id, true)}
+          onWaiting={handleBuffering(soundPiece.id, true)}
+          onStalled={handleBuffering(soundPiece.id, true)}
+          onProgress={handleBuffered(soundPiece.id, true)}
+          onSeeked={handleBuffered(soundPiece.id, true)}
           onTimeUpdate={handleTimeUpdate(soundPiece.id, true)}
           onEnded={handleEnded(soundPiece.id, true)}
           onError={handleError(soundPiece.id, true)}
-        />
+        >
+          <source src={soundPiece.audioSources.primary.url} type={soundPiece.audioSources.primary.mimeType} />
+          <source src={soundPiece.audioSources.fallback.url} type={soundPiece.audioSources.fallback.mimeType} />
+        </audio>
       )}
     </div>
   )

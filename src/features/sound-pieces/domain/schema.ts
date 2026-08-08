@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { audioSourcesSchema } from '@shared/lib/audio-sources'
+
 export const soundPieceSchema = z.object(
   {
     id: z.number().int().positive(),
@@ -7,7 +9,7 @@ export const soundPieceSchema = z.object(
     title: z.string().min(1),
     author: z.string().min(1),
     description: z.string().min(1),
-    audioUrl: z.url().nullable()
+    audioSources: audioSourcesSchema.nullable()
   },
   { error: 'Invalid sound piece' }
 )

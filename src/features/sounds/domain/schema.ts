@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { audioSourcesSchema } from '@shared/lib/audio-sources'
+
 export const positionSchema = z.object(
   {
     x: z.number().finite().min(0).max(100),
@@ -14,12 +16,7 @@ export const soundSchema = z.object(
     title: z.string().optional(),
     description: z.string().min(1).nullable(),
     location: z.string(),
-    audioUrl: z
-      .string()
-      .min(1)
-      .refine((value) => /^https?:\/\//.test(value), {
-        message: 'audioUrl must be a non-empty URL'
-      }),
+    audioSources: audioSourcesSchema,
     geoReferenceUrl: z
       .string()
       .min(1)

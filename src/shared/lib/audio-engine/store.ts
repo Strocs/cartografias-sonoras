@@ -11,8 +11,13 @@ import {
   pendingPieceSeek as pendingPieceSeekEngine,
   pendingSeek as pendingSeekEngine,
   pieceEnded as pieceEndedEngine,
+  pieceBuffered as pieceBufferedEngine,
+  pieceBuffering as pieceBufferingEngine,
   pieceError as pieceErrorEngine,
+  pieceLoadStarted as pieceLoadStartedEngine,
   pieceLoaded as pieceLoadedEngine,
+  piecePlaying as piecePlayingEngine,
+  pieceReady as pieceReadyEngine,
   pieceTimeUpdated as pieceTimeUpdatedEngine,
   playPiece as playPieceEngine,
   playSound as playSoundEngine,
@@ -21,8 +26,13 @@ import {
   seekSound as seekSoundEngine,
   setVolume as setVolumeEngine,
   soundEnded as soundEndedEngine,
+  soundBuffered as soundBufferedEngine,
+  soundBuffering as soundBufferingEngine,
   soundError as soundErrorEngine,
+  soundLoadStarted as soundLoadStartedEngine,
   soundLoaded as soundLoadedEngine,
+  soundPlaying as soundPlayingEngine,
+  soundReady as soundReadyEngine,
   soundTimeUpdated as soundTimeUpdatedEngine,
   stopAllSounds as stopAllSoundsEngine,
   stopPiece as stopPieceEngine,
@@ -102,6 +112,11 @@ export const useAudioStore = <T>(selector: (state: AudioStore) => T): T => useSt
 // Kept outside the public AudioActions interface to keep the API focused,
 // but exposed through the store for event wiring.
 export const audioTransitions: AudioTransitions = {
+  soundLoadStarted: (soundId) => audioStore.setState((state) => soundLoadStartedEngine(state, soundId)),
+  soundReady: (soundId) => audioStore.setState((state) => soundReadyEngine(state, soundId)),
+  soundPlaying: (soundId) => audioStore.setState((state) => soundPlayingEngine(state, soundId)),
+  soundBuffering: (soundId) => audioStore.setState((state) => soundBufferingEngine(state, soundId)),
+  soundBuffered: (soundId, ranges) => audioStore.setState((state) => soundBufferedEngine(state, soundId, ranges)),
   soundLoaded: (soundId: number, duration: number) => {
     audioStore.setState((state) => soundLoadedEngine(state, soundId, duration))
   },
@@ -125,6 +140,12 @@ export const audioTransitions: AudioTransitions = {
   pieceLoaded: (duration: number) => {
     audioStore.setState((state) => pieceLoadedEngine(state, duration))
   },
+
+  pieceLoadStarted: () => audioStore.setState(pieceLoadStartedEngine),
+  pieceReady: () => audioStore.setState(pieceReadyEngine),
+  piecePlaying: () => audioStore.setState(piecePlayingEngine),
+  pieceBuffering: () => audioStore.setState(pieceBufferingEngine),
+  pieceBuffered: (ranges) => audioStore.setState((state) => pieceBufferedEngine(state, ranges)),
 
   pieceEnded: () => {
     audioStore.setState((state) => pieceEndedEngine(state))
