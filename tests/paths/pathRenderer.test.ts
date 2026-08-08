@@ -8,6 +8,18 @@ function createSvg(): SVGSVGElement {
   return document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 }
 
+function twoPointState(overrides: Partial<PathVisualState> = {}): PathVisualState {
+  return {
+    pathId: 1,
+    points: [
+      { x: 0, y: 0 },
+      { x: 100, y: 100 }
+    ],
+    variant: 'idle',
+    ...overrides
+  }
+}
+
 describe('renderPaths', () => {
   let svg: SVGSVGElement
 
@@ -19,70 +31,36 @@ describe('renderPaths', () => {
     svg.remove()
   })
 
-  it('creates a path element with geometry from buildPolylineD', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'idle'
-      }
-    ]
+  it('creates a path element with rounded geometry', () => {
+    const state: PathVisualState = {
+      pathId: 1,
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 100 }
+      ],
+      variant: 'idle'
+    }
 
-    renderPaths(states, svg, 200, 100)
+    renderPaths([state], svg, 100, 100)
 
     const path = svg.querySelector('path[data-path-id="1"]')
     expect(path).not.toBeNull()
-    expect(path?.getAttribute('d')).toBe('M 0 0 L 200 100')
+    expect(path?.getAttribute('d')).toBe('M 0 0 L 88 0 Q 100 0 100 12 L 100 100')
   })
 
   it('applies vector-effect="non-scaling-stroke" to every path', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 2,
-        points: [
-          { x: 0, y: 0 },
-          { x: 50, y: 50 }
-        ],
-        variant: 'idle'
-      }
-    ]
+    renderPaths([twoPointState()], svg, 200, 100)
 
-    renderPaths(states, svg, 100, 100)
-
-    const path = svg.querySelector('path[data-path-id="2"]')
+    const path = svg.querySelector('path[data-path-id="1"]')
     expect(path?.getAttribute('vector-effect')).toBe('non-scaling-stroke')
   })
 
   it('applies legacy and BEM CSS classes for each variant', () => {
     const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 10, y: 10 }
-        ],
-        variant: 'idle'
-      },
-      {
-        pathId: 2,
-        points: [
-          { x: 0, y: 0 },
-          { x: 10, y: 10 }
-        ],
-        variant: 'single',
-        activeEndpoint: 'start'
-      },
-      {
-        pathId: 3,
-        points: [
-          { x: 0, y: 0 },
-          { x: 10, y: 10 }
-        ],
-        variant: 'both'
-      }
+      twoPointState({ pathId: 1 }),
+      twoPointState({ pathId: 2, variant: 'single', activeEndpoint: 'start' }),
+      twoPointState({ pathId: 3, variant: 'both' })
     ]
 
     renderPaths(states, svg, 100, 100)
@@ -102,21 +80,10 @@ describe('renderPaths', () => {
   })
 
   it('reuses existing path elements instead of recreating them', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'idle'
-      }
-    ]
-
-    renderPaths(states, svg, 200, 100)
+    renderPaths([twoPointState()], svg, 200, 100)
     const first = svg.querySelector('path[data-path-id="1"]')
 
-    renderPaths(states, svg, 200, 100)
+    renderPaths([twoPointState()], svg, 200, 100)
     const second = svg.querySelector('path[data-path-id="1"]')
 
     expect(first).toBe(second)
@@ -124,228 +91,133 @@ describe('renderPaths', () => {
   })
 
   it('removes path elements that are no longer in the visual state list', () => {
-    renderPaths(
-      [
-        {
-          pathId: 1,
-          points: [
-            { x: 0, y: 0 },
-            { x: 100, y: 100 }
-          ],
-          variant: 'idle'
-        }
-      ],
-      svg,
-      200,
-      100
-    )
-
+    renderPaths([twoPointState()], svg, 200, 100)
     renderPaths([], svg, 200, 100)
 
     expect(svg.querySelectorAll('path[data-path-id]').length).toBe(0)
   })
 
-  it('creates a pulse animation for the single variant', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'single',
-        activeEndpoint: 'start'
-      }
-    ]
-
-    renderPaths(states, svg, 200, 100)
-
-    const pulseGroup = svg.querySelector('.path-pulse')
-    expect(pulseGroup).not.toBeNull()
-
-    const animateMotion = svg.querySelector('animateMotion')
-    expect(animateMotion).not.toBeNull()
-    expect(animateMotion?.getAttribute('repeatCount')).toBe('indefinite')
-  })
-
-  it('reverses pulse direction when activeEndpoint is "end"', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'single',
-        activeEndpoint: 'end'
-      }
-    ]
-
-    renderPaths(states, svg, 200, 100)
-
-    const animateMotion = svg.querySelector('animateMotion')
-    expect(animateMotion?.getAttribute('keyPoints')).toBe('1;0')
-  })
-
-  it('gives the path a real id that matches the animateMotion reference', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'single',
-        activeEndpoint: 'start'
-      }
-    ]
-
-    renderPaths(states, svg, 200, 100)
-
-    const path = svg.querySelector('path[data-path-id="1"]')
-    expect(path?.getAttribute('id')).toBe('path-1')
-
-    const mpath = svg.querySelector('mpath')
-    expect(mpath?.getAttribute('href')).toBe('#path-1')
-  })
-
-  it('renders multiple staggered particles for the single variant', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'single',
-        activeEndpoint: 'start'
-      }
-    ]
-
-    renderPaths(states, svg, 200, 100)
-
-    const particles = svg.querySelectorAll('.path-pulse circle')
-    expect(particles.length).toBeGreaterThanOrEqual(2)
-
-    const begins = Array.from(svg.querySelectorAll('.path-pulse circle animateMotion')).map((motion) =>
-      motion.getAttribute('begin')
-    )
-    const uniqueBegins = new Set(begins)
-    expect(uniqueBegins.size).toBe(particles.length)
-  })
-
-  it('travels start->end for activeEndpoint "start" and end->start for "end"', () => {
-    const startStates: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'single',
-        activeEndpoint: 'start'
-      }
-    ]
-    const endStates: PathVisualState[] = [
-      {
-        pathId: 2,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'single',
-        activeEndpoint: 'end'
-      }
-    ]
-
-    renderPaths([...startStates, ...endStates], svg, 200, 100)
-
-    const startMotions = svg.querySelectorAll('.path-pulse circle animateMotion')
-    const endMotion = Array.from(startMotions).find((motion) =>
-      motion.closest('g')?.querySelector('mpath')?.getAttribute('href')?.includes('path-2')
-    )
-    const startMotion = Array.from(startMotions).find((motion) =>
-      motion.closest('g')?.querySelector('mpath')?.getAttribute('href')?.includes('path-1')
-    )
-
-    expect(startMotion?.getAttribute('keyPoints')).toBeNull()
-    expect(endMotion?.getAttribute('keyPoints')).toBe('1;0')
-  })
-
-  it('renders no travelling particles for the "both" variant', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'both'
-      }
-    ]
-
-    renderPaths(states, svg, 200, 100)
-
-    expect(svg.querySelector('.path-pulse')).toBeNull()
-    expect(svg.querySelectorAll('.path-pulse circle').length).toBe(0)
-    expect(svg.querySelector('path[data-path-id="1"]')).not.toBeNull()
-  })
-
-  it('uses the full polyline geometry including waypoint breaks for motion', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 50, y: 20 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'single',
-        activeEndpoint: 'start'
-      }
-    ]
-
-    renderPaths(states, svg, 200, 100)
-
-    const path = svg.querySelector('path[data-path-id="1"]')
-    expect(path?.getAttribute('d')).toBe('M 0 0 L 100 20 L 200 100')
-
-    const mpath = svg.querySelector('mpath')
-    expect(mpath?.getAttribute('href')).toBe(`#${path?.getAttribute('id')}`)
-    expect(svg.querySelectorAll('path[id="path-1"]').length).toBe(1)
-  })
-
   it('does not render paths with fewer than two points', () => {
-    const states: PathVisualState[] = [{ pathId: 1, points: [{ x: 50, y: 50 }], variant: 'idle' }]
-
-    renderPaths(states, svg, 100, 100)
+    renderPaths([twoPointState({ points: [{ x: 50, y: 50 }] })], svg, 100, 100)
 
     expect(svg.querySelector('path[data-path-id="1"]')).toBeNull()
   })
 
-  it('applies explicit style overrides when provided', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'idle',
-        style: {
-          strokeColor: '#ff0000',
-          strokeWidth: 5,
-          dashArray: '4 2'
-        }
-      }
+  it('sets a 14/4 dash pattern at unit scale', () => {
+    const state = twoPointState({ variant: 'single', activeEndpoint: 'start' })
+
+    renderPaths([state], svg, 200, 100, 1)
+
+    const path = svg.querySelector('path[data-path-id="1"]')
+    expect(path?.getAttribute('stroke-dasharray')).toBe('14 4')
+    expect(path?.style.getPropertyValue('--path-dash-period')).toBe('18px')
+  })
+
+  it('scales the dash pattern so dashes stay 14px/4px on screen at any zoom', () => {
+    const state = twoPointState({ variant: 'single', activeEndpoint: 'start' })
+    const path = () => svg.querySelector('path[data-path-id="1"]')
+
+    renderPaths([state], svg, 200, 100, 2)
+    expect(path()?.getAttribute('stroke-dasharray')).toBe('28 8')
+    expect(path()?.style.getPropertyValue('--path-dash-period')).toBe('36px')
+
+    renderPaths([state], svg, 200, 100, 0.5)
+    expect(path()?.getAttribute('stroke-dasharray')).toBe('7 2')
+    expect(path()?.style.getPropertyValue('--path-dash-period')).toBe('9px')
+  })
+
+  it('marks the dash direction forward when the start endpoint is playing', () => {
+    renderPaths([twoPointState({ variant: 'single', activeEndpoint: 'start' })], svg, 200, 100)
+
+    const path = svg.querySelector('path[data-path-id="1"]')
+    expect(path?.getAttribute('data-path-direction')).toBe('forward')
+  })
+
+  it('marks the dash direction backward when the end endpoint is playing', () => {
+    renderPaths([twoPointState({ variant: 'single', activeEndpoint: 'end' })], svg, 200, 100)
+
+    const path = svg.querySelector('path[data-path-id="1"]')
+    expect(path?.getAttribute('data-path-direction')).toBe('backward')
+  })
+
+  it('clears the direction attribute when the path leaves the single state', () => {
+    renderPaths([twoPointState({ variant: 'single', activeEndpoint: 'start' })], svg, 200, 100)
+    renderPaths([twoPointState({ variant: 'both' })], svg, 200, 100)
+
+    const path = svg.querySelector('path[data-path-id="1"]')
+    expect(path?.getAttribute('data-path-direction')).toBeNull()
+  })
+
+  it('renders no pulse circles or animateMotion nodes for the single variant', () => {
+    renderPaths([twoPointState({ variant: 'single', activeEndpoint: 'start' })], svg, 200, 100)
+
+    expect(svg.querySelectorAll('.path-pulse').length).toBe(0)
+    expect(svg.querySelectorAll('circle').length).toBe(0)
+    expect(svg.querySelectorAll('animateMotion').length).toBe(0)
+    expect(svg.querySelectorAll('mpath').length).toBe(0)
+  })
+
+  it('leaves the both variant static: same dashes, no direction attribute', () => {
+    const state: PathVisualState = {
+      pathId: 1,
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 100 }
+      ],
+      variant: 'both'
+    }
+
+    renderPaths([state], svg, 100, 100)
+
+    const path = svg.querySelector('path[data-path-id="1"]')
+    expect(path).not.toBeNull()
+    expect(path?.getAttribute('data-path-direction')).toBeNull()
+    expect(svg.querySelectorAll('.path-pulse').length).toBe(0)
+  })
+
+  it('uses the same rounded geometry for every variant (no route jump)', () => {
+    const roundedPoints = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 }
     ]
 
-    renderPaths(states, svg, 200, 100)
+    renderPaths(
+      [
+        { pathId: 1, points: roundedPoints, variant: 'idle' },
+        { pathId: 2, points: roundedPoints, variant: 'single', activeEndpoint: 'start' },
+        { pathId: 3, points: roundedPoints, variant: 'both' }
+      ],
+      svg,
+      100,
+      100
+    )
+
+    const shapes = new Set(
+      Array.from(svg.querySelectorAll('path[data-path-id]')).map((pathEl) => pathEl.getAttribute('d'))
+    )
+    expect(shapes.size).toBe(1)
+    expect(shapes.values().next().value).toBe('M 0 0 L 88 0 Q 100 0 100 12 L 100 100')
+  })
+
+  it('applies explicit style overrides when provided', () => {
+    const state = twoPointState({
+      variant: 'idle',
+      style: {
+        strokeColor: '#ff0000',
+        strokeWidth: 5,
+        dashArray: '4 2'
+      }
+    })
+
+    renderPaths([state], svg, 200, 100)
 
     const path = svg.querySelector('path[data-path-id="1"]')
     expect(path?.getAttribute('stroke')).toBe('#ff0000')
     expect(path?.getAttribute('stroke-width')).toBe('5')
     expect(path?.getAttribute('stroke-dasharray')).toBe('4 2')
+    expect(path?.style.getPropertyValue('--path-dash-period')).toBe('6px')
   })
 })
 
@@ -360,23 +232,12 @@ describe('clearPaths', () => {
     svg.remove()
   })
 
-  it('removes all paths and pulse groups', () => {
-    const states: PathVisualState[] = [
-      {
-        pathId: 1,
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 100 }
-        ],
-        variant: 'single',
-        activeEndpoint: 'start'
-      }
-    ]
+  it('removes all paths', () => {
+    const states: PathVisualState[] = [twoPointState({ variant: 'single', activeEndpoint: 'start' })]
 
     renderPaths(states, svg, 200, 100)
     clearPaths(svg)
 
     expect(svg.querySelectorAll('path').length).toBe(0)
-    expect(svg.querySelectorAll('.path-pulse').length).toBe(0)
   })
 })

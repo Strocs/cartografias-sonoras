@@ -7,6 +7,12 @@
  * Tailwind's JIT scanner cannot see at build time.
  *
  * Variant classes are applied by pathRenderer and compose on top of .path-base.
+ *
+ * The dash pattern itself is applied inline by pathRenderer, scaled by the
+ * current viewport scale so dashes stay visually 14px/4px at any zoom. The
+ * animation below slides those dashes; its one-cycle distance comes from
+ * `--path-dash-period` (a dash + gap in user units), which pathRenderer sets
+ * on every path.
  */
 
 @layer components {
@@ -14,6 +20,7 @@
 
   .path-base {
     @apply fill-none transition-all duration-300;
+    stroke: var(--color-secondary-sand);
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 6;
@@ -21,38 +28,37 @@
 
   /* ── Variants ─────────────────────────────────────────────────── */
 
-  /* BEM aliases used by the vanilla pathRenderer. */
+  .path--idle {
+    stroke-opacity: 0.4;
+  }
 
   .path--single {
-    stroke-opacity: 0;
+    stroke-opacity: 1;
+    animation: path-dash-flow 1s linear infinite;
   }
 
+  /* Playing endpoint is the end mark: reverse the slide toward the start. */
+  .path--single[data-path-direction='backward'] {
+    animation-direction: reverse;
+  }
+
+  /* Same dashes, static and illuminated (no blur: it would swallow the glow). */
   .path--both {
     stroke: var(--color-canvas);
-    filter: drop-shadow(0 0 2px var(--color-canvas));
     stroke-opacity: 1;
-    filter: blur(1px);
-  }
-
-  /* ── Pulse animation (single variant) ─────────────────────────── */
-
-  .path-pulse circle {
-    fill: firebrick;
-    stroke: var(--color-secondary-sand);
-    stroke-width: 2;
-    animation: path-glow 1.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 2px var(--color-canvas)) drop-shadow(0 0 8px var(--color-secondary-sand));
   }
 
   /* ── Reduced motion ───────────────────────────────────────────── */
 
   @media (prefers-reduced-motion: reduce) {
-    .path-pulse circle {
-      display: none;
+    .path--single {
+      animation: none;
     }
 
-    .path-single,
-    .path-both {
-      @apply drop-shadow-none;
+    .path--single,
+    .path--both {
+      filter: none;
       stroke: var(--color-charcoal);
       stroke-opacity: 0.4;
     }
@@ -61,14 +67,12 @@
 
 /* ── Keyframes ──────────────────────────────────────────────────── */
 
-@keyframes path-glow {
-
-  0%,
-  100% {
-    opacity: 0.6;
+@keyframes path-dash-flow {
+  from {
+    stroke-dashoffset: 0;
   }
 
-  50% {
-    opacity: 1;
+  to {
+    stroke-dashoffset: calc(-1 * var(--path-dash-period));
   }
 }

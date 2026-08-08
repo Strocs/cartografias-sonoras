@@ -1,15 +1,15 @@
-import { buildPolylineD } from '../lib/pathEngine'
+import { buildRoundedPathD } from '../lib/pathEngine'
 
 import type { PathVisualState } from '../domain/PathVisualState'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
-/** Number of luminous points that travel along a `single` path's geometry. */
-const PARTICLE_COUNT = 8
-const PULSE_DURATION_SECONDS = 3
-/** Full loop duration for one particle; each particle repeats this cycle. */
-const PULSE_DURATION = `${PULSE_DURATION_SECONDS}s`
-const PULSE_RADIUS = '8'
+/** Dash length in screen pixels for the segmented path stroke. */
+const DASH_LENGTH = 14
+/** Gap between consecutive dashes, in screen pixels. */
+const DASH_GAP = 8
 const PATH_CLASS_BASE = 'path-base'
+const DIRECTION_ATTR = 'data-path-direction'
+const DASH_PERIOD_VAR = '--path-dash-period'
 
 /** Maps a PathVisualState variant to the legacy CSS class used by the React PathOverlay. */
 const VARIANT_LEGACY_CLASS: Record<PathVisualState['variant'], string> = {
@@ -29,14 +29,26 @@ const VARIANT_BEM_CLASS: Record<PathVisualState['variant'], string> = {
  * Renders or updates SVG `<path>` elements for the supplied visual states.
  *
  * Existing path elements are reused (identified by `data-path-id`) so geometry
- * is only computed once per path model. Pulse animations are recreated when the
- * variant changes because their `<animateMotion>` nodes reference the path.
+ * is computed once per path model. A path is a single dashed stroke whose
+ * geometry (rounded corners) is shared by every state (`idle`, `single`,
+ * `both`), so switching states never jumps the route line.
+ *
+ * `scaleFactor` is the inverse of the current viewport zoom. `vector-effect`
+ * only normalizes stroke-width: dash lengths are always resolved in the
+ * current user coordinate system, so the dash pattern is scaled by
+ * `scaleFactor` to keep it visually constant (14px dashes, 4px gaps) at any
+ * zoom, mirroring the stroke compensation the marker layer already uses.
+ *
+ * Direction is carried by `data-path-direction` (`forward`/`backward`) so the
+ * CSS animation can slide the dashes toward the non-playing endpoint while the
+ * `both` variant stays static.
  */
 export function renderPaths(
   pathStates: PathVisualState[],
   svgElement: SVGSVGElement,
   imgWidth: number,
-  imgHeight: number
+  imgHeight: number,
+  scaleFactor: number = 1
 ): void {
   const existingPaths = new Map<number, SVGPathElement>()
   for (const pathEl of svgElement.querySelectorAll('path[data-path-id]')) {
@@ -46,12 +58,6 @@ export function renderPaths(
     }
   }
 
-  // Remove all pulse groups before re-rendering; they are cheap to recreate and
-  // this avoids stale animations when a path changes variant.
-  for (const pulse of svgElement.querySelectorAll('.path-pulse')) {
-    pulse.remove()
-  }
-
   const activeIds = new Set<number>()
 
   for (const state of pathStates) {
@@ -59,7 +65,7 @@ export function renderPaths(
 
     activeIds.add(state.pathId)
 
-    const d = buildPolylineD(state.points, imgWidth, imgHeight)
+    const d = buildRoundedPathD(state.points, imgWidth, imgHeight)
     if (d === '') continue
 
     const pathEl = existingPaths.get(state.pathId) ?? createPathElement()
@@ -72,10 +78,6 @@ export function renderPaths(
     pathEl.setAttribute('d', d)
     pathEl.setAttribute('data-testid', 'map-path')
     pathEl.setAttribute('data-path-id', String(state.pathId))
-    // Real `id` so <animateMotion>/<mpath> can reference this path. It is kept
-    // in sync with `path-{id}` referenced in the pulse group; `data-path-id`
-    // remains the unique selector for diff/reuse logic.
-    pathEl.setAttribute('id', `path-${state.pathId}`)
     pathEl.setAttribute('vector-effect', 'non-scaling-stroke')
     pathEl.setAttribute('class', `${PATH_CLASS_BASE} ${legacyClass} ${bemClass}`)
 
@@ -90,8 +92,14 @@ export function renderPaths(
       applyPathStyle(pathEl, state.style)
     }
 
+    const { dashArray, period } = resolveDashPattern(state.style, scaleFactor)
+    pathEl.setAttribute('stroke-dasharray', dashArray)
+    pathEl.style.setProperty(DASH_PERIOD_VAR, `${period}px`)
+
     if (state.variant === 'single') {
-      createPulseGroup(svgElement, state.pathId, state.activeEndpoint, state.style)
+      pathEl.setAttribute(DIRECTION_ATTR, state.activeEndpoint === 'start' ? 'forward' : 'backward')
+    } else {
+      pathEl.removeAttribute(DIRECTION_ATTR)
     }
   }
 
@@ -103,13 +111,10 @@ export function renderPaths(
   }
 }
 
-/** Removes every path and pulse element from the SVG layer. */
+/** Removes every path element from the SVG layer. */
 export function clearPaths(svgElement: SVGSVGElement): void {
   for (const pathEl of svgElement.querySelectorAll('path[data-path-id]')) {
     pathEl.remove()
-  }
-  for (const pulse of svgElement.querySelectorAll('.path-pulse')) {
-    pulse.remove()
   }
 }
 
@@ -124,52 +129,38 @@ function applyPathStyle(pathEl: SVGPathElement, style: NonNullable<PathVisualSta
   if (style.strokeWidth !== undefined) {
     pathEl.setAttribute('stroke-width', String(style.strokeWidth))
   }
-  if (style.dashArray !== undefined) {
-    pathEl.setAttribute('stroke-dasharray', style.dashArray)
+}
+
+interface DashPattern {
+  dashArray: string
+  period: number
+}
+
+/**
+ * Resolves the dash pattern. The default keeps dashes visually constant
+ * (14px/4px) by scaling the pattern with `scaleFactor`; an explicit
+ * `style.dashArray` is honored as-is (user units, caller-controlled).
+ */
+function resolveDashPattern(style: PathVisualState['style'], scaleFactor: number): DashPattern {
+  if (style?.dashArray !== undefined) {
+    const values = style.dashArray
+      .trim()
+      .split(/\s+/)
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value) && value > 0)
+    const period = values.reduce((sum, value) => sum + value, 0)
+    if (period > 0) {
+      return { dashArray: style.dashArray, period: round2(period) }
+    }
+  }
+
+  const factor = Number.isFinite(scaleFactor) && scaleFactor > 0 ? scaleFactor : 1
+  return {
+    dashArray: `${round2(DASH_LENGTH * factor)} ${round2(DASH_GAP * factor)}`,
+    period: round2((DASH_LENGTH + DASH_GAP) * factor)
   }
 }
 
-function createPulseGroup(
-  svgElement: SVGSVGElement,
-  pathId: number,
-  activeEndpoint: 'start' | 'end',
-  style?: PathVisualState['style']
-): void {
-  const routeId = `path-${pathId}`
-  const stagger = PULSE_DURATION_SECONDS / PARTICLE_COUNT
-
-  const pulseGroup = document.createElementNS(SVG_NS, 'g')
-  pulseGroup.setAttribute('class', 'path-pulse')
-
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    const circle = document.createElementNS(SVG_NS, 'circle')
-    circle.setAttribute('r', PULSE_RADIUS)
-
-    if (style?.strokeColor !== undefined) {
-      circle.setAttribute('fill', style.strokeColor)
-    }
-
-    const animateMotion = document.createElementNS(SVG_NS, 'animateMotion')
-    animateMotion.setAttribute('dur', PULSE_DURATION)
-    animateMotion.setAttribute('repeatCount', 'indefinite')
-    animateMotion.setAttribute('calcMode', 'linear')
-    // Offset each particle's start so the points read as a single travelling
-    // stream instead of a single dot. `begin` + indefinite repeat phase-shifts
-    // the loop so the whole path stays populated.
-    animateMotion.setAttribute('begin', `${(i * stagger).toFixed(3)}s`)
-
-    if (activeEndpoint === 'end') {
-      animateMotion.setAttribute('keyPoints', '1;0')
-      animateMotion.setAttribute('keyTimes', '0;1')
-    }
-
-    const mpath = document.createElementNS(SVG_NS, 'mpath')
-    mpath.setAttribute('href', `#${routeId}`)
-
-    animateMotion.appendChild(mpath)
-    circle.appendChild(animateMotion)
-    pulseGroup.appendChild(circle)
-  }
-
-  svgElement.appendChild(pulseGroup)
+function round2(value: number): number {
+  return Number(value.toFixed(2))
 }

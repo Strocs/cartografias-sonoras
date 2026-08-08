@@ -113,6 +113,8 @@ export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapV
     for (const group of marksById.values()) {
       updateMark(group, { scaleFactor: currentScaleFactor })
     }
+    // Keep the path dash pattern a constant 14px/4px on screen while zooming.
+    updatePaths()
   }
 
   mapView.addEventListener('sound:activate', soundActivateHandler)
@@ -181,7 +183,7 @@ export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapV
     const activeSounds = audioStore.getState().activeSounds
     const marksByIdMap = new Map(marks.map((mark) => [mark.id, mark]))
     const pathStates = computePathVisualStates(paths, marksByIdMap, activeSounds)
-    renderPaths(Array.from(pathStates.values()), svg, imageWidth, imageHeight)
+    renderPaths(Array.from(pathStates.values()), svg, imageWidth, imageHeight, currentScaleFactor)
   }
 
   return function unbind(): void {
