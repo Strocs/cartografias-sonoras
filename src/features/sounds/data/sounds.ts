@@ -66,7 +66,7 @@ const MAP_01_POINTS: PointEntry[] = [
       title: '',
       description: null,
       location: 'Cruz del Tercer Milenio',
-      position: { x: 62.1, y: 22.6 }
+      position: { x: 62.1, y: 22.2 }
     }
   }
 ]
@@ -110,7 +110,7 @@ const MAP_02_POINTS: PointEntry[] = [
       title: '',
       description: null,
       location: 'Universidad Central',
-      position: { x: 39, y: 57 }
+      position: { x: 39, y: 56.2 }
     }
   },
   {
