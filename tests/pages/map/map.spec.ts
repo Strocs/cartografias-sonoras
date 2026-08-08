@@ -156,7 +156,7 @@ test.describe('Map', () => {
       await button.focus()
       await expect(button).toBeFocused()
       await button.press('Space')
-      await expect(button).toHaveAttribute('data-state', /playing|paused/, {
+      await expect(button).toHaveAttribute('data-state', /playing|paused|buffering/, {
         timeout: 5000
       })
 
@@ -601,7 +601,7 @@ test.describe('Map', () => {
 
       // The sound button toggles playback without any mark toggle.
       await button.click()
-      await expect(button).toHaveAttribute('data-state', /playing|paused/, {
+      await expect(button).toHaveAttribute('data-state', /playing|paused|buffering/, {
         timeout: 5000
       })
 
@@ -611,7 +611,7 @@ test.describe('Map', () => {
   )
 
   test(
-    'mark shows an active accent only when one of its sounds is playing',
+    'mark shows an active accent only when one of its sounds is engaged in playback',
     { tag: ['@e2e', '@audio'] },
     async ({ page }) => {
       const mapPage = new MapPage(page)
@@ -729,6 +729,238 @@ test.describe('Map', () => {
 
       await expect(mapPage.bottomPlayer).toBeVisible()
       await expect(mapPage.bottomPlayer).toHaveAttribute('data-mode', 'idle')
+    }
+  )
+
+  test(
+    'streams map sounds through native lifecycle states and retries with reset ring geometry',
+    { tag: ['@high', '@e2e', '@audio', '@AUDIO-E2E-001'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page)
+      const map = mapFixtures[0]
+      const mark = marksFor(map.id).find((candidate) => candidate.sounds.length > 1)
+
+      if (!mark) {
+        throw new Error(`Map ${map.slug} has no mark with independent sound buttons`)
+      }
+
+      await mapPage.goto(map.slug)
+      await mapPage.waitForViewportReady()
+
+      const firstButton = mapPage.getSoundButton(mark.id, mark.sounds[0].id)
+      const secondButton = mapPage.getSoundButton(mark.id, mark.sounds[1].id)
+      await firstButton.click()
+
+      const audio = page.locator('audio')
+      await expect(audio).toHaveCount(1)
+
+      await audio.dispatchEvent('waiting')
+      await expect(firstButton).toHaveAttribute('data-status', 'buffering')
+      await expect(firstButton.locator('.sound-button__rings')).toHaveCSS('opacity', '1')
+      await expect(firstButton.locator('.sound-button__icon--spinner')).toHaveCSS('opacity', '1')
+
+      await audio.dispatchEvent('playing')
+      await expect(firstButton).toHaveAttribute('data-status', 'playing')
+
+      await firstButton.click()
+      await expect(firstButton).toHaveAttribute('data-status', 'paused')
+      await expect(firstButton.locator('.sound-button__rings')).toHaveCSS('opacity', '1')
+
+      await audio.dispatchEvent('error')
+      await expect(firstButton).toHaveAttribute('data-status', 'error')
+      await expect(firstButton.locator('.sound-button__rings')).toHaveCSS('opacity', '0')
+      await expect(firstButton.locator('.sound-button__icon--error')).toHaveCSS('opacity', '1')
+
+      await firstButton.evaluate((button) => {
+        const transitions: Array<{ status: string; progress: string; bufferProgress: string }> = []
+        new MutationObserver(() => {
+          const status = button.getAttribute('data-status')
+          if (status !== null) {
+            transitions.push({
+              status,
+              progress: button.style.getPropertyValue('--progress'),
+              bufferProgress: button.style.getPropertyValue('--buffer-progress')
+            })
+          }
+        }).observe(button, { attributes: true, attributeFilter: ['data-status', 'style'] })
+        ;(
+          window as Window & {
+            __audioStatusTransitions?: Array<{ status: string; progress: string; bufferProgress: string }>
+          }
+        ).__audioStatusTransitions = transitions
+      })
+      await firstButton.click()
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () =>
+              (
+                window as Window & {
+                  __audioStatusTransitions?: Array<{ status: string; progress: string; bufferProgress: string }>
+                }
+              ).__audioStatusTransitions
+          )
+        )
+        .toContainEqual({ status: 'loading', progress: '0%', bufferProgress: '0%' })
+
+      await secondButton.click()
+      await expect(audio).toHaveCount(2)
+      const firstStatusBeforeSecondBuffering = await firstButton.getAttribute('data-status')
+      await audio.nth(1).dispatchEvent('waiting')
+      await expect(secondButton).toHaveAttribute('data-status', 'buffering')
+      await expect(firstButton).toHaveAttribute('data-status', firstStatusBeforeSecondBuffering!)
+    }
+  )
+
+  test(
+    'serves bounded byte ranges for the deployed AAC and Opus streaming assets',
+    { tag: ['@high', '@e2e', '@audio', '@external', '@AUDIO-E2E-002'] },
+    async ({ request }) => {
+      const assets = [
+        {
+          name: 'AAC',
+          url: 'https://mapasonoro.frijolmagico.cl/1/1/sonidos/1/streaming/Ruta_1_Punto_1_Sonido_1_Binaural_norm.m4a',
+          contentType: /^audio\/(mp4|x-m4a)$/
+        },
+        {
+          name: 'Opus',
+          url: 'https://mapasonoro.frijolmagico.cl/1/1/sonidos/1/streaming/Ruta_1_Punto_1_Sonido_1_Binaural_norm.opus',
+          contentType: /^audio\/(ogg|opus)$/
+        }
+      ]
+
+      for (const asset of assets) {
+        const response = await request.get(asset.url, { headers: { Range: 'bytes=0-1023' } })
+        const contentRange = response.headers()['content-range']
+        const acceptRanges = response.headers()['accept-ranges']
+        const body = await response.body()
+
+        expect(response.status(), `${asset.name} must honor the Range request`).toBe(206)
+        expect(contentRange).toMatch(/^bytes 0-(?:1023|\d{1,3})\/\d+$/)
+        if (acceptRanges !== undefined) expect(acceptRanges).toBe('bytes')
+        expect(response.headers()['content-type']).toMatch(asset.contentType)
+
+        const rangeMatch = contentRange.match(/^bytes (\d+)-(\d+)\/(\d+)$/)
+        expect(rangeMatch).not.toBeNull()
+        expect(body).toHaveLength(Number(rangeMatch![2]) - Number(rangeMatch![1]) + 1)
+      }
+    }
+  )
+
+  test(
+    'uses native ordered fallback from an unsupported primary to the deployed Opus source',
+    { tag: ['@high', '@e2e', '@audio', '@AUDIO-E2E-003'] },
+    async ({ page }) => {
+      const fallbackUrl =
+        'https://mapasonoro.frijolmagico.cl/1/1/sonidos/1/streaming/Ruta_1_Punto_1_Sonido_1_Binaural_norm.opus'
+
+      // Chromium supports the real AAC source. This fixture proves native ordered
+      // fallback mechanics under an unsupported primary; DOM tests prove AAC-first/Opus-second production order.
+      const outcome = await page.evaluate(async (fallback) => {
+        const audio = document.createElement('audio')
+        const unsupportedPrimary = document.createElement('source')
+        const opusFallback = document.createElement('source')
+        const unsupportedMime = 'audio/x-unsupported'
+
+        audio.preload = 'metadata'
+        audio.style.display = 'none'
+        unsupportedPrimary.src = 'https://example.invalid/unsupported-primary.audio'
+        unsupportedPrimary.type = unsupportedMime
+        opusFallback.src = fallback
+        opusFallback.type = 'audio/ogg; codecs=opus'
+        audio.append(unsupportedPrimary, opusFallback)
+        document.body.append(audio)
+
+        try {
+          const event = await new Promise<'canplay' | 'error'>((resolve, reject) => {
+            const timeout = window.setTimeout(() => reject(new Error('Timed out waiting for audio fallback')), 15_000)
+            const cleanup = (): void => {
+              window.clearTimeout(timeout)
+              audio.removeEventListener('canplay', onCanPlay)
+              audio.removeEventListener('error', onError)
+            }
+            const onCanPlay = (): void => {
+              cleanup()
+              resolve('canplay')
+            }
+            const onError = (): void => {
+              cleanup()
+              resolve('error')
+            }
+
+            audio.addEventListener('canplay', onCanPlay, { once: true })
+            audio.addEventListener('error', onError, { once: true })
+            audio.load()
+          })
+
+          return {
+            event,
+            unsupportedCanPlayType: audio.canPlayType(unsupportedMime),
+            currentSrc: audio.currentSrc,
+            readyState: audio.readyState
+          }
+        } finally {
+          audio.remove()
+        }
+      }, fallbackUrl)
+
+      expect(outcome.unsupportedCanPlayType).toBe('')
+      expect(outcome.event).toBe('canplay')
+      expect(outcome.currentSrc).toBe(fallbackUrl)
+      expect(outcome.readyState).toBeGreaterThanOrEqual(3)
+    }
+  )
+
+  test(
+    'renders the S9 ring colors, caps, full buffer, and spinner motion',
+    { tag: ['@high', '@e2e', '@audio', '@AUDIO-E2E-004'] },
+    async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'no-preference' })
+      const mapPage = new MapPage(page)
+      const map = mapFixtures[0]
+      const mark = marksFor(map.id)[0]
+
+      await mapPage.goto(map.slug)
+      await mapPage.waitForViewportReady()
+
+      const button = mapPage.getSoundButton(mark.id, mark.sounds[0].id)
+      const outcome = await button.evaluate(async (element) => {
+        const ringStyle = (role: string) => getComputedStyle(element.querySelector(`[data-role="${role}"]`)!)
+        const spinner = element.querySelector<HTMLElement>('.sound-button__icon--spinner')!
+        const spinnerTransforms: Record<string, [string, string]> = {}
+
+        for (const status of ['loading', 'ready', 'buffering']) {
+          element.setAttribute('data-state', status)
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+          const before = getComputedStyle(spinner).transform
+          await new Promise((resolve) => window.setTimeout(resolve, 150))
+          spinnerTransforms[status] = [before, getComputedStyle(spinner).transform]
+        }
+
+        const buffer = element.querySelector<SVGCircleElement>('[data-role="buffer"]')!
+        buffer.setAttribute('stroke-dasharray', '100 100')
+        return {
+          base: { stroke: ringStyle('base').stroke, linecap: ringStyle('base').strokeLinecap },
+          buffer: {
+            stroke: ringStyle('buffer').stroke,
+            linecap: ringStyle('buffer').strokeLinecap,
+            dasharray: buffer.getAttribute('stroke-dasharray')
+          },
+          progress: { stroke: ringStyle('progress').stroke, linecap: ringStyle('progress').strokeLinecap },
+          spinnerTransforms
+        }
+      })
+
+      expect(outcome.progress).toEqual({ stroke: 'rgb(178, 34, 34)', linecap: 'round' })
+      expect(outcome.base).toEqual({ stroke: 'rgba(255, 255, 255, 0.25)', linecap: 'butt' })
+      expect(outcome.buffer).toEqual({
+        stroke: 'rgba(255, 255, 255, 0.45)',
+        linecap: 'butt',
+        dasharray: '100 100'
+      })
+      for (const transforms of Object.values(outcome.spinnerTransforms)) {
+        expect(transforms[1]).not.toBe(transforms[0])
+      }
     }
   )
 })

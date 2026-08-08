@@ -9,6 +9,7 @@ import {
   createSoundButton,
   removeSoundButton,
   updateSoundButton,
+  getSoundButtonProgress,
   type SoundButtonStatus
 } from '@features/sounds/ui'
 import type { Mark } from '@features/sounds/domain/types'
@@ -93,7 +94,12 @@ export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapV
     const state = audioStore.getState().activeSounds.get(detail.soundId)
     const status = state?.status ?? AUDIO_STATUS.IDLE
 
-    if (status === AUDIO_STATUS.PLAYING || status === AUDIO_STATUS.LOADING) {
+    if (
+      status === AUDIO_STATUS.PLAYING ||
+      status === AUDIO_STATUS.LOADING ||
+      status === AUDIO_STATUS.READY ||
+      status === AUDIO_STATUS.BUFFERING
+    ) {
       audioStore.getState().pauseSound(detail.soundId)
     } else if (status === AUDIO_STATUS.PAUSED) {
       audioStore.getState().resumeSound(detail.soundId)
@@ -141,10 +147,7 @@ export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapV
   function soundStatusOf(soundId: number): SoundButtonStatus {
     const state = audioStore.getState().activeSounds.get(soundId)
     const status = state?.status ?? AUDIO_STATUS.IDLE
-    if (status === AUDIO_STATUS.PLAYING) return 'playing'
-    if (status === AUDIO_STATUS.LOADING) return 'loading'
-    if (status === AUDIO_STATUS.PAUSED) return 'paused'
-    return 'idle'
+    return status
   }
 
   function updateSoundButtons(): void {
@@ -152,12 +155,9 @@ export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapV
 
     for (const [soundId, button] of soundButtonsById) {
       const state = activeSounds.get(soundId)
-      const progress =
-        state !== undefined && state.duration > 0
-          ? Math.min(100, Math.max(0, (state.currentTime / state.duration) * 100))
-          : 0
+      const progress = state === undefined ? { progress: 0, bufferProgress: 0 } : getSoundButtonProgress(state)
 
-      updateSoundButton(button, { status: soundStatusOf(soundId), progress })
+      updateSoundButton(button, { status: soundStatusOf(soundId), ...progress })
     }
   }
 
@@ -168,9 +168,12 @@ export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapV
       const group = marksById.get(mark.id)
       if (group === undefined) continue
 
+      // A sound is "engaged" while the user has started playback and the
+      // element is loading, playing, or waiting for streamed data — so
+      // BUFFERING keeps the accent active until playback actually proceeds.
       const anySoundActive = mark.sounds.some((sound) => {
         const status = activeSounds.get(sound.id)?.status
-        return status === AUDIO_STATUS.PLAYING || status === AUDIO_STATUS.LOADING
+        return status === AUDIO_STATUS.PLAYING || status === AUDIO_STATUS.LOADING || status === AUDIO_STATUS.BUFFERING
       })
 
       updateMark(group, { active: anySoundActive })

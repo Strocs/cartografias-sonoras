@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-import { AudioBottomPlayer } from '../../src/features/sound-pieces/ui/AudioBottomPlayer'
-import { createInitialState } from '../../src/shared/lib/audio-engine/engine'
-import { audioStore, audioTransitions } from '../../src/shared/lib/audio-engine/store'
-import { AUDIO_STATUS } from '../../src/shared/lib/audio-engine/types'
+import { AudioBottomPlayer } from '@features/sound-pieces/ui/AudioBottomPlayer'
+import { createInitialState } from '@shared/lib/audio-engine/engine'
+import { audioStore, audioTransitions } from '@shared/lib/audio-engine/store'
+import { AUDIO_STATUS } from '@shared/lib/audio-engine/types'
+import { buildSoundAudioAssetUrls } from '@shared/lib/audio-sources'
 
 const SOUND_PIECE = {
   id: 1,
@@ -12,7 +13,7 @@ const SOUND_PIECE = {
   title: 'Paisaje de la plaza',
   author: 'Colectivo Marcasonora',
   description: 'Composición sonora de la plaza.',
-  audioUrl: '/sound-pieces/piece.mp3'
+  audioSources: buildSoundAudioAssetUrls(1, 1, 1)!.audioSources
 }
 
 describe('AudioBottomPlayer', () => {
@@ -59,6 +60,7 @@ describe('AudioBottomPlayer', () => {
 
     act(() => {
       audioTransitions.pieceLoaded(60)
+      audioTransitions.piecePlaying()
     })
 
     expect(audioStore.getState().piece.status).toBe(AUDIO_STATUS.PLAYING)
@@ -129,6 +131,87 @@ describe('AudioBottomPlayer', () => {
     expect(player).toHaveAttribute('data-mode', 'piece')
     expect(screen.getByText(SOUND_PIECE.title)).toBeInTheDocument()
     expect(screen.getByText(SOUND_PIECE.author)).toBeInTheDocument()
+  })
+
+  it('renders the base, buffered, and played layers in one scrubber track', () => {
+    render(<AudioBottomPlayer soundPiece={SOUND_PIECE} />)
+
+    act(() => {
+      audioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId)
+      audioTransitions.pieceLoaded(100)
+      audioTransitions.pieceTimeUpdated(25)
+      audioTransitions.pieceBuffered([
+        { start: 0, end: 50 },
+        { start: 70, end: 90 }
+      ])
+    })
+
+    const track = screen.getByTestId('bottom-scrubber-track')
+    const buffered = screen.getByTestId('bottom-scrubber-buffered')
+    const played = screen.getByTestId('bottom-scrubber-played')
+
+    expect(track).toContainElement(screen.getByTestId('bottom-scrubber-base'))
+    expect(track).toContainElement(buffered)
+    expect(track).toContainElement(played)
+    expect(screen.getByTestId('bottom-scrubber-base')).toHaveClass('bg-white/20')
+    expect(buffered).toHaveClass('bg-white/40')
+    expect(played).toHaveClass('bg-secondary-sand')
+    expect(played).toHaveAttribute('data-played-percentage', '25')
+    expect(buffered).toHaveAttribute('data-buffer-start', '25')
+    expect(buffered).toHaveAttribute('data-buffer-width', '25')
+    expect(screen.queryByText(/buffering|cargando/i)).not.toBeInTheDocument()
+  })
+
+  it('clamps played progress and shows no buffer without a containing range', () => {
+    render(<AudioBottomPlayer soundPiece={SOUND_PIECE} />)
+
+    act(() => {
+      audioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId)
+      audioTransitions.pieceLoaded(100)
+      audioTransitions.pieceTimeUpdated(150)
+      audioTransitions.pieceBuffered([{ start: 0, end: 50 }])
+    })
+
+    expect(screen.getByTestId('bottom-scrubber-played')).toHaveAttribute('data-played-percentage', '100')
+    expect(screen.getByTestId('bottom-scrubber-buffered')).toHaveAttribute('data-buffer-width', '0')
+  })
+
+  it('updates the buffered layer while paused without changing the playhead', () => {
+    render(<AudioBottomPlayer soundPiece={SOUND_PIECE} />)
+
+    act(() => {
+      audioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId)
+      audioTransitions.pieceLoaded(100)
+      audioTransitions.pieceTimeUpdated(30)
+      audioStore.getState().pausePiece()
+      audioTransitions.pieceBuffered([{ start: 0, end: 45 }])
+    })
+
+    expect(audioStore.getState().piece.currentTime).toBe(30)
+    expect(screen.getByTestId('bottom-scrubber-buffered')).toHaveAttribute('data-buffer-width', '15')
+
+    act(() => {
+      audioTransitions.pieceBuffered([{ start: 0, end: 70 }])
+    })
+
+    expect(audioStore.getState().piece.currentTime).toBe(30)
+    expect(screen.getByTestId('bottom-scrubber-buffered')).toHaveAttribute('data-buffer-width', '40')
+  })
+
+  it.each([
+    [AUDIO_STATUS.LOADING, 'Cargando audio'],
+    [AUDIO_STATUS.BUFFERING, 'Recuperando audio']
+  ])('uses the shared spinner with distinct %s semantics', (status, label) => {
+    render(<AudioBottomPlayer soundPiece={SOUND_PIECE} />)
+
+    act(() => {
+      audioStore.getState().playPiece(SOUND_PIECE.id, SOUND_PIECE.mapId)
+      if (status === AUDIO_STATUS.BUFFERING) audioTransitions.pieceBuffering()
+    })
+
+    expect(screen.getByRole('button', { name: label })).toHaveAttribute('data-status', status)
+    expect(screen.getByTestId('bottom-spinner')).toHaveAttribute('data-status', status)
+    expect(screen.queryByTestId('bottom-wave')).toBeInTheDocument()
   })
 
   it('seeks the piece when the scrubber is changed in piece mode', async () => {

@@ -2,12 +2,15 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   createSoundButton,
+  getSoundButtonProgress,
   removeSoundButton,
   updateSoundButton,
+  SOUND_BUTTON_RING_STROKE,
   SOUND_BUTTON_SIZE,
   SOUND_VISIBLE_SIZE
 } from '../../src/features/sounds/ui/soundButton'
 import { createMark } from '../../src/features/sounds/ui/mark'
+import { buildSoundAudioAssetUrls } from '../../src/shared/lib/audio-sources'
 
 import type { Mark, Sound } from '../../src/features/sounds/domain/types'
 
@@ -16,7 +19,7 @@ const sound: Sound = {
   title: 'Fuente 2',
   description: '',
   location: '',
-  audioUrl: '/b.mp3'
+  audioSources: buildSoundAudioAssetUrls(1, 1, 1)!.audioSources
 }
 
 const mark: Mark = {
@@ -73,6 +76,27 @@ describe('createSoundButton', () => {
 
     expect(button.querySelector('.sound-button__icon--play')).not.toBeNull()
     expect(button.querySelector('.sound-button__icon--pause')).not.toBeNull()
+
+    container.remove()
+  })
+
+  it('renders three ordered SVG perimeter rings inside its footprint', () => {
+    const { container, button } = appendButton()
+    const rings = button.querySelectorAll<SVGCircleElement>('.sound-button__ring')
+
+    expect(button.querySelector('svg.sound-button__rings')?.getAttribute('viewBox')).toBe('0 0 30 30')
+    expect(Array.from(rings, (ring) => ring.dataset.role)).toEqual(['base', 'buffer', 'progress'])
+    expect(Array.from(rings, (ring) => ring.getAttribute('class'))).toEqual([
+      'sound-button__ring sound-button__ring--base',
+      'sound-button__ring sound-button__ring--buffer',
+      'sound-button__ring sound-button__ring--progress'
+    ])
+    for (const ring of rings) {
+      expect(ring.getAttribute('pathLength')).toBe('100')
+      expect(ring.getAttribute('stroke-width')).toBe(String(SOUND_BUTTON_RING_STROKE))
+      expect(ring.getAttribute('transform')).toBe('rotate(-90 15 15)')
+    }
+    expect(Number(rings[0].getAttribute('r')) + SOUND_BUTTON_RING_STROKE / 2).toBeLessThanOrEqual(15)
 
     container.remove()
   })
@@ -147,6 +171,90 @@ describe('updateSoundButton', () => {
     expect(button.style.transform).toBe('scale(1.5)')
 
     container.remove()
+  })
+
+  it('uses one spinner visual with distinct loading, ready, and buffering semantics', () => {
+    const { container, button } = appendButton()
+    const ariaLabels = new Set<string>()
+
+    for (const status of ['loading', 'ready', 'buffering'] as const) {
+      updateSoundButton(button, { status })
+      expect(button.getAttribute('data-status')).toBe(status)
+      expect(button.getAttribute('aria-label')).not.toBe(sound.title)
+      ariaLabels.add(button.getAttribute('aria-label') ?? '')
+      expect(button.querySelector('.sound-button__icon--spinner')).not.toBeNull()
+    }
+    expect(ariaLabels).toHaveLength(3)
+
+    container.remove()
+  })
+
+  it('clamps ring percentages, shows error state, and resets on retry', () => {
+    const { container, button } = appendButton()
+
+    updateSoundButton(button, { status: 'error', progress: 150, bufferProgress: -1 })
+    expect(button.getAttribute('data-status')).toBe('error')
+    expect(button.querySelector('.sound-button__icon--error')).not.toBeNull()
+    expect(button.style.getPropertyValue('--progress')).toBe('100%')
+    expect(button.style.getPropertyValue('--buffer-progress')).toBe('0%')
+
+    updateSoundButton(button, { status: 'loading', progress: 0, bufferProgress: 0 })
+    expect(button.getAttribute('data-status')).toBe('loading')
+    expect(button.style.getPropertyValue('--progress')).toBe('0%')
+    expect(button.style.getPropertyValue('--buffer-progress')).toBe('0%')
+
+    container.remove()
+  })
+
+  it('keeps a fully buffered circular ring at 100%', () => {
+    const { container, button } = appendButton()
+
+    updateSoundButton(button, { bufferProgress: 100 })
+
+    expect(button.style.getPropertyValue('--buffer-progress')).toBe('100%')
+    expect(button.querySelector('.sound-button__ring--buffer')).toHaveAttribute('stroke-dasharray', '100 100')
+
+    container.remove()
+  })
+
+  it('keeps each button update independent', () => {
+    const first = createSoundButton(sound, mark)
+    const second = createSoundButton({ ...sound, id: 113 }, mark)
+
+    updateSoundButton(first, { status: 'paused', progress: 20, bufferProgress: 70 })
+    expect(second.getAttribute('data-status')).toBe('idle')
+    expect(second.style.getPropertyValue('--progress')).toBe('0%')
+    expect(second.style.getPropertyValue('--buffer-progress')).toBe('0%')
+  })
+})
+
+describe('getSoundButtonProgress', () => {
+  it('uses only the contiguous buffered range containing the playhead', () => {
+    expect(
+      getSoundButtonProgress({
+        currentTime: 1,
+        duration: 10,
+        buffered: [
+          { start: 0, end: 2 },
+          { start: 5, end: 7 }
+        ]
+      })
+    ).toEqual({ progress: 10, bufferProgress: 20 })
+    expect(getSoundButtonProgress({ currentTime: 1, duration: 10, buffered: [{ start: 0, end: 7 }] })).toEqual({
+      progress: 10,
+      bufferProgress: 70
+    })
+  })
+
+  it('ignores future ranges and allows paused buffer updates without moving progress', () => {
+    const paused = getSoundButtonProgress({ currentTime: 2, duration: 10, buffered: [{ start: 0, end: 4 }] })
+    const bufferedLater = getSoundButtonProgress({ currentTime: 2, duration: 10, buffered: [{ start: 0, end: 7 }] })
+
+    expect(paused).toEqual({ progress: 20, bufferProgress: 40 })
+    expect(bufferedLater).toEqual({ progress: 20, bufferProgress: 70 })
+    expect(
+      getSoundButtonProgress({ currentTime: 1, duration: 10, buffered: [{ start: 5, end: 7 }] }).bufferProgress
+    ).toBe(0)
   })
 })
 

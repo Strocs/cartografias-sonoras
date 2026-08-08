@@ -26,16 +26,15 @@ interface Props {
 
 const { map, maps, marks, paths, soundPiece, soundPieceEnabled = true } = Astro.props
 
-// The audio pool consumes a flat list of sound ids→urls only; each mark embeds
-// its sounds, so flatten them here.
 const audioPoolSounds = marks.flatMap((mark) =>
   mark.sounds.map((sound) => ({
     id: sound.id,
-    audioUrl: sound.audioUrl
+    audioSources: sound.audioSources
   }))
 )
 
-const audioPoolPiece = soundPieceEnabled && soundPiece ? { id: soundPiece.id, audioUrl: soundPiece.audioUrl } : null
+const audioPoolPiece =
+  soundPieceEnabled && soundPiece ? { id: soundPiece.id, audioSources: soundPiece.audioSources } : null
 
 const mapData = {
   marks,

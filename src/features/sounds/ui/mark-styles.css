@@ -141,8 +141,8 @@
   color: rgba(45, 45, 45, 0.8);
 }
 
-.sound-mark__circle:hover~.sound-mark__tooltip,
-.sound-mark__tail:hover~.sound-mark__tooltip {
+.sound-mark__circle:hover ~ .sound-mark__tooltip,
+.sound-mark__tail:hover ~ .sound-mark__tooltip {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }

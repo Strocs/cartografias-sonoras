@@ -65,14 +65,18 @@ describe('Dataset validation', () => {
     }
   })
 
-  it('emits per-point distinct audio URLs including MAP_02 (spec req 15)', () => {
+  it('emits per-point dual streaming audio URLs including MAP_02 (spec req 15)', () => {
     for (const mark of MARKS) {
       // Mark id encodes the point: mapId*100 + point.
       const point = mark.id % 100
-      const expectedSegment = `Punto_${point}_`
 
-      for (const sound of mark.sounds) {
-        expect(sound.audioUrl).toContain(expectedSegment)
+      for (const [index, sound] of mark.sounds.entries()) {
+        const soundIdx = index + 1
+        const baseUrl = `https://mapasonoro.frijolmagico.cl/1/${mark.mapId}/sonidos/${point}`
+        const filename = `Ruta_${mark.mapId}_Punto_${point}_Sonido_${soundIdx}_Binaural_norm`
+
+        expect(sound.audioSources.primary.url).toBe(`${baseUrl}/streaming/${filename}.m4a`)
+        expect(sound.audioSources.fallback.url).toBe(`${baseUrl}/streaming/${filename}.opus`)
       }
     }
   })

@@ -35,6 +35,21 @@ describe('Audio store actions', () => {
   })
 
   describe('seek sound', () => {
+    it('exposes native lifecycle and buffered-range transitions for the adapter', () => {
+      audioStore.getState().playSound(1, 10)
+      audioTransitions.soundReady(1)
+      audioTransitions.soundBuffering(1)
+      audioTransitions.soundBuffered(1, [
+        { start: 2, end: 5 },
+        { start: 0, end: 2 }
+      ])
+      audioTransitions.soundPlaying(1)
+
+      expect(audioStore.getState().activeSounds.get(1)).toMatchObject({
+        status: AUDIO_STATUS.PLAYING,
+        buffered: [{ start: 0, end: 5 }]
+      })
+    })
     it('seekSound records a pending seek', () => {
       audioStore.getState().playSound(1, 10)
       audioStore.getState().seekSound(1, 42)
@@ -55,12 +70,12 @@ describe('Audio store actions', () => {
       expect(state._pendingSeeks.has(1)).toBe(false)
     })
 
-    it('audioTransitions.soundLoaded sets duration and status', () => {
+    it('audioTransitions.soundLoaded updates duration without forcing playback', () => {
       audioStore.getState().playSound(1, 10)
       audioTransitions.soundLoaded(1, 60)
 
       const sound = audioStore.getState().activeSounds.get(1)
-      expect(sound?.status).toBe(AUDIO_STATUS.PLAYING)
+      expect(sound?.status).toBe(AUDIO_STATUS.LOADING)
       expect(sound?.duration).toBe(60)
     })
 
@@ -74,12 +89,23 @@ describe('Audio store actions', () => {
   })
 
   describe('piece transitions', () => {
-    it('audioTransitions.pieceLoaded sets duration and status', () => {
+    it('exposes native piece lifecycle and paused buffered updates', () => {
+      audioStore.getState().playPiece(100, 10)
+      audioTransitions.pieceReady()
+      audioStore.getState().pausePiece()
+      audioTransitions.pieceBuffered([{ start: 0, end: 20 }])
+
+      expect(audioStore.getState().piece).toMatchObject({
+        status: AUDIO_STATUS.PAUSED,
+        buffered: [{ start: 0, end: 20 }]
+      })
+    })
+    it('audioTransitions.pieceLoaded updates duration without forcing playback', () => {
       audioStore.getState().playPiece(100, 10)
       audioTransitions.pieceLoaded(180)
 
       const { piece } = audioStore.getState()
-      expect(piece.status).toBe(AUDIO_STATUS.PLAYING)
+      expect(piece.status).toBe(AUDIO_STATUS.LOADING)
       expect(piece.duration).toBe(180)
     })
 

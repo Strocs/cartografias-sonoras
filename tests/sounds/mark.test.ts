@@ -3,6 +3,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { createMark, insertFanButton, removeMark, updateMark } from '../../src/features/sounds/ui/mark'
 import { createSoundButton, SOUND_VISIBLE_SIZE } from '../../src/features/sounds/ui/soundButton'
 import { computeFanRadius, computeFanSlots } from '../../src/features/sounds/ui/fanGeometry'
+import { buildSoundAudioAssetUrls } from '../../src/shared/lib/audio-sources'
 
 import type { Mark } from '../../src/features/sounds/domain/types'
 
@@ -14,8 +15,20 @@ const mark: Mark = {
   location: 'Avenida de Aguirre',
   position: { x: 50, y: 25 },
   sounds: [
-    { id: 101, title: 'Fuente', description: null, location: '', audioUrl: '/a.mp3' },
-    { id: 112, title: 'Fuente', description: null, location: '', audioUrl: '/b.mp3' }
+    {
+      id: 101,
+      title: 'Fuente',
+      description: null,
+      location: '',
+      audioSources: buildSoundAudioAssetUrls(1, 1, 1)!.audioSources
+    },
+    {
+      id: 112,
+      title: 'Fuente',
+      description: null,
+      location: '',
+      audioSources: buildSoundAudioAssetUrls(1, 1, 2)!.audioSources
+    }
   ]
 }
 
