@@ -46,9 +46,9 @@ describe('audioSourcesSchema', () => {
   })
 
   it('rejects missing sources and MIME types outside their source role', () => {
-    const { fallback: _, ...missingFallback } = validSources
+    const { primary } = validSources
 
-    expect(audioSourcesSchema.safeParse(missingFallback).success).toBe(false)
+    expect(audioSourcesSchema.safeParse(primary).success).toBe(false)
     expect(
       audioSourcesSchema.safeParse({
         ...validSources,
