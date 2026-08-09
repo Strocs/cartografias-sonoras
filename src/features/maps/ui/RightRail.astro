@@ -19,25 +19,22 @@ const inactiveMaps = await Promise.all(
 ---
 
 <aside
-  class={`absolute right-0 bottom-0 left-0 z-100 h-32 w-full shrink-0 px-4 py-4 md:relative md:h-full md:w-36 md:max-h-dvh md:px-0 md:pr-4 md:pointer-events-none ${className ?? ''}`}
+  class={`absolute right-0 bottom-0 z-100 shrink-0 px-4 py-6 md:pointer-events-none ${className ?? ''}`}
   data-testid="right-rail"
 >
-  <div class="flex h-full flex-row gap-4 overflow-x-auto md:flex-col md:overflow-visible">
+  <div class="flex w-full flex-row items-end gap-8">
     {
       inactiveMaps.map(({ map, destinationPreview }) => (
         <a
           href={`/${map.slug}`}
-          class="group relative flex h-full flex-1 flex-col overflow-hidden rounded-xl border border-secondary-sand bg-charcoal shadow-lg md:pointer-events-auto"
+          class="group relative flex w-full max-w-60 flex-1 shrink-0 flex-col rounded-xl md:pointer-events-auto"
           data-rail-card
           data-preview-src={destinationPreview.src}
           data-preview-srcset={destinationPreview.srcset}
           data-preview-sizes={destinationPreview.sizes}
         >
-          <div
-            class="absolute inset-0 z-10 flex items-center justify-center p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            data-rail-title
-          >
-            <span class="block text-center font-cormorant text-lg leading-none font-bold tracking-wide text-white uppercase">
+          <div class="absolute right-0 bottom-0 left-0 z-10" data-rail-title>
+            <span class="block text-center font-cormorant leading-none font-bold tracking-wide text-canvas">
               {map.title}
             </span>
           </div>
@@ -45,7 +42,7 @@ const inactiveMaps = await Promise.all(
             map={map}
             loading="eager"
             class="size-full"
-            imageClass="size-full object-cover transition-all duration-300 group-hover:scale-105 group-hover:grayscale-0 grayscale-100 group-hover:blur-sm"
+            imageClass="object-contain aspect-auto transition-all duration-300 group-hover:scale-110"
             widths={[620]}
             sizes="(min-width: 768px) 9rem, 7rem"
           />

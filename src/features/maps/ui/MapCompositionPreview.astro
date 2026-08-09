@@ -37,11 +37,11 @@ const labelId = `map-composition-label-${map.slug}`
 >
   {
     destinationPreview ? (
-      <img
+      <Image
         src={destinationPreview.src}
         srcset={destinationPreview.srcset}
         sizes={destinationPreview.sizes}
-        alt=""
+        alt={map.title}
         aria-hidden="true"
         class={imageClass}
         loading={loading}
@@ -52,7 +52,7 @@ const labelId = `map-composition-label-${map.slug}`
     ) : (
       <Image
         src={map.preview.asset!}
-        alt=""
+        alt={map.title}
         aria-hidden="true"
         class={imageClass}
         loading={loading}

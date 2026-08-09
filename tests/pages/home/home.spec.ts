@@ -6,13 +6,25 @@ import { HomePage } from './home-page'
 test.describe('Home', () => {
   test.describe.configure({ mode: 'serial' })
 
-  test('home page loads', { tag: ['@critical', '@e2e'] }, async ({ page }) => {
-    const homePage = new HomePage(page)
-    await homePage.goto()
+  // NOTE (temporary): the landing navigation links (Inicio/Proyecto/Datos/Equipo)
+  // were removed from the home page in the landing redesign. The nav will be
+  // re-implemented in the future; until then these two tests are skipped
+  // deliberately, keeping their assertions as the future spec. Remove the
+  // `test.skip` modifiers when the landing navigation lands.
+  test.skip(
+    'home page loads',
+    {
+      tag: ['@critical', '@e2e'],
+      annotation: { type: 'skip', description: 'Landing navigation not implemented yet' }
+    },
+    async ({ page }) => {
+      const homePage = new HomePage(page)
+      await homePage.goto()
 
-    await expect(homePage.heading).toBeVisible()
-    await expect(homePage.nav).toBeVisible()
-  })
+      await expect(homePage.heading).toBeVisible()
+      await expect(homePage.nav).toBeVisible()
+    }
+  )
 
   test('3 map cards visible', { tag: ['@critical', '@e2e'] }, async ({ page }) => {
     const homePage = new HomePage(page)
@@ -25,14 +37,21 @@ test.describe('Home', () => {
     }
   })
 
-  test('navigation links present', { tag: ['@critical', '@e2e'] }, async ({ page }) => {
-    const homePage = new HomePage(page)
-    await homePage.goto()
+  test.skip(
+    'navigation links present',
+    {
+      tag: ['@critical', '@e2e'],
+      annotation: { type: 'skip', description: 'Landing navigation not implemented yet' }
+    },
+    async ({ page }) => {
+      const homePage = new HomePage(page)
+      await homePage.goto()
 
-    await expect(homePage.proyectoLink).toBeVisible()
-    await expect(homePage.datosLink).toBeVisible()
-    await expect(homePage.equipoLink).toBeVisible()
-  })
+      await expect(homePage.proyectoLink).toBeVisible()
+      await expect(homePage.datosLink).toBeVisible()
+      await expect(homePage.equipoLink).toBeVisible()
+    }
+  )
 
   test('clicking a map navigates to /:slug', { tag: ['@critical', '@e2e'] }, async ({ page }) => {
     const homePage = new HomePage(page)

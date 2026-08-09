@@ -1,13 +1,14 @@
 ---
-import { Picture } from 'astro:assets'
+import { Image, Picture } from 'astro:assets'
 
+import NavItems from './NavItems.astro'
 import anidLogo from '@assets/logos/anid.png'
 import innovaLogo from '@assets/logos/innova.png'
 import arqulsLogo from '@assets/logos/arquls.png'
-import NavItems from './NavItems.astro'
+import siteIcon from '@assets/site/icon.png'
 ---
 
-<aside class="md:pointer-events-none md:relative md:z-10 md:max-h-dvh md:w-62 md:shrink-0 md:p-4">
+<aside class="md:pointer-events-none md:relative md:z-10 md:max-h-dvh md:w-68 md:shrink-0 md:p-4">
   <button
     data-nav-toggle
     type="button"
@@ -44,18 +45,29 @@ import NavItems from './NavItems.astro'
     data-nav-panel
     class="fixed inset-y-2 left-0 z-1100 flex w-72 max-w-[85vw] -translate-x-full flex-col rounded-r-xl border border-l-0 border-secondary-sand bg-charcoal shadow-lg transition-transform duration-300 motion-reduce:transition-none md:pointer-events-auto md:static md:z-auto md:h-full md:w-auto md:max-w-none md:translate-x-0 md:rounded-xl md:border-l md:transition-none"
   >
-    <div class="flex items-start justify-between gap-4 p-6 pb-4">
-      <a href="/" class="flex flex-col gap-1">
-        <h1 class="font-cormorant text-xl leading-none font-bold tracking-wide text-secondary-sand uppercase">
-          Cartografías Sensoriales
-        </h1>
-        <span class="text-xs leading-none tracking-widest text-secondary-blue/60"> Mapeo de Marcas Sonoras </span>
+    <div class="relative flex items-start justify-between gap-4 p-6 pb-4">
+      <a href="/" class="flex flex-col">
+        <div class="flex items-center">
+          <Image
+            src={siteIcon}
+            width={siteIcon.width}
+            height={siteIcon.height}
+            alt="Logo de Cartografías Sensoriales"
+            class="-ml-7 aspect-auto max-h-12 w-fit"
+            loading="eager"
+            widths={[128, 320]}
+          />
+          <h1 class="-ml-2 font-cormorant text-xl leading-none font-bold tracking-wide text-secondary-sand uppercase">
+            Cartografías Sensoriales
+          </h1>
+        </div>
+        <span class="ml-9 text-xs leading-none tracking-widest text-secondary-blue/60"> Mapeo de Marcas Sonoras </span>
       </a>
       <button
         data-nav-close
         type="button"
         aria-label="Cerrar menú"
-        class="-mt-1 -mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary-teal text-secondary-sand transition-colors hover:bg-secondary-sand/30 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
+        class="absolute top-4 right-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary-teal text-secondary-sand transition-colors hover:bg-secondary-sand/30 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
       >
         <svg
           aria-hidden="true"
