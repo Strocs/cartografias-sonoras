@@ -380,12 +380,14 @@ test.describe('Map', () => {
             }
           ])
         )
-        document.body.appendChild(view)
-        await new Promise<void>((resolve) =>
-          view.addEventListener('map-composition-ready', () => resolve(), {
-            once: true
-          })
+        // With declared `map-layers`, composition is built synchronously: the
+        // ready event fires during `appendChild`, so the listener must be
+        // registered before the element is connected.
+        const ready = new Promise<void>((resolve) =>
+          view.addEventListener('map-composition-ready', () => resolve(), { once: true })
         )
+        document.body.appendChild(view)
+        await ready
         return view.querySelector('[data-map-layer="effect"]')?.getAttribute('data-effect-active')
       })
       expect(effectActive).toBe('false')
