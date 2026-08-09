@@ -455,7 +455,7 @@ describe('MapView custom element', () => {
     await Promise.resolve()
     expect(ViewportEngineMock).not.toHaveBeenCalled()
 
-    decodes.slice(2).forEach((resolve) => resolve())
+    await drainDecodes(decodes, (resolve) => resolve())
     await waitForReady(el)
 
     expect(el.querySelectorAll('[data-map-layer]')).toHaveLength(2)
@@ -620,6 +620,7 @@ describe('MapView custom element', () => {
     expect(ViewportEngineMock).not.toHaveBeenCalled()
 
     decodes[1]?.()
+    await drainDecodes(decodes, (resolve) => resolve())
     await waitForReady(el)
 
     expect(ViewportEngineMock).toHaveBeenCalledTimes(1)

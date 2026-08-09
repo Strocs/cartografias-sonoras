@@ -8,7 +8,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "vitest run",
+    "test": "node --test tests/support/serve-dist.test.mjs && vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test --project=chromium --grep-invert @external",
     "test:e2e:external": "playwright test --project=chromium --grep @external",

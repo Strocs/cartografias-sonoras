@@ -243,6 +243,7 @@ export class MapView extends HTMLElement implements MapViewElement {
         false,
         this._mapTitle === null ? undefined : `Mapa de ${this._mapTitle}`
       )
+      await this._visibleImg.decode()
 
       const settled = await Promise.all(
         optionalLayers.map(async (layer) => {
@@ -264,11 +265,15 @@ export class MapView extends HTMLElement implements MapViewElement {
       }
       const effectContext = this._renderContext()
       const reducedMotion = this._prefersReducedMotion()
+      const visibleLayers: HTMLImageElement[] = []
       for (const { layer, failed } of settled) {
         if (!failed) {
-          createImageLayer(this._world, layer, decodedBase, enablesEffect(layer, effectContext, reducedMotion))
+          visibleLayers.push(
+            createImageLayer(this._world, layer, decodedBase, enablesEffect(layer, effectContext, reducedMotion))
+          )
         }
       }
+      await Promise.all(visibleLayers.map((image) => image.decode()))
 
       this._svgLayer = createSvgLayer(this._world)
       this._markerLayer = createMarkerLayer(this._world)
