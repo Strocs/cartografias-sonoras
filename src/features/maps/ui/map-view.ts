@@ -204,7 +204,7 @@ export class MapView extends HTMLElement implements MapViewElement {
     const world = this._world
     const container = this._container
     let base = layers[0]
-    const optionalLayers = layers.slice(1, -1)
+    const optionalLayers = layers.slice(1)
 
     if (hiddenImg === null || world === null || container === null || base === undefined) return
 
