@@ -163,11 +163,15 @@ test.describe('Map', () => {
 
       await homePage.goto()
       await expect(homePage.compositionPreviews).toHaveCount(mapFixtures.length)
+      await expect(homePage.compositionPreviews.first()).toHaveCSS(
+        'view-transition-name',
+        transitionName('map-composition', firstMap.slug)
+      )
       await homePage.getMapCard(firstMap.title).click()
       await expect(page).toHaveURL(`/${firstMap.slug}`)
       await mapPage.waitForViewportReady()
       await expect(mapPage.marks).toHaveCount(marksFor(firstMap.id).length)
-      await expect(mapPage.getCompositionPreview(firstMap.slug)).toHaveCSS(
+      await expect(mapPage.getCompositionPreview(firstMap.slug).locator('img')).toHaveCSS(
         'view-transition-name',
         transitionName('map-composition', firstMap.slug)
       )
@@ -176,11 +180,15 @@ test.describe('Map', () => {
         transitionName('map-title', firstMap.slug)
       )
 
+      await expect(mapPage.getRailLink(nextMap.slug).locator('[data-map-composition-preview]')).toHaveCSS(
+        'view-transition-name',
+        transitionName('map-composition', nextMap.slug)
+      )
       await mapPage.getRailLink(nextMap.slug).click()
       await expect(page).toHaveURL(`/${nextMap.slug}`)
       await mapPage.waitForViewportReady()
       await expect(mapPage.marks).toHaveCount(marksFor(nextMap.id).length)
-      await expect(mapPage.getCompositionPreview(nextMap.slug)).toHaveCSS(
+      await expect(mapPage.getCompositionPreview(nextMap.slug).locator('img')).toHaveCSS(
         'view-transition-name',
         transitionName('map-composition', nextMap.slug)
       )
@@ -994,10 +1002,12 @@ test.describe('Map', () => {
 
       await secondButton.click()
       await expect(audio).toHaveCount(2)
-      const firstStatusBeforeSecondBuffering = await firstButton.getAttribute('data-status')
-      await audio.nth(1).dispatchEvent('waiting')
+      await audio.first().dispatchEvent('ended')
+      await expect(firstButton).toHaveAttribute('data-status', 'ended')
+      await expect(audio).toHaveCount(1)
+      await audio.dispatchEvent('waiting')
       await expect(secondButton).toHaveAttribute('data-status', 'buffering')
-      await expect(firstButton).toHaveAttribute('data-status', firstStatusBeforeSecondBuffering!)
+      await expect(firstButton).toHaveAttribute('data-status', 'ended')
     }
   )
 
