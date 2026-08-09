@@ -131,6 +131,7 @@ describe('MapView custom element', () => {
   })
 
   afterEach(() => {
+    vi.unstubAllGlobals()
     restoreDecode?.()
     wrapper.remove()
   })
@@ -175,7 +176,7 @@ describe('MapView custom element', () => {
     expect(el.hasAttribute('data-scene-ready')).toBe(false)
   })
 
-  it('reveals the scene explicitly and idempotently via revealScene()', async () => {
+  it('hands scene release off idempotently via revealScene()', async () => {
     const el = document.createElement('map-view') as MapView
     setLayers(el)
     wrapper.appendChild(el)
@@ -186,12 +187,12 @@ describe('MapView custom element', () => {
 
     el.revealScene()
     expect(world?.style.visibility).toBe('visible')
-    expect(el.getAttribute('data-scene-ready')).toBe('true')
+    expect(el.hasAttribute('data-scene-ready')).toBe(false)
 
     // Idempotent: repeated calls never throw nor reset the state.
     el.revealScene()
     expect(world?.style.visibility).toBe('visible')
-    expect(el.getAttribute('data-scene-ready')).toBe('true')
+    expect(el.hasAttribute('data-scene-ready')).toBe(false)
   })
 
   it('drops data-scene-ready when the element disconnects', async () => {
@@ -201,6 +202,7 @@ describe('MapView custom element', () => {
     await waitForReady(el)
 
     el.revealScene()
+    await new Promise((resolve) => setTimeout(resolve, 50))
     expect(el.hasAttribute('data-scene-ready')).toBe(true)
 
     el.remove()
@@ -216,8 +218,42 @@ describe('MapView custom element', () => {
 
     await waitForStatus(el, 'error')
 
-    expect(el.hasAttribute('data-ready')).toBe(false)
+    expect(el.hasAttribute('data-ready')).toBe(true)
     expect(el.hasAttribute('data-scene-ready')).toBe(false)
+  })
+
+  it('binds declared overlays before decode and releases only after two frames', async () => {
+    const decodes: Array<() => void> = []
+    const frames: FrameRequestCallback[] = []
+    HTMLImageElement.prototype.decode = function () {
+      return new Promise<void>((resolve) => decodes.push(resolve))
+    }
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn((callback: FrameRequestCallback) => {
+        frames.push(callback)
+        return frames.length
+      })
+    )
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    const el = document.createElement('map-view') as MapView
+    setLayers(el)
+    wrapper.appendChild(el)
+
+    expect(el.hasAttribute('data-ready')).toBe(true)
+    expect(el.svgLayer).not.toBeNull()
+    expect(el.markerLayer).not.toBeNull()
+    expect(el.imageWidth).toBe(800)
+    el.revealScene()
+    expect(frames).toHaveLength(0)
+
+    await drainDecodes(decodes)
+    expect(frames).toHaveLength(1)
+    frames[0]?.(0)
+    expect(el.hasAttribute('data-scene-ready')).toBe(false)
+    expect(frames).toHaveLength(2)
+    frames[1]?.(0)
+    expect(el.getAttribute('data-scene-ready')).toBe('true')
   })
 
   it('publishes initializing on connect and clears ready until composition settles', async () => {
@@ -237,8 +273,8 @@ describe('MapView custom element', () => {
     setLayers(el)
     wrapper.appendChild(el)
 
-    expect(el.getAttribute('data-composition-status')).toBe('initializing')
-    expect(el.hasAttribute('data-ready')).toBe(false)
+    expect(el.getAttribute('data-composition-status')).toBe('ready')
+    expect(el.hasAttribute('data-ready')).toBe(true)
 
     await drainDecodes(decodes)
     await waitForReady(el)
@@ -271,8 +307,8 @@ describe('MapView custom element', () => {
     expect(el.hasAttribute('data-ready')).toBe(false)
 
     wrapper.appendChild(el)
-    expect(el.getAttribute('data-composition-status')).toBe('initializing')
-    expect(el.hasAttribute('data-ready')).toBe(false)
+    expect(el.getAttribute('data-composition-status')).toBe('ready')
+    expect(el.hasAttribute('data-ready')).toBe(true)
 
     await drainDecodes(decodes)
     await waitForReady(el)
@@ -350,7 +386,7 @@ describe('MapView custom element', () => {
     el.addEventListener('map-composition-ready', ready)
     wrapper.appendChild(el)
 
-    await waitForReady(el)
+    await waitForStatus(el, 'degraded')
 
     expect(el.getAttribute('data-composition-status')).toBe('degraded')
     expect(el.querySelector('[data-map-layer="overlay"]')).toBeNull()
@@ -360,7 +396,7 @@ describe('MapView custom element', () => {
       })
     )
     expect((ready.mock.calls[0][0] as CustomEvent).detail).toEqual({
-      status: 'degraded'
+      status: 'ready'
     })
   })
 
@@ -374,7 +410,7 @@ describe('MapView custom element', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(el.hasAttribute('data-ready')).toBe(false)
+    expect(el.hasAttribute('data-ready')).toBe(true)
     expect(el.getAttribute('data-composition-status')).toBe('error')
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('Map image failed to decode')
     expect(el.querySelector('.map-skeleton')).toBeNull()
@@ -388,7 +424,7 @@ describe('MapView custom element', () => {
   it('publishes error with an accessible diagnostic when the base image has invalid dimensions', async () => {
     mockImageDecode(0, 0)
     const el = document.createElement('map-view') as MapView
-    setLayers(el)
+    el.setAttribute('map-src', TEST_IMAGE_SRC)
     const error = vi.fn()
     el.addEventListener('map-composition-error', error)
     wrapper.appendChild(el)
@@ -453,13 +489,13 @@ describe('MapView custom element', () => {
 
     decodes.slice(0, 2).forEach((resolve) => resolve())
     await Promise.resolve()
-    expect(ViewportEngineMock).not.toHaveBeenCalled()
+    expect(ViewportEngineMock).toHaveBeenCalledTimes(2)
 
     await drainDecodes(decodes, (resolve) => resolve())
     await waitForReady(el)
 
     expect(el.querySelectorAll('[data-map-layer]')).toHaveLength(2)
-    expect(ViewportEngineMock).toHaveBeenCalledTimes(1)
+    expect(ViewportEngineMock).toHaveBeenCalledTimes(2)
   })
 
   it('applies active effects unless reduced motion is requested without changing layer geometry', async () => {
@@ -648,22 +684,22 @@ describe('MapView custom element', () => {
     wrapper.appendChild(el)
     el.remove()
     wrapper.appendChild(el)
-    expect(el.getAttribute('data-composition-status')).toBe('initializing')
+    expect(el.getAttribute('data-composition-status')).toBe('ready')
 
     decodes[0]?.reject(new Error('stale failure'))
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(el.getAttribute('data-composition-status')).toBe('initializing')
-    expect(el.hasAttribute('data-ready')).toBe(false)
+    expect(el.getAttribute('data-composition-status')).toBe('ready')
+    expect(el.hasAttribute('data-ready')).toBe(true)
     expect(el.querySelector('[role="alert"]')).toBeNull()
-    expect(ViewportEngineMock).not.toHaveBeenCalled()
+    expect(ViewportEngineMock).toHaveBeenCalledTimes(2)
 
     await drainDecodes(decodes, (decode) => decode.resolve())
     await waitForReady(el)
 
     expect(el.getAttribute('data-composition-status')).toBe('ready')
     expect(el.hasAttribute('data-ready')).toBe(true)
-    expect(ViewportEngineMock).toHaveBeenCalledTimes(1)
+    expect(ViewportEngineMock).toHaveBeenCalledTimes(2)
   })
 
   it('throws when map-src is missing', () => {

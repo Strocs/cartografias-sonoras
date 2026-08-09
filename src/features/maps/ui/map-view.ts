@@ -69,6 +69,7 @@ export class MapView extends HTMLElement implements MapViewElement {
   private _world: HTMLDivElement | null = null
   private _worldFit = 1
   private _naturalSize: ViewportSize | null = null
+  private _declaredSize: ViewportSize | null = null
   private _visibleImg: HTMLImageElement | null = null
   private _hiddenImg: HTMLImageElement | null = null
   private _svgLayer: SVGSVGElement | null = null
@@ -77,6 +78,11 @@ export class MapView extends HTMLElement implements MapViewElement {
   private _zoomResizeObserver: ResizeObserver | null = null
   private _zoomAttributes: ZoomAttributes = {}
   private _mapTitle: string | null = null
+  private _overlayReady = false
+  private _baseReady = false
+  private _baseFailed = false
+  private _imagesSettled = false
+  private _frameId: number | null = null
 
   connectedCallback() {
     this._setStatus(COMPOSITION_STATUS.INITIALIZING)
@@ -100,12 +106,12 @@ export class MapView extends HTMLElement implements MapViewElement {
 
   /** Returns the natural width of the decoded map image. */
   get imageWidth(): number {
-    return this._visibleImg?.naturalWidth ?? 0
+    return this._visibleImg?.naturalWidth || this._declaredSize?.width || 0
   }
 
   /** Returns the natural height of the decoded map image. */
   get imageHeight(): number {
-    return this._visibleImg?.naturalHeight ?? 0
+    return this._visibleImg?.naturalHeight || this._declaredSize?.height || 0
   }
 
   /** Returns the current viewport scale (worldFit × engine factor). */
@@ -193,118 +199,60 @@ export class MapView extends HTMLElement implements MapViewElement {
 
   private async _initialize(layers: readonly MapLayer[], zoomAttributes: ZoomAttributes, lifecycle: number) {
     const hiddenImg = this._hiddenImg
-    if (hiddenImg === null || this._container === null) {
-      return
-    }
+    const world = this._world
+    const container = this._container
+    let [base, ...optionalLayers] = layers
+    if (hiddenImg === null || world === null || container === null || base === undefined) return
 
     try {
-      const [base, ...optionalLayers] = layers
-      if (!base) return
-      hiddenImg.src = base.src
-      try {
+      // Legacy single-image callers have no declared geometry. Keep their
+      // decode-derived dimensions while map compositions construct immediately.
+      if (this.getAttribute(MAP_LAYERS_ATTR) === null) {
+        hiddenImg.src = base.src
         await hiddenImg.decode()
-      } catch {
-        if (this._isCurrentLifecycle(lifecycle, hiddenImg)) {
-          this._fail(new Error('Map image failed to decode'), base)
+        if (!this._isCurrentLifecycle(lifecycle, hiddenImg)) return
+        if (hiddenImg.naturalWidth === 0 || hiddenImg.naturalHeight === 0) {
+          throw new Error(`Map image has invalid dimensions: ${hiddenImg.naturalWidth}x${hiddenImg.naturalHeight}`)
         }
-        return
+        base = { ...base, width: hiddenImg.naturalWidth, height: hiddenImg.naturalHeight }
       }
-
-      if (!this._isCurrentLifecycle(lifecycle, hiddenImg) || this._container === null) return
-
-      const { naturalWidth, naturalHeight } = hiddenImg
-      if (naturalWidth === 0 || naturalHeight === 0) {
-        throw new Error(`Map image has invalid dimensions: ${naturalWidth}x${naturalHeight}`)
-      }
-
-      const decodedBase = {
-        ...base,
-        width: naturalWidth,
-        height: naturalHeight
-      }
-
-      // The world carries the map at its natural pixel size.
-      const world = this._world
-      if (world === null) return
-      world.style.width = `${naturalWidth}px`
-      world.style.height = `${naturalHeight}px`
-      this._naturalSize = { width: naturalWidth, height: naturalHeight }
-
-      // The world self-fits into the container (contain, never enlarged). The
-      // interaction engine above operates in container space independently.
+      this._declaredSize = { width: base.width, height: base.height }
+      this._naturalSize = this._declaredSize
+      world.style.width = `${base.width}px`
+      world.style.height = `${base.height}px`
       const worldFit = this._computeWorldFit()
       this._worldFit = worldFit
       this._applyWorldFit(world, worldFit)
 
       this._visibleImg = createImageLayer(
         world,
-        decodedBase,
-        decodedBase,
+        base,
+        base,
         false,
         this._mapTitle === null ? undefined : `Mapa de ${this._mapTitle}`
       )
-      await this._visibleImg.decode()
-
-      const settled = await Promise.all(
-        optionalLayers.map(async (layer) => {
-          const image = document.createElement('img')
-          image.src = layer.src
-          try {
-            await image.decode()
-            return { layer, failed: false }
-          } catch {
-            return { layer, failed: true }
-          }
-        })
-      )
-      if (!this._isCurrentLifecycle(lifecycle, hiddenImg) || this._world === null) return
-
-      const failedLayers = settled.filter((result) => result.failed)
-      for (const { layer } of failedLayers) {
-        this._reportFailure(layer, `Map layer "${layer.id}" failed to decode`)
-      }
       const effectContext = this._renderContext()
       const reducedMotion = this._prefersReducedMotion()
-      const visibleLayers: HTMLImageElement[] = []
-      for (const { layer, failed } of settled) {
-        if (!failed) {
-          visibleLayers.push(
-            createImageLayer(this._world, layer, decodedBase, enablesEffect(layer, effectContext, reducedMotion))
-          )
-        }
-      }
-      await Promise.all(visibleLayers.map((image) => image.decode()))
-
-      this._svgLayer = createSvgLayer(this._world)
-      this._markerLayer = createMarkerLayer(this._world)
+      const optionalImages = optionalLayers.map((layer) => ({
+        layer,
+        image: createImageLayer(world, layer, base, enablesEffect(layer, effectContext, reducedMotion))
+      }))
+      this._svgLayer = createSvgLayer(world)
+      this._markerLayer = createMarkerLayer(world)
 
       const viewportWidth = this._viewport?.clientWidth ?? 0
-
       const startFactor = resolveZoomFactor(zoomAttributes.startScale ?? DEFAULT_START_ZOOM_FACTOR, viewportWidth)
       const minFactor = resolveZoomFactor(zoomAttributes.minScale ?? DEFAULT_MIN_ZOOM_FACTOR, viewportWidth)
       const maxFactor = resolveZoomFactor(zoomAttributes.maxScale ?? DEFAULT_MAX_ZOOM_FACTOR, viewportWidth)
-
-      // Input-surface interaction: zoom factors are relative to the world at
-      // fit (1x = the world self-fits the viewport). The engine receives the
-      // real image footprint (natural × worldFit) as its content so strict pan
-      // bounds reflect the letterbox margins at fit scale instead of zeroing
-      // out, and it centres via its state. The `.map-panzoom` container stays a
-      // static, viewport-sized interaction surface; the engine's transform is
-      // written to the `.map-world` child, folding worldFit into the emitted
-      // scale so the visible scale equals `state.scale × worldFit`.
-      this._engine = new ViewportEngine(this._container, {
-        content: {
-          width: naturalWidth * worldFit,
-          height: naturalHeight * worldFit
-        },
-        transformTarget: this._world,
+      this._engine = new ViewportEngine(container, {
+        content: { width: base.width * worldFit, height: base.height * worldFit },
+        transformTarget: world,
         transformScaleFactor: worldFit,
         startScale: startFactor,
         minScale: minFactor,
         maxScale: maxFactor,
         zoomStep: 0.3
       })
-
       this._watchZoomBreakpoints(zoomAttributes)
 
       this._viewportChangeHandler = (event: Event) => {
@@ -330,16 +278,44 @@ export class MapView extends HTMLElement implements MapViewElement {
         )
       }
 
-      this._container.addEventListener('viewport-change', this._viewportChangeHandler)
-
-      const status = failedLayers.length === 0 ? COMPOSITION_STATUS.READY : COMPOSITION_STATUS.DEGRADED
-      this._setStatus(status)
+      container.addEventListener('viewport-change', this._viewportChangeHandler)
+      this._setStatus(COMPOSITION_STATUS.READY)
       this.dispatchEvent(
         new CustomEvent('map-composition-ready', {
           bubbles: true,
-          detail: { status }
+          detail: { status: COMPOSITION_STATUS.READY }
         })
       )
+
+      const outcomes = await Promise.all([
+        this._visibleImg.decode().then(
+          () => ({ layer: base, failed: false }),
+          () => ({ layer: base, failed: true })
+        ),
+        ...optionalImages.map(({ layer, image }) =>
+          image.decode().then(
+            () => ({ layer, failed: false, image }),
+            () => ({ layer, failed: true, image })
+          )
+        )
+      ])
+      if (!this._isCurrentLifecycle(lifecycle, hiddenImg)) return
+
+      const [baseOutcome, ...optionalOutcomes] = outcomes
+      for (const outcome of optionalOutcomes) {
+        if (!outcome.failed) continue
+        outcome.image.parentElement?.remove()
+        this._reportFailure(outcome.layer, `Map layer "${outcome.layer.id}" failed to decode`)
+      }
+      this._imagesSettled = true
+      this._baseFailed = baseOutcome?.failed ?? true
+      if (this._baseFailed) {
+        this._fail(new Error('Map image failed to decode'), base, true)
+        return
+      }
+      this._baseReady = true
+      if (optionalOutcomes.some((outcome) => outcome.failed)) this._setStatus(COMPOSITION_STATUS.DEGRADED)
+      this._scheduleRelease(lifecycle)
     } catch (error) {
       if (!this._isCurrentLifecycle(lifecycle, hiddenImg)) return
       this._fail(this._toError(error, 'Map initialization failed'))
@@ -437,7 +413,8 @@ export class MapView extends HTMLElement implements MapViewElement {
    */
   revealScene(): void {
     this._setWorldVisible()
-    this.setAttribute(SCENE_READY_ATTR, 'true')
+    this._overlayReady = true
+    this._scheduleRelease(this._lifecycle)
   }
 
   /** Failure fallback: never leave the live world permanently hidden. */
@@ -447,11 +424,36 @@ export class MapView extends HTMLElement implements MapViewElement {
     world.style.visibility = 'visible'
   }
 
-  private _fail(error: Error, layer?: MapLayer): void {
+  private _scheduleRelease(lifecycle: number): void {
+    if (
+      !this._overlayReady ||
+      !this._baseReady ||
+      !this._imagesSettled ||
+      this._baseFailed ||
+      this._frameId !== null ||
+      this.hasAttribute(SCENE_READY_ATTR)
+    ) {
+      return
+    }
+    const hiddenImg = this._hiddenImg
+    if (hiddenImg === null) return
+
+    this._frameId = requestAnimationFrame(() => {
+      if (!this._isCurrentLifecycle(lifecycle, hiddenImg) || this.hasAttribute(SCENE_READY_ATTR)) return
+      this._frameId = requestAnimationFrame(() => {
+        this._frameId = null
+        if (!this._isCurrentLifecycle(lifecycle, hiddenImg) || this._baseFailed) return
+        this.setAttribute(SCENE_READY_ATTR, 'true')
+      })
+    })
+  }
+
+  private _fail(error: Error, layer?: MapLayer, keepComposition = false): void {
     if (!this.isConnected) return
 
-    this._setWorldVisible()
+    if (!keepComposition) this._setWorldVisible()
     this._setStatus(COMPOSITION_STATUS.ERROR)
+    if (keepComposition) this.setAttribute(READY_ATTR, 'true')
     this.dispatchEvent(
       new CustomEvent('viewport-error', {
         bubbles: true,
@@ -596,6 +598,8 @@ export class MapView extends HTMLElement implements MapViewElement {
 
   private _cleanup() {
     this._lifecycle += 1
+    if (this._frameId !== null) cancelAnimationFrame(this._frameId)
+    this._frameId = null
     if (this._viewportChangeHandler !== null && this._container !== null) {
       this._container.removeEventListener('viewport-change', this._viewportChangeHandler)
       this._viewportChangeHandler = null
@@ -612,10 +616,15 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._visibleImg = null
     this._hiddenImg = null
     this._naturalSize = null
+    this._declaredSize = null
     this._container = null
     this._world = null
     this._worldFit = 1
     this._viewport = null
+    this._overlayReady = false
+    this._baseReady = false
+    this._baseFailed = false
+    this._imagesSettled = false
     this.querySelectorAll('img').forEach((image) => image.removeAttribute('src'))
     this.replaceChildren()
 
