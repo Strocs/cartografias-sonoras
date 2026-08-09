@@ -104,6 +104,28 @@ describe('bindMapPage', () => {
     expect(secondUnbind).not.toHaveBeenCalled()
   })
 
+  it('ignores a stale map readiness event after ClientRouter replaces the page', () => {
+    const staleMapView = createMapView(false)
+    bindMapPage()
+
+    staleMapView.remove()
+    document.getElementById('map-data')?.remove()
+    const dataScript = document.createElement('script')
+    dataScript.id = 'map-data'
+    dataScript.type = 'application/json'
+    dataScript.textContent = JSON.stringify(MAP_DATA)
+    document.body.appendChild(dataScript)
+    const currentMapView = createMapView(false)
+
+    bindMapPage()
+    staleMapView.dispatchEvent(new CustomEvent('map-composition-ready', { bubbles: true }))
+    expect(bindMapViewMock).not.toHaveBeenCalled()
+
+    currentMapView.dispatchEvent(new CustomEvent('map-composition-ready', { bubbles: true }))
+    expect(bindMapViewMock).toHaveBeenCalledOnce()
+    expect(bindMapViewMock).toHaveBeenCalledWith(expect.objectContaining({ mapView: currentMapView }))
+  })
+
   it('does not bind when the map view element is absent', () => {
     const dispose = bindMapPage()
 

@@ -8,6 +8,7 @@ export function installHoverPreviewController(): void {
 
   installed = true
   document.addEventListener('pointerenter', preloadHoveredCard, true)
+  document.addEventListener('focusin', preloadHoveredCard)
 }
 
 function preloadHoveredCard(event: Event): void {

@@ -1,5 +1,6 @@
 ---
 import MapCompositionPreview from './MapCompositionPreview.astro'
+import { getMapDestinationPreview } from '../lib/destinationPreview'
 
 import type { Map } from '../domain/types'
 
@@ -10,7 +11,11 @@ interface Props {
 }
 
 const { maps, activeSlug, class: className } = Astro.props
-const inactiveMaps = maps.filter((map) => map.slug !== activeSlug)
+const inactiveMaps = await Promise.all(
+  maps
+    .filter((map) => map.slug !== activeSlug)
+    .map(async (map) => ({ map, destinationPreview: await getMapDestinationPreview(map) }))
+)
 ---
 
 <aside
@@ -19,11 +24,14 @@ const inactiveMaps = maps.filter((map) => map.slug !== activeSlug)
 >
   <div class="flex h-full flex-row gap-4 overflow-x-auto md:flex-col md:overflow-visible">
     {
-      inactiveMaps.map((map) => (
+      inactiveMaps.map(({ map, destinationPreview }) => (
         <a
           href={`/${map.slug}`}
           class="group relative flex h-full flex-1 flex-col overflow-hidden rounded-xl border border-secondary-sand bg-charcoal shadow-lg md:pointer-events-auto"
           data-rail-card
+          data-preview-src={destinationPreview.src}
+          data-preview-srcset={destinationPreview.srcset}
+          data-preview-sizes={destinationPreview.sizes}
         >
           <div
             class="absolute inset-0 z-10 flex items-center justify-center p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100"

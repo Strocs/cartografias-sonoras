@@ -8,6 +8,12 @@ const PROFILE = {
   sizes: '100vw'
 } as const
 
+const RAIL_THUMBNAIL_PROFILE = {
+  src: '/_astro/preview-620.hash.webp',
+  srcset: '/_astro/preview-620.hash.webp 620w',
+  sizes: '(min-width: 768px) 9rem, 7rem'
+} as const
+
 function createMapCard(profile = PROFILE): HTMLAnchorElement {
   const card = document.createElement('a')
   card.dataset.previewSrc = profile.src
@@ -19,6 +25,10 @@ function createMapCard(profile = PROFILE): HTMLAnchorElement {
 
 function enter(card: Element): void {
   card.dispatchEvent(new Event('pointerenter', { bubbles: false }))
+}
+
+function focus(card: Element): void {
+  card.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
 }
 
 function previewPreloads(): HTMLLinkElement[] {
@@ -47,6 +57,28 @@ describe('installHoverPreviewController', () => {
     })
     expect(previewPreloads()[0]?.getAttribute('imagesrcset')).toBe(PROFILE.srcset)
     expect(previewPreloads()[0]?.getAttribute('imagesizes')).toBe(PROFILE.sizes)
+  })
+
+  it('preloads the destination profile on keyboard focus, not the 620w rail thumbnail profile', () => {
+    installHoverPreviewController()
+    const card = createMapCard(PROFILE)
+
+    focus(card)
+
+    expect(previewPreloads()).toHaveLength(1)
+    expect(previewPreloads()[0]).toMatchObject({
+      href: new URL(PROFILE.src, window.location.href).href,
+      imageSrcset: PROFILE.srcset,
+      imageSizes: PROFILE.sizes
+    })
+    expect(previewPreloads()[0]?.getAttribute('imagesrcset')).not.toBe(RAIL_THUMBNAIL_PROFILE.srcset)
+  })
+
+  it('does not preload a destination before pointer or keyboard intent', () => {
+    installHoverPreviewController()
+    createMapCard()
+
+    expect(previewPreloads()).toHaveLength(0)
   })
 
   it('ignores incomplete card metadata', () => {

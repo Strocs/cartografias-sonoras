@@ -65,7 +65,7 @@ const mapData = {
           map-layers={JSON.stringify(map.images)}
           map-title={map.title}
           render-context="active"
-          class="min-h-0 min-w-0 flex-1"
+          class="absolute inset-0 z-20 block size-full bg-transparent"
           min-zoom='{"base":1,"md":0.8}'
           max-zoom='{"base":3.2,"md":1.5}'
         >
@@ -112,5 +112,10 @@ const mapData = {
   .map-wrapper:has(map-view[data-scene-ready]) [data-map-composition-preview] {
     opacity: 0;
     pointer-events: none;
+  }
+
+  .map-wrapper map-view,
+  .map-wrapper map-view .map-world {
+    background: transparent;
   }
 </style>
