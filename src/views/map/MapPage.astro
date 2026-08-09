@@ -6,6 +6,8 @@ import HeadphonesNotice from '@features/maps/ui/HeadphonesNotice.astro'
 import { AudioPool } from '@shared/lib/audio-engine'
 import { AudioBottomPlayer } from '@features/sound-pieces/ui/AudioBottomPlayer.tsx'
 import { MapControls } from '@features/maps/ui/MapControls.tsx'
+import { Image } from 'astro:assets'
+import separator from '@assets/site/separator.png'
 
 import '@features/sounds/ui/mark-styles.css'
 import '@features/sounds/ui/sound-button-styles.css'
@@ -74,25 +76,34 @@ const mapData = {
       </div>
       <MapControls client:visible mapViewId="main-map" className="md:pointer-events-auto" />
     </div>
-    <RightRail maps={maps} activeSlug={map.slug} class="shrink-0" />
-  </div>
-
-  <div
-    class="pointer-events-none absolute right-4 bottom-38 left-4 z-1001 flex flex-col gap-3 md:top-4 md:right-8 md:bottom-auto md:left-8 md:flex-row md:items-end md:justify-between"
-  >
-    <h2
-      class="block pb-4 text-center font-cormorant text-xl font-bold text-secondary-sand uppercase md:pb-0 md:text-start md:text-3xl"
-      transition:name={`map-title-${map.slug}`}
-    >
-      {map.title}
-    </h2>
-    {
-      soundPieceEnabled && (
-        <div class="pointer-events-auto w-full max-w-2xl md:w-auto">
-          <AudioBottomPlayer client:idle soundPiece={soundPiece} enabled={soundPieceEnabled} />
-        </div>
-      )
-    }
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 z-1001 flex flex-col md:static md:contents">
+      <div
+        class="order-1 flex flex-col gap-3 px-4 pb-2 md:absolute md:top-4 md:right-8 md:bottom-auto md:left-8 md:flex-row md:items-end md:justify-between md:px-0 md:pb-0"
+      >
+        <h2
+          class="block pb-1 text-center font-cormorant text-xl font-bold text-secondary-sand uppercase md:pb-0 md:text-start md:text-3xl"
+          transition:name={`map-title-${map.slug}`}
+        >
+          {map.title}
+        </h2>
+        {
+          soundPieceEnabled && (
+            <div class="pointer-events-auto w-full max-w-2xl md:w-auto">
+              <AudioBottomPlayer client:idle soundPiece={soundPiece} enabled={soundPieceEnabled} />
+            </div>
+          )
+        }
+      </div>
+      <Image
+        src={separator}
+        width={separator.width}
+        height={separator.height}
+        alt=""
+        class="order-2 h-4 w-full rotate-180 object-contain md:order-none md:hidden"
+        aria-hidden="true"
+      />
+      <RightRail maps={maps} activeSlug={map.slug} class="order-3 shrink-0 md:order-none" />
+    </div>
   </div>
 
   <AudioPool client:idle sounds={audioPoolSounds} soundPiece={audioPoolPiece} />

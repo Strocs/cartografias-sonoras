@@ -6,7 +6,7 @@ import tailwindcss from 'eslint-plugin-tailwindcss'
 
 export default defineConfig([
   {
-    ignores: ['.astro/', 'dist/', 'pnpm-lock.yaml', 'node_modules/']
+    ignores: ['.astro/', '.vercel/', 'dist/', 'pnpm-lock.yaml', 'node_modules/']
   },
   // Base config: all files get recommended rules
   {

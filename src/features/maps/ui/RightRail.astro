@@ -19,7 +19,7 @@ const inactiveMaps = await Promise.all(
 ---
 
 <aside
-  class={`absolute right-0 bottom-0 z-100 shrink-0 px-4 py-6 md:pointer-events-none ${className ?? ''}`}
+  class={`relative order-2 w-full shrink-0 px-4 pt-2 pb-6 pointer-events-auto md:absolute md:right-0 md:bottom-0 md:w-auto md:pointer-events-none ${className ?? ''}`}
   data-testid="right-rail"
 >
   <div class="flex w-full flex-row items-end gap-8">
@@ -34,19 +34,21 @@ const inactiveMaps = await Promise.all(
           data-preview-srcset={destinationPreview.srcset}
           data-preview-sizes={destinationPreview.sizes}
         >
-          <div class="absolute right-0 bottom-0 left-0 z-10" data-rail-title>
+          <div class="aspect-[4/3] w-full overflow-hidden">
+            <MapCompositionPreview
+              map={map}
+              loading="eager"
+              class="size-full"
+              imageClass="size-full object-contain transition-all duration-300 group-hover:scale-110"
+              widths={[620]}
+              sizes="(min-width: 768px) 9rem, 7rem"
+            />
+          </div>
+          <div class="mt-2" data-rail-title>
             <span class="block text-center font-cormorant leading-none font-bold tracking-wide text-canvas">
               {map.title}
             </span>
           </div>
-          <MapCompositionPreview
-            map={map}
-            loading="eager"
-            class="size-full"
-            imageClass="object-contain aspect-auto transition-all duration-300 group-hover:scale-110"
-            widths={[620]}
-            sizes="(min-width: 768px) 9rem, 7rem"
-          />
         </a>
       ))
     }

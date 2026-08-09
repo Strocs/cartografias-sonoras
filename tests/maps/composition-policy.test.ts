@@ -34,11 +34,11 @@ describe('map composition policy', () => {
     expect(previewSource).toContain('[data-map-composition-preview].map-composition-destination')
     expect(previewSource).toContain('max-width: 100%')
     expect(previewSource).toContain('max-height: 100%')
-    expect(mapCardSource).toContain(
-      'imageClass="size-full transition-transform duration-600 group-hover:scale-110 object-contain"'
+    expect(mapCardSource).toMatch(
+      /imageClass="(?=[^"]*\bsize-full\b)(?=[^"]*\bobject-contain\b)(?=[^"]*\bgroup-hover:scale-110\b)[^"]*"/
     )
-    expect(rightRailSource).toContain(
-      'imageClass="object-contain aspect-auto transition-all duration-300 group-hover:scale-110"'
+    expect(rightRailSource).toMatch(
+      /imageClass="(?=[^"]*\bsize-full\b)(?=[^"]*\bobject-contain\b)(?=[^"]*\bgroup-hover:scale-110\b)[^"]*"/
     )
   })
 
