@@ -24,6 +24,7 @@ export interface MapViewBindingOptions {
   paths: Path[]
   imgWidth: number
   imgHeight: number
+  transitionFinished: Promise<void>
 }
 
 /**
@@ -44,13 +45,22 @@ export interface MapViewBindingOptions {
  *   created every mark, sound button, and path, the live world is revealed via
  *   `mapView.revealScene()` — the live map never becomes visible early.
  */
-export function bindMapView({ mapView, marks, paths, imgWidth, imgHeight }: MapViewBindingOptions): () => void {
+export function bindMapView({
+  mapView,
+  marks,
+  paths,
+  imgWidth,
+  imgHeight,
+  transitionFinished
+}: MapViewBindingOptions): () => void {
   const markerLayer = mapView.markerLayer
   const svgLayer = mapView.svgLayer
 
   if (markerLayer === null || svgLayer === null) {
     throw new Error('<map-view> layers are not ready')
   }
+
+  mapView.setTransitionFinished(transitionFinished)
 
   const svg = svgLayer
   const imageWidth = mapView.imageWidth || imgWidth

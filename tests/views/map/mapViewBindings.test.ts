@@ -53,6 +53,7 @@ function createStubMapView(): MapViewElement {
   Object.defineProperty(element, 'imageHeight', { value: 600, configurable: true })
   Object.defineProperty(element, 'scaleFactor', { value: 1, configurable: true })
   element.revealScene = vi.fn()
+  element.setTransitionFinished = vi.fn()
 
   return element
 }
@@ -76,7 +77,14 @@ describe('bindMapView mark engagement', () => {
 
   it('keeps the mark engaged while its sound is BUFFERING', () => {
     const mapView = createStubMapView()
-    unbind = bindMapView({ mapView, marks: [mark], paths: [], imgWidth: 800, imgHeight: 600 })
+    unbind = bindMapView({
+      mapView,
+      marks: [mark],
+      paths: [],
+      imgWidth: 800,
+      imgHeight: 600,
+      transitionFinished: Promise.resolve()
+    })
     const group = findMarkGroup(mapView)
 
     setSoundStatus(mark.sounds[0]!.id, AUDIO_STATUS.PLAYING)
@@ -88,7 +96,14 @@ describe('bindMapView mark engagement', () => {
 
   it('drops the mark engagement once the only sound pauses', () => {
     const mapView = createStubMapView()
-    unbind = bindMapView({ mapView, marks: [mark], paths: [], imgWidth: 800, imgHeight: 600 })
+    unbind = bindMapView({
+      mapView,
+      marks: [mark],
+      paths: [],
+      imgWidth: 800,
+      imgHeight: 600,
+      transitionFinished: Promise.resolve()
+    })
     const group = findMarkGroup(mapView)
 
     setSoundStatus(mark.sounds[0]!.id, AUDIO_STATUS.BUFFERING)
@@ -115,7 +130,14 @@ describe('bindMapView mark engagement', () => {
       endMarkId: mark.id
     }
 
-    unbind = bindMapView({ mapView, marks: [mark], paths: [path], imgWidth: 800, imgHeight: 600 })
+    unbind = bindMapView({
+      mapView,
+      marks: [mark],
+      paths: [path],
+      imgWidth: 800,
+      imgHeight: 600,
+      transitionFinished: Promise.resolve()
+    })
 
     expect(revealScene).toHaveBeenCalledOnce()
   })

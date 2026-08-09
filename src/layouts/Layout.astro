@@ -39,6 +39,8 @@ const path = Astro.url.pathname
 
 <script>
   import { installHoverPreviewController } from '@features/maps/ui/hoverPreviewController'
+  import { installViewTransitionLifecycle } from '@shared/lib/view-transition-lifecycle'
 
   installHoverPreviewController()
+  installViewTransitionLifecycle()
 </script>

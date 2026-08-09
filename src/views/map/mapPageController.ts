@@ -1,4 +1,5 @@
 import { bindMapView } from './mapViewBindings'
+import { getActiveViewTransitionFinished } from '@shared/lib/view-transition-lifecycle'
 
 import type { MapViewElement } from '@features/maps/ui/map-view'
 import type { Path } from '@features/paths/domain/types'
@@ -39,6 +40,7 @@ export function bindMapPage(): () => void {
 
   const mapView = document.querySelector<HTMLElement>(MAP_VIEW_SELECTOR)
   const data = readMapPageData()
+  const transitionFinished = getActiveViewTransitionFinished()
   if (mapView === null || data === null) {
     return () => undefined
   }
@@ -51,6 +53,7 @@ export function bindMapPage(): () => void {
     bound = true
     disposeBinding = bindMapView({
       mapView: mapView as MapViewElement,
+      transitionFinished,
       ...data
     })
   }

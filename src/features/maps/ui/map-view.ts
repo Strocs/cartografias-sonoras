@@ -25,6 +25,7 @@ export interface MapViewElement extends HTMLElement {
    * complete. Idempotent — safe to call from multiple bindings.
    */
   revealScene(): void
+  setTransitionFinished(transitionFinished: Promise<void>): void
 }
 
 const MAP_SRC_ATTR = 'map-src'
@@ -82,6 +83,7 @@ export class MapView extends HTMLElement implements MapViewElement {
   private _baseReady = false
   private _baseFailed = false
   private _imagesSettled = false
+  private _transitionFinished = false
   private _frameId: number | null = null
 
   connectedCallback() {
@@ -201,7 +203,7 @@ export class MapView extends HTMLElement implements MapViewElement {
     const hiddenImg = this._hiddenImg
     const world = this._world
     const container = this._container
-    let [base, ...optionalLayers] = layers
+    const [base, ...optionalLayers] = layers
     if (hiddenImg === null || world === null || container === null || base === undefined) return
 
     try {
@@ -412,21 +414,38 @@ export class MapView extends HTMLElement implements MapViewElement {
    * the live map is visible before the overlays exist. Idempotent.
    */
   revealScene(): void {
-    this._setWorldVisible()
     this._overlayReady = true
+    this._setWorldVisible()
     this._scheduleRelease(this._lifecycle)
+  }
+
+  setTransitionFinished(transitionFinished: Promise<void>): void {
+    const lifecycle = this._lifecycle
+    this._transitionFinished = false
+    void transitionFinished.then(
+      () => this._finishTransition(lifecycle),
+      () => this._finishTransition(lifecycle)
+    )
+  }
+
+  private _finishTransition(lifecycle: number): void {
+    if (!this.isConnected || this._lifecycle !== lifecycle) return
+    this._transitionFinished = true
+    this._setWorldVisible()
+    this._scheduleRelease(lifecycle)
   }
 
   /** Failure fallback: never leave the live world permanently hidden. */
   private _setWorldVisible(): void {
     const world = this._world
-    if (world === null) return
+    if (world === null || !this._overlayReady || !this._transitionFinished) return
     world.style.visibility = 'visible'
   }
 
   private _scheduleRelease(lifecycle: number): void {
     if (
       !this._overlayReady ||
+      !this._transitionFinished ||
       !this._baseReady ||
       !this._imagesSettled ||
       this._baseFailed ||
@@ -625,6 +644,7 @@ export class MapView extends HTMLElement implements MapViewElement {
     this._baseReady = false
     this._baseFailed = false
     this._imagesSettled = false
+    this._transitionFinished = false
     this.querySelectorAll('img').forEach((image) => image.removeAttribute('src'))
     this.replaceChildren()
 

@@ -185,14 +185,34 @@ describe('MapView custom element', () => {
     const world = el.querySelector<HTMLElement>('.map-world')
     expect(world?.style.visibility).toBe('hidden')
 
+    let finishTransition!: () => void
+    el.setTransitionFinished(new Promise<void>((resolve) => (finishTransition = resolve)))
     el.revealScene()
-    expect(world?.style.visibility).toBe('visible')
+    expect(world?.style.visibility).toBe('hidden')
     expect(el.hasAttribute('data-scene-ready')).toBe(false)
 
+    finishTransition()
+    await Promise.resolve()
+    expect(world?.style.visibility).toBe('visible')
+
     // Idempotent: repeated calls never throw nor reset the state.
+    el.setTransitionFinished(Promise.resolve())
     el.revealScene()
     expect(world?.style.visibility).toBe('visible')
     expect(el.hasAttribute('data-scene-ready')).toBe(false)
+  })
+
+  it('releases the world when the transition is rejected', async () => {
+    const el = document.createElement('map-view') as MapView
+    setLayers(el)
+    wrapper.appendChild(el)
+    await waitForReady(el)
+
+    el.setTransitionFinished(Promise.reject(new Error('transition aborted')))
+    el.revealScene()
+    await Promise.resolve()
+
+    expect(el.querySelector<HTMLElement>('.map-world')?.style.visibility).toBe('visible')
   })
 
   it('invalidates pending release frames across disconnect and reconnect', async () => {
@@ -203,7 +223,9 @@ describe('MapView custom element', () => {
     wrapper.appendChild(el)
     await waitForReady(el)
     await new Promise((resolve) => setTimeout(resolve, 0))
+    el.setTransitionFinished(Promise.resolve())
     el.revealScene()
+    await Promise.resolve()
     expect(frames).toHaveLength(1)
     frames[0]?.(0)
     expect(frames).toHaveLength(2)
@@ -248,7 +270,15 @@ describe('MapView custom element', () => {
     expect(el.svgLayer).not.toBeNull()
     expect(el.markerLayer).not.toBeNull()
     expect(el.imageWidth).toBe(800)
+    let finishTransition!: () => void
+    el.setTransitionFinished(new Promise<void>((resolve) => (finishTransition = resolve)))
     el.revealScene()
+    expect(frames).toHaveLength(0)
+
+    finishTransition()
+    await Promise.resolve()
+    expect(el.querySelector<HTMLElement>('.map-world')?.style.visibility).toBe('visible')
+    expect(el.hasAttribute('data-scene-ready')).toBe(false)
     expect(frames).toHaveLength(0)
 
     await drainDecodes(decodes)

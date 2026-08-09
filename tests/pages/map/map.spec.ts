@@ -1158,17 +1158,38 @@ test.describe('Map', () => {
     { tag: ['@critical', '@e2e', '@NOTICE-E2E-001'] },
     async ({ page }) => {
       const mapPage = new MapPage(page)
+      const homePage = new HomePage(page)
       const firstMap = mapFixtures[0]
       const nextMap = mapFixtures[1]
 
-      // Raw navigation: MapPage.goto dismisses the notice for other tests, so
-      // the first-visit state must be asserted without that helper.
-      await page.goto(`/${firstMap.slug}`)
+      await homePage.goto()
+      const destinationTextOpacity = page.evaluate(
+        () =>
+          new Promise<string>((resolve) => {
+            document.addEventListener(
+              'astro:after-swap',
+              () => {
+                const text = document.querySelector<HTMLElement>('[data-headphones-notice-text]')
+                resolve(text ? getComputedStyle(text).opacity : 'missing')
+              },
+              { once: true }
+            )
+          })
+      )
+      await homePage.getMapCard(firstMap.title).click()
+      await expect(page).toHaveURL(`/${firstMap.slug}`)
 
       const notice = page.locator('#headphones-notice')
       await expect(notice).toBeVisible()
       await expect(notice).toContainText('Se recomienda el uso de audífonos')
+      const noticeText = notice.locator('[data-headphones-notice-text]')
+      await expect.poll(() => destinationTextOpacity).toBe('0')
       await expect.poll(() => notice.evaluate((element) => getComputedStyle(element).opacity)).toBe('1')
+
+      await noticeText.evaluate(async (element) => {
+        await Promise.all(element.getAnimations().map((animation) => animation.finished))
+      })
+      await expect(noticeText).toHaveCSS('opacity', '1')
 
       // Tapping anywhere on the overlay dismisses it and persists the flag.
       await notice.click()
@@ -1178,7 +1199,7 @@ test.describe('Map', () => {
         .toBe('dismissed')
 
       // Navigating to another map never shows the notice again.
-      await page.goto(`/${nextMap.slug}`)
+      await mapPage.getRailLink(nextMap.slug).click()
       await expect(page.locator('#headphones-notice')).toHaveCount(0)
       await expect(mapPage.viewport).toHaveAttribute('data-ready', 'true')
     }
