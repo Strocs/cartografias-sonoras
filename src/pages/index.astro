@@ -39,7 +39,7 @@ const title = 'Cartografías Sensoriales'
       <span class="block text-sm font-light text-secondary-sand/80">Se recomienda el uso de audífonos</span>
     </h3>
     <section aria-label="Cartografías">
-      <div class="mx-auto flex gap-8 flex-col md:flex-row md:gap-0 items-center justify-center">
+      <div class="mx-auto flex flex-col items-center justify-center gap-8 md:flex-row md:gap-0">
         <Image
           src={separator}
           width={separator.width}
@@ -49,19 +49,25 @@ const title = 'Cartografías Sensoriales'
           aria-hidden="true"
         />
         {
-        MAPS_DATA.map((map, index) => {
-          const isLast = index === MAPS_DATA.length - 1
-          const isSecond = index === 1
+          MAPS_DATA.map((map, index) => {
+            const isLast = index === MAPS_DATA.length - 1
+            const isSecond = index === 1
             return (
+              <>
                 <MapCard map={map} loading="eager" />
                 <Image
                   src={separator}
                   width={separator.width}
                   height={separator.height}
                   alt=""
-                  class:list={['h-fit w-full md:w-52 -mx-12', isLast && 'md:hidden' , isSecond ? 'md:-rotate-90' : 'md:rotate-90']}
+                  class:list={[
+                    '-mx-12 h-fit w-full md:w-52',
+                    isLast && 'md:hidden',
+                    isSecond ? 'md:-rotate-90' : 'md:rotate-90'
+                  ]}
                   aria-hidden="true"
                 />
+              </>
             )
           })
         }
