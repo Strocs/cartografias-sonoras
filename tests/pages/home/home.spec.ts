@@ -4,6 +4,8 @@ import { mapFixtures } from '../../fixtures/maps'
 import { HomePage } from './home-page'
 
 test.describe('Home', () => {
+  test.describe.configure({ mode: 'serial' })
+
   test('home page loads', { tag: ['@critical', '@e2e'] }, async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
@@ -61,7 +63,8 @@ test.describe('Home', () => {
         try {
           const homePage = new HomePage(page)
           await homePage.goto()
-          await page.waitForLoadState('networkidle')
+          await expect(homePage.mapCards).toHaveCount(mapFixtures.length)
+          await expect(homePage.compositionPreviews).toHaveCount(mapFixtures.length)
           const serializedProfile = await homePage.getMapCard(homePage.firstMapTitle).evaluate((card) => ({
             src: card.getAttribute('data-preview-src'),
             srcset: card.getAttribute('data-preview-srcset'),

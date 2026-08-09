@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type CDPSession, type Page } from '@playwright/test'
 
 import { mapCompositionFixtures } from '../../fixtures/map-composition'
 import { mapFixtures } from '../../fixtures/maps'
@@ -11,6 +11,101 @@ import { MapPage } from './map-page'
 function marksFor(mapId: number) {
   return MARKS.filter((mark) => mark.mapId === mapId)
 }
+
+interface NetworkRequestEvent {
+  requestId: string
+  request: { url: string }
+}
+
+interface NetworkResponseEvent {
+  requestId: string
+  response: { fromDiskCache?: boolean; fromPrefetchCache?: boolean; fromServiceWorker?: boolean }
+}
+
+interface NetworkFinishedEvent {
+  requestId: string
+  encodedDataLength: number
+}
+
+interface CacheCandidateEvidence {
+  servedFromCache: boolean
+  response?: NetworkResponseEvent['response']
+  encodedDataLength?: number
+}
+
+class ChromiumNetworkTrace {
+  private readonly requests: Array<NetworkRequestEvent & { sequence: number }> = []
+  private readonly servedFromCache = new Set<string>()
+  private readonly responses = new Map<string, NetworkResponseEvent['response']>()
+  private readonly finished = new Map<string, number>()
+  private sequence = 0
+
+  constructor(private readonly session: CDPSession) {}
+
+  async enable(cacheDisabled: boolean): Promise<void> {
+    this.session.on('Network.requestWillBeSent', (event: NetworkRequestEvent) => {
+      this.requests.push({ ...event, sequence: this.sequence++ })
+    })
+    this.session.on('Network.requestServedFromCache', (event: { requestId: string }) => {
+      this.servedFromCache.add(event.requestId)
+    })
+    this.session.on('Network.responseReceived', (event: NetworkResponseEvent) => {
+      this.responses.set(event.requestId, event.response)
+    })
+    this.session.on('Network.loadingFinished', (event: NetworkFinishedEvent) => {
+      this.finished.set(event.requestId, event.encodedDataLength)
+    })
+    await this.session.send('Network.enable')
+    await this.session.send('Network.setCacheDisabled', { cacheDisabled })
+  }
+
+  cursor(): number {
+    return this.sequence
+  }
+
+  async waitForCandidate(urls: Set<string>): Promise<NetworkRequestEvent> {
+    await expect.poll(() => this.requests.find((request) => urls.has(request.request.url))).toBeTruthy()
+    const request = this.requests.find((candidate) => urls.has(candidate.request.url))
+    if (!request) throw new Error('Timed out waiting for the exact responsive candidate request')
+    return request
+  }
+
+  candidateRequestsAfter(urls: Set<string>, cursor: number): NetworkRequestEvent[] {
+    return this.requests.filter((request) => request.sequence >= cursor && urls.has(request.request.url))
+  }
+
+  evidenceFor(requestId: string): CacheCandidateEvidence {
+    return {
+      servedFromCache: this.servedFromCache.has(requestId),
+      response: this.responses.get(requestId),
+      encodedDataLength: this.finished.get(requestId)
+    }
+  }
+}
+
+function isBrowserCacheZeroTransfer(evidence: CacheCandidateEvidence): boolean {
+  const browserCache =
+    evidence.servedFromCache ||
+    evidence.response?.fromDiskCache === true ||
+    evidence.response?.fromPrefetchCache === true
+  return browserCache && evidence.response?.fromServiceWorker !== true && evidence.encodedDataLength === 0
+}
+
+async function destinationLayerUrls(page: Page, slug: string): Promise<Set<string>> {
+  const response = await page.request.get(new URL(`/${slug}`, page.url()).href)
+  const html = await response.text()
+  const serialized = html.match(/map-layers="([^"]+)"/)?.[1]
+  if (!serialized) throw new Error(`Missing map layers for ${slug}`)
+  const layers = JSON.parse(serialized.replaceAll('&quot;', '"')) as Array<{ src: string }>
+  return new Set(layers.map((layer) => new URL(layer.src, page.url()).href))
+}
+
+function responsiveCandidates(profile: { srcset: string; sizes: string }, page: Page): Set<string> {
+  expect(profile.sizes).toBe('100vw')
+  return new Set(profile.srcset.split(',').map((candidate) => new URL(candidate.trim().split(' ')[0], page.url()).href))
+}
+
+const transitionName = (prefix: string, slug: string) => `${prefix}-${slug}`
 
 test.describe('Map', () => {
   test('map page loads with viewport and navigation', { tag: ['@critical', '@e2e'] }, async ({ page }) => {
@@ -72,63 +167,155 @@ test.describe('Map', () => {
       await expect(page).toHaveURL(`/${firstMap.slug}`)
       await mapPage.waitForViewportReady()
       await expect(mapPage.marks).toHaveCount(marksFor(firstMap.id).length)
+      await expect(mapPage.getCompositionPreview(firstMap.slug)).toHaveCSS(
+        'view-transition-name',
+        transitionName('map-composition', firstMap.slug)
+      )
+      await expect(page.getByRole('heading', { name: firstMap.title, exact: true })).toHaveCSS(
+        'view-transition-name',
+        transitionName('map-title', firstMap.slug)
+      )
 
       await mapPage.getRailLink(nextMap.slug).click()
       await expect(page).toHaveURL(`/${nextMap.slug}`)
       await mapPage.waitForViewportReady()
       await expect(mapPage.marks).toHaveCount(marksFor(nextMap.id).length)
+      await expect(mapPage.getCompositionPreview(nextMap.slug)).toHaveCSS(
+        'view-transition-name',
+        transitionName('map-composition', nextMap.slug)
+      )
+      await expect(page.getByRole('heading', { name: nextMap.title, exact: true })).toHaveCSS(
+        'view-transition-name',
+        transitionName('map-title', nextMap.slug)
+      )
     }
   )
 
   test(
-    'preserves preview fallback for base failure and completes degraded optional layers',
+    'keeps the destination preview and usable overlays visible while cold target layers are delayed',
+    { tag: ['@critical', '@e2e', '@MAP-E2E-COLD'] },
+    async ({ browser }) => {
+      const context = await browser.newContext()
+      const page = await context.newPage()
+      const session = await context.newCDPSession(page)
+      const trace = new ChromiumNetworkTrace(session)
+      let releaseLayers: (() => void) | undefined
+      const layersReleased = new Promise<void>((resolve) => {
+        releaseLayers = resolve
+      })
+
+      try {
+        await trace.enable(true)
+        const mapPage = new MapPage(page)
+        const target = mapFixtures[1]
+        await mapPage.goto(mapFixtures[0].slug)
+        await mapPage.waitForViewportReady()
+        const targetLayers = await destinationLayerUrls(page, target.slug)
+        const delayedUrls = new Set<string>()
+        await page.route('**/*', async (route) => {
+          if (targetLayers.has(route.request().url())) {
+            delayedUrls.add(route.request().url())
+            await layersReleased
+          }
+          await route.continue()
+        })
+        await mapPage.getRailLink(target.slug).click({ noWaitAfter: true })
+        await expect(page).toHaveURL(`/${target.slug}`)
+        await expect.poll(() => delayedUrls.size).toBeGreaterThan(0)
+
+        const preview = mapPage.getCompositionPreview(target.slug)
+        await expect(preview).toBeVisible()
+        await expect(mapPage.marks.first().locator('.sound-mark__circle')).toBeVisible()
+        await expect(mapPage.pathSvg.first()).toBeVisible()
+        await expect(mapPage.viewport).not.toHaveAttribute('data-scene-ready', 'true')
+
+        releaseLayers?.()
+        await expect(mapPage.viewport).toHaveAttribute('data-scene-ready', 'true')
+        await expect(preview).toHaveCSS('opacity', '0')
+      } finally {
+        releaseLayers?.()
+        await session.detach().catch(() => undefined)
+        await context.close()
+      }
+    }
+  )
+
+  test(
+    'accepts warm destination reuse only with correlated Chromium browser-cache zero-byte evidence',
+    { tag: ['@critical', '@e2e', '@MAP-E2E-WARM'] },
+    async ({ page }) => {
+      const mapPage = new MapPage(page)
+      const session = await page.context().newCDPSession(page)
+      const trace = new ChromiumNetworkTrace(session)
+
+      try {
+        await trace.enable(false)
+        const target = mapFixtures[1]
+        await mapPage.goto(mapFixtures[0].slug)
+        await mapPage.waitForViewportReady()
+        const profile = await mapPage.getRailPreviewProfile(target.slug)
+        const candidates = responsiveCandidates(profile, page)
+
+        await mapPage.getRailLink(target.slug).hover()
+        const warmed = await trace.waitForCandidate(candidates)
+        const navigationCursor = trace.cursor()
+        await mapPage.getRailLink(target.slug).click({ noWaitAfter: true })
+        await expect(page).toHaveURL(`/${target.slug}`)
+        await expect(mapPage.viewport).toHaveAttribute('data-scene-ready', 'true')
+
+        const destinationCurrentSrc = await mapPage
+          .getCompositionPreview(target.slug)
+          .locator('img')
+          .evaluate((image) => (image as HTMLImageElement).currentSrc)
+        expect(destinationCurrentSrc).toBe(warmed.request.url)
+
+        const postNavigation = trace.candidateRequestsAfter(candidates, navigationCursor)
+        const invalidCandidateRequests = postNavigation.filter(
+          (request) => !isBrowserCacheZeroTransfer(trace.evidenceFor(request.requestId))
+        )
+        if (postNavigation.length === 0) {
+          expect(postNavigation, 'the destination profile was reused without a second browser request').toHaveLength(0)
+        } else {
+          expect(
+            invalidCandidateRequests,
+            'every destination-profile request must be browser-cached with zero bytes'
+          ).toEqual([])
+        }
+      } finally {
+        await session.detach().catch(() => undefined)
+      }
+    }
+  )
+
+  test('rejects CDN or Vercel HIT headers without Chromium browser-cache evidence', () => {
+    expect(
+      isBrowserCacheZeroTransfer({
+        servedFromCache: false,
+        response: { fromServiceWorker: false },
+        encodedDataLength: 0
+      })
+    ).toBe(false)
+  })
+
+  test(
+    'preserves preview fallback and usable overlays after base failure',
     { tag: ['@high', '@e2e', '@MAP-E2E-003'] },
     async ({ page }) => {
       const mapPage = new MapPage(page)
-      const fixture = mapCompositionFixtures[0]
-
-      await mapPage.goto(fixture.slug)
+      const target = mapFixtures[1]
+      await mapPage.goto(mapFixtures[0].slug)
       await mapPage.waitForViewportReady()
-
-      const outcome = await page.evaluate(async () => {
-        const current = document.querySelector('map-view#main-map')
-        const wrapper = current?.parentElement
-        if (!(current instanceof HTMLElement) || !(wrapper instanceof HTMLElement)) {
-          throw new Error('Missing active map view')
-        }
-        current.remove()
-
-        const failingView = document.createElement('map-view')
-        failingView.id = 'main-map'
-        failingView.setAttribute(
-          'map-layers',
-          JSON.stringify([
-            {
-              id: 'base',
-              src: 'data:image/png;base64,not-an-image',
-              width: 2,
-              height: 2,
-              frame: { x: 0, y: 0, width: 100, height: 100 },
-              optional: false,
-              effect: 'none'
-            }
-          ])
-        )
-        wrapper.appendChild(failingView)
-        await new Promise<void>((resolve) =>
-          failingView.addEventListener('map-composition-error', () => resolve(), { once: true })
-        )
-
-        return {
-          status: failingView.getAttribute('data-composition-status'),
-          alert: failingView.querySelector('[role="alert"]')?.textContent,
-          previewVisible: document.querySelector('[data-map-composition-preview]') !== null
-        }
-      })
-
-      expect(outcome.status).toBe('error')
-      expect(outcome.alert).toContain('Map image failed to decode')
-      expect(outcome.previewVisible).toBe(true)
+      const [baseUrl] = await destinationLayerUrls(page, target.slug)
+      await page.route(baseUrl!, (route) =>
+        route.fulfill({ status: 200, contentType: 'image/webp', body: 'invalid image' })
+      )
+      await mapPage.getRailLink(target.slug).click({ noWaitAfter: true })
+      await expect(page).toHaveURL(`/${target.slug}`)
+      await expect(mapPage.viewport).toHaveAttribute('data-composition-status', 'error')
+      await expect(mapPage.compositionErrors).toContainText('Map image failed to decode')
+      await expect(mapPage.getCompositionPreview(target.slug)).toBeVisible()
+      await expect(mapPage.marks.first().locator('.sound-mark__circle')).toBeVisible()
+      await expect(mapPage.pathSvg.first()).toBeVisible()
     }
   )
 

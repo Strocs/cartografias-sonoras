@@ -195,19 +195,23 @@ describe('MapView custom element', () => {
     expect(el.hasAttribute('data-scene-ready')).toBe(false)
   })
 
-  it('drops data-scene-ready when the element disconnects', async () => {
+  it('invalidates pending release frames across disconnect and reconnect', async () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => (frames.push(callback), frames.length))
     const el = document.createElement('map-view') as MapView
     setLayers(el)
     wrapper.appendChild(el)
     await waitForReady(el)
-
+    await new Promise((resolve) => setTimeout(resolve, 0))
     el.revealScene()
-    await new Promise((resolve) => setTimeout(resolve, 50))
-    expect(el.hasAttribute('data-scene-ready')).toBe(true)
-
+    expect(frames).toHaveLength(1)
+    frames[0]?.(0)
+    expect(frames).toHaveLength(2)
     el.remove()
+    wrapper.appendChild(el)
+    await waitForReady(el)
+    frames[1]?.(0)
     expect(el.hasAttribute('data-scene-ready')).toBe(false)
-    expect(el.hasAttribute('data-ready')).toBe(false)
   })
 
   it('keeps the preview fallback after a base failure (no scene-ready publication)', async () => {

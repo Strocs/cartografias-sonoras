@@ -118,6 +118,14 @@ export class MapPage extends BasePage {
     return this.rightRail.locator(`a[href="/${slug}"]`)
   }
 
+  async getRailPreviewProfile(slug: string): Promise<{ srcset: string; sizes: string }> {
+    return this.getRailLink(slug).evaluate((link) => {
+      const { previewSrcset: srcset, previewSizes: sizes } = link.dataset
+      if (!srcset || !sizes) throw new Error('Missing destination preview profile')
+      return { srcset, sizes }
+    })
+  }
+
   async getZoom(): Promise<number> {
     return this.page.evaluate(() => {
       const mapView = document.querySelector('map-view#main-map')
