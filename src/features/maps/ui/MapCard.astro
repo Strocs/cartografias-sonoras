@@ -15,14 +15,14 @@ const destinationPreview = await getMapDestinationPreview(map)
 
 <a
   href={`/${map.slug}`}
-  class="group relative block h-full max-h-48 overflow-hidden rounded-xl border border-secondary-sand bg-charcoal md:max-h-64"
+  class="group relative block h-full max-h-48 rounded-xl md:max-h-64"
   data-testid="map-card"
   data-preview-src={destinationPreview.src}
   data-preview-srcset={destinationPreview.srcset}
   data-preview-sizes={destinationPreview.sizes}
 >
   <h2
-    class="absolute right-0 bottom-4 left-0 z-10 mx-auto block px-4 text-center text-3xl font-bold text-canvas md:text-4xl"
+    class="absolute right-0 bottom-0 left-0 z-10 mx-auto block px-4 text-center font-cormorant text-3xl leading-none text-canvas/90 md:text-3xl"
     transition:name={`map-title-${map.slug}`}
   >
     {map.title}
@@ -30,8 +30,8 @@ const destinationPreview = await getMapDestinationPreview(map)
   <MapCompositionPreview
     map={map}
     loading={loading}
-    class="h-full w-full"
-    imageClass="h-full w-full object-cover transition-transform duration-600 group-hover:scale-140"
+    class="size-full"
+    imageClass="size-full transition-transform duration-600 group-hover:scale-110 object-contain"
     widths={[360, 540, 720, 960]}
     sizes="(min-width: 768px) 33vw, 92vw"
   />
