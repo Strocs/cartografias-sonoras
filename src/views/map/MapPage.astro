@@ -119,4 +119,26 @@ const mapData = {
   .map-wrapper map-view .map-world {
     background: transparent;
   }
+
+  /* Entrance fade-in for marks and paths: overlays stay invisible until the
+   * scene is ready (data-scene-ready, set after the view transition finished),
+   * then fade in once. Only `opacity` is transitioned so zoom transforms on
+   * marks and stroke-opacity variant switches on paths stay unaffected. */
+  .map-wrapper map-view:not([data-scene-ready]) .sound-mark,
+  .map-wrapper map-view:not([data-scene-ready]) path[data-path-id] {
+    opacity: 0;
+  }
+
+  .map-wrapper map-view[data-scene-ready] .sound-mark,
+  .map-wrapper map-view[data-scene-ready] path[data-path-id] {
+    opacity: 1;
+    transition: opacity 150ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .map-wrapper map-view[data-scene-ready] .sound-mark,
+    .map-wrapper map-view[data-scene-ready] path[data-path-id] {
+      transition: none;
+    }
+  }
 </style>
