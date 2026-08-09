@@ -14,6 +14,7 @@ interface Props {
   /** The container's rendered width, so the browser picks the right candidate. */
   sizes?: string
   destinationPreview?: DestinationPreview
+  transitionRole?: 'source' | 'destination'
 }
 
 const {
@@ -23,16 +24,18 @@ const {
   imageClass = '',
   widths = [640, 960, 1280, 1600],
   sizes = '100vw',
-  destinationPreview
+  destinationPreview,
+  transitionRole = 'source'
 } = Astro.props
 
 const labelId = `map-composition-label-${map.slug}`
+const isDestination = transitionRole === 'destination'
 ---
 
 <figure
-  class={className}
+  class={isDestination ? `${className} map-composition-destination` : className}
   aria-labelledby={labelId}
-  transition:name={`map-composition-${map.slug}`}
+  transition:name={!isDestination ? `map-composition-${map.slug}` : undefined}
   data-map-composition-preview
 >
   {
@@ -43,10 +46,11 @@ const labelId = `map-composition-label-${map.slug}`
         sizes={destinationPreview.sizes}
         alt={map.title}
         aria-hidden="true"
-        class={imageClass}
+        class={isDestination ? `map-composition-destination-image ${imageClass}` : imageClass}
         loading={loading}
         width={destinationPreview.width}
         height={destinationPreview.height}
+        transition:name={isDestination ? `map-composition-${map.slug}` : undefined}
         {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
       />
     ) : (
@@ -60,9 +64,26 @@ const labelId = `map-composition-label-${map.slug}`
         height={map.preview.height}
         widths={widths}
         sizes={sizes}
+        transition:name={isDestination ? `map-composition-${map.slug}` : undefined}
         {...(loading === 'eager' ? { fetchpriority: 'high' } : {})}
       />
     )
   }
   <figcaption id={labelId} class="sr-only">{map.title}</figcaption>
 </figure>
+
+<style>
+  [data-map-composition-preview].map-composition-destination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  [data-map-composition-preview] :global(.map-composition-destination-image) {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+</style>
