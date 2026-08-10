@@ -1,8 +1,10 @@
 ---
 import MapCompositionPreview from './MapCompositionPreview.astro'
 import { getMapDestinationPreview } from '../lib/destinationPreview'
+import separator from '@assets/site/separator.png'
 
 import type { Map } from '../domain/types'
+import { Image } from 'astro:assets'
 
 interface Props {
   maps: Map[]
@@ -24,33 +26,47 @@ const inactiveMaps = await Promise.all(
 >
   <div class="flex w-full flex-row items-end gap-8">
     {
-      inactiveMaps.map(({ map, destinationPreview }) => (
-        <a
-          href={`/${map.slug}`}
-          data-astro-prefetch="hover"
-          class="group relative flex w-full max-w-60 flex-1 shrink-0 flex-col rounded-xl md:pointer-events-auto"
-          data-rail-card
-          data-preview-src={destinationPreview.src}
-          data-preview-srcset={destinationPreview.srcset}
-          data-preview-sizes={destinationPreview.sizes}
-        >
-          <div class="aspect-[4/3] w-full">
-            <MapCompositionPreview
-              map={map}
-              loading="eager"
-              class="size-full"
-              imageClass="size-full object-contain transition-all duration-300 group-hover:scale-110"
-              widths={[620]}
-              sizes="(min-width: 768px) 9rem, 7rem"
-            />
-          </div>
-          <div class="mt-2" data-rail-title>
-            <span class="block text-center font-cormorant leading-none font-bold tracking-wide text-canvas">
-              {map.title}
-            </span>
-          </div>
-        </a>
-      ))
+      inactiveMaps.map(({ map, destinationPreview }, index) => {
+        return (
+          <>
+            <a
+              href={`/${map.slug}`}
+              data-astro-prefetch="hover"
+              class="group relative flex w-full max-w-60 flex-1 shrink-0 flex-col rounded-xl md:pointer-events-auto"
+              data-rail-card
+              data-preview-src={destinationPreview.src}
+              data-preview-srcset={destinationPreview.srcset}
+              data-preview-sizes={destinationPreview.sizes}
+            >
+              <div class="aspect-[4/3] w-full">
+                <MapCompositionPreview
+                  map={map}
+                  loading="eager"
+                  class="size-full"
+                  imageClass="size-full object-contain transition-all duration-300 group-hover:scale-110"
+                  widths={[620]}
+                  sizes="(min-width: 768px) 9rem, 7rem"
+                />
+              </div>
+              <div class="mt-2" data-rail-title>
+                <span class="block text-center font-cormorant leading-none font-bold tracking-wide text-canvas">
+                  {map.title}
+                </span>
+              </div>
+            </a>
+            {index === 0 && (
+              <Image
+                src={separator}
+                width={separator.width}
+                height={separator.height}
+                alt=""
+                aria-label="hidden"
+                class="-mx-16 my-auto hidden aspect-auto h-3 w-fit -rotate-90 md:block"
+              />
+            )}
+          </>
+        )
+      })
     }
   </div>
 </aside>
