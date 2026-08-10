@@ -5,14 +5,14 @@ import { AUDIO_MIME_TYPES, audioSourcesSchema, buildSoundAudioAssetUrls } from '
 describe('buildSoundAudioAssetUrls', () => {
   it('builds the A3 master contract and ordered streaming sources', () => {
     expect(buildSoundAudioAssetUrls(2, 3, 4)).toEqual({
-      masterUrl: 'https://mapasonoro.frijolmagico.cl/1/2/sonidos/3/master/Ruta_2_Punto_3_Sonido_4_Binaural_norm.wav',
+      masterUrl: 'https://cdn.marcasonora.cl/1/2/sonidos/3/master/Ruta_2_Punto_3_Sonido_4_Binaural_norm.wav',
       audioSources: {
         primary: {
-          url: 'https://mapasonoro.frijolmagico.cl/1/2/sonidos/3/streaming/Ruta_2_Punto_3_Sonido_4_Binaural_norm.m4a',
+          url: 'https://cdn.marcasonora.cl/1/2/sonidos/3/streaming/Ruta_2_Punto_3_Sonido_4_Binaural_norm.m4a',
           mimeType: AUDIO_MIME_TYPES.AAC
         },
         fallback: {
-          url: 'https://mapasonoro.frijolmagico.cl/1/2/sonidos/3/streaming/Ruta_2_Punto_3_Sonido_4_Binaural_norm.opus',
+          url: 'https://cdn.marcasonora.cl/1/2/sonidos/3/streaming/Ruta_2_Punto_3_Sonido_4_Binaural_norm.opus',
           mimeType: AUDIO_MIME_TYPES.OPUS
         }
       }

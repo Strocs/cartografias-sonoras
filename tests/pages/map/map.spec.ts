@@ -1018,12 +1018,12 @@ test.describe('Map', () => {
       const assets = [
         {
           name: 'AAC',
-          url: 'https://mapasonoro.frijolmagico.cl/1/1/sonidos/1/streaming/Ruta_1_Punto_1_Sonido_1_Binaural_norm.m4a',
+          url: 'https://cdn.marcasonora.cl/1/1/sonidos/1/streaming/Ruta_1_Punto_1_Sonido_1_Binaural_norm.m4a',
           contentType: /^audio\/(mp4|x-m4a)$/
         },
         {
           name: 'Opus',
-          url: 'https://mapasonoro.frijolmagico.cl/1/1/sonidos/1/streaming/Ruta_1_Punto_1_Sonido_1_Binaural_norm.opus',
+          url: 'https://cdn.marcasonora.cl/1/1/sonidos/1/streaming/Ruta_1_Punto_1_Sonido_1_Binaural_norm.opus',
           contentType: /^audio\/(ogg|opus)$/
         }
       ]
@@ -1051,7 +1051,7 @@ test.describe('Map', () => {
     { tag: ['@high', '@e2e', '@audio', '@AUDIO-E2E-003'] },
     async ({ page }) => {
       const fallbackUrl =
-        'https://mapasonoro.frijolmagico.cl/1/1/sonidos/1/streaming/Ruta_1_Punto_1_Sonido_1_Binaural_norm.opus'
+        'https://cdn.marcasonora.cl/1/1/sonidos/1/streaming/Ruta_1_Punto_1_Sonido_1_Binaural_norm.opus'
 
       // Chromium supports the real AAC source. This fixture proves native ordered
       // fallback mechanics under an unsupported primary; DOM tests prove AAC-first/Opus-second production order.

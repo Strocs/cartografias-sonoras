@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const AUDIO_CDN_BASE_URL = 'https://mapasonoro.frijolmagico.cl/1'
+const AUDIO_CDN_BASE_URL = 'https://cdn.marcasonora.cl/1'
 
 export const AUDIO_MIME_TYPES = {
   AAC: 'audio/mp4',

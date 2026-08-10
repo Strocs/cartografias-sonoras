@@ -72,7 +72,7 @@ describe('Dataset validation', () => {
 
       for (const [index, sound] of mark.sounds.entries()) {
         const soundIdx = index + 1
-        const baseUrl = `https://mapasonoro.frijolmagico.cl/1/${mark.mapId}/sonidos/${point}`
+        const baseUrl = `https://cdn.marcasonora.cl/1/${mark.mapId}/sonidos/${point}`
         const filename = `Ruta_${mark.mapId}_Punto_${point}_Sonido_${soundIdx}_Binaural_norm`
 
         expect(sound.audioSources.primary.url).toBe(`${baseUrl}/streaming/${filename}.m4a`)
