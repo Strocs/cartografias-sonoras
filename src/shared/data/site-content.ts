@@ -23,7 +23,7 @@ export const siteContent = {
   },
   team: {
     title: 'Equipo',
-    heading: 'Equipo de investigación',
+    heading: 'Equipo',
     description: 'Colectivo Marcasonora y colaboradores de la Universidad de La Serena.',
     body: [
       'Investigación y composición sonora: Colectivo Marcasonora.',
